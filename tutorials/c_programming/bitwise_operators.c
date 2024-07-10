@@ -148,7 +148,7 @@ void main(void)
     // char ch2 = 177;
     // printBinary(ch2);
 
-    int a= -15213;
+    int a= - 15213;
     printf("int a = %d , hex: %x;\n",a,a);
     show_bytes((pointer) &a, sizeof(int));
    
