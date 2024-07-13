@@ -27,6 +27,10 @@ Also, Make sure to add C++ compiler PATH to environment variable of your platfor
 
 For Windows MinGW64 add: C:\MinGW64\bin
 
+## Unix-like C compilers in Windows
+- Cygwin : Cygwin是模拟 POSIX 系统，源码移植 Linux 应用到 Windows 下
+- MinGW & MSYS: MinGW 是用于进行 Windows 应用开发的 GNU 工具链（开发环境），它的编译产物一般是原生 Windows 应用
+- MinGW-w64 & MSYS2:  https://www.msys2.org/
 
 # GCC on Windows WSL
 
