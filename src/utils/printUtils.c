@@ -1,4 +1,6 @@
 
+#include <stdio.h>
+
 void printArray(int* arr,int length)
 // An array is always passed as pointers to a function in C. Whenever we try to pass an array to a function,
 // it decays to the pointer and then passed as a pointer to the first element of an array.
