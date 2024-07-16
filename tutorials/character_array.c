@@ -85,9 +85,9 @@ int find_matched_lines(void)
     {
         printf("%d lines found.\n", found);
     }
+    return found;
 }
-return found;
-}
+
 
 /* strindex: return index of t in s, -1 if none */
 int strindex(char s[], char t[])

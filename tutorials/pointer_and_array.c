@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 // #include <printUtils.h>
 
 // malloc define a String type
@@ -64,12 +65,14 @@ void pointer_and_array(int i)
     a[i] = 0; // same as *(a+i)
 }
 
-/* strlen: return length of string s */
-int strlen(char *s)
+/* strlen: return length of string s
+'strlen' is declared in header '<string.h>'
+*/
+int strLength(char *s)
 {
     int n;
-    for (n = 0; *s != '\0', s++;)
-        n++;
+    for (n = 0; *s != '\0'; s++)
+            n++;
     return n;
 }
 
@@ -81,9 +84,10 @@ void main(void)
     // int x[10];
     // printArray(x, 10);
 
-    char s[10] = "abc";
+    // char s[10] = "abc";
     int n;
-    n =  strlen(s);
-    printf("string of %s lenght= %d",s,n);
-
+    // char s[] = "Hello, world!";
+    char *s = "Hello, world!";
+    n = strLength( s);
+    printf("string of %s lenght= %d",s, n);
 }
