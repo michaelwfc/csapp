@@ -6,6 +6,7 @@
 # -std=c11: Specifies that the compiler should use the C11 standard.
 # -I.: Adds the current directory to the list of directories to be searched for header files.
 # -Iinclude: Adds the include directory to the list of directories to be searched for header files.
+# -Isrc/utils: Adds the src/utils directory to the list of directories to be searched for header files.
 # The CFLAGS variable is updated to include the current directory (-I.). This tells the compiler to look for header files in the current directory.
 # The -I option specifies an additional include directory. In this case, . refers to the current directory.
 
