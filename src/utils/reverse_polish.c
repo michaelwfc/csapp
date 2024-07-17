@@ -1,16 +1,18 @@
 #include <stdio.h>
+#include <stdlib.h> /* for atof() */
+#include <input.h>
+#include <stack.h>
 
 
 #define MAXOP 100  /* max size of operand or operator */
 
-extern NUMBER;
 
 /* reverse Polish calculator */
 int reverse_polish_calculator(void)
 {
-    int type;
+    char type;
     double op2;
-    char s[MAXOP];
+    char s[MAXOP]; // the input string 
     while ((type = getop(s)) != EOF)
     {
         switch (type)
