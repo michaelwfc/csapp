@@ -13,10 +13,10 @@
 # Compiler to use
 CC = gcc
 
-CFLAGS = -Wall -Wextra -std=c11 -I../../src/utils
+CFLAGS = -g -Wall -Wextra -std=c11 -I../../src/utils
 
 # Target executable name
-TARGET = my_program
+TARGET = main
 
 # Source files
 SRCS  = main.c ../../src/utils/printUtils.c
