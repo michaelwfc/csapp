@@ -11,7 +11,7 @@
 int reverse_polish_calculator(void)
 {
     char type;
-    double op2;
+    double op1, op2, result;
     char s[MAXOP]; // the input string 
     while ((type = getop(s)) != EOF)
     {
@@ -28,7 +28,9 @@ int reverse_polish_calculator(void)
             break;
         case '-':
             op2 = pop();
-            push(pop() - op2);
+            op1 = pop();
+            result= op1 - op2;
+            push(result);
             break;
         case '/':
             op2 = pop();
@@ -40,7 +42,8 @@ int reverse_polish_calculator(void)
         case '\n':; // in windows when entry the char by press \entry,there will 2 characters
             break;
         case '?':
-            printf("\tThe result= %.8g\n", pop());
+            result =pop();
+            printf("\tThe result= %.8g\n", result);
             break;
         default:
             printf("error: unknown command %s\n", s);
