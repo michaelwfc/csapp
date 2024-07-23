@@ -1,0 +1,6 @@
+lecture_notes/
+*.tar
+*.i
+*.s
+*.o
+*.exe
