@@ -1,4 +1,6 @@
-lecture_notes/
+lecture_notes/*
+!lecture_notes/code/
+!lecture_notes/code_examples/
 *.tar
 *.i
 *.s
