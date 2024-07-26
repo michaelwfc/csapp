@@ -19,7 +19,7 @@ CFLAGS = -g -Wall -Wextra -std=c11 -I../../src/utils
 TARGET = main
 
 # Source files
-SRCS  = main.c ../../src/utils/printUtils.c
+SRCS  = main.c ../../src/utils/arrayUtils.c
 
 # Object files: List of object files derived from the source files
 OBJS = $(SRCS:.c=.o)
