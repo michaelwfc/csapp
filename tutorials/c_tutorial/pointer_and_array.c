@@ -9,21 +9,21 @@ typedef char *String;
 void print_address()
 {
     int n = 50;
-    printf("address of n=%i is %p\n", n, &n);
+    printf("\naddress of n=%i is 0x%p\n", n, &n);
     int *p = &n;
-    printf("value in adress %p is %i\n", p, *p);
+    printf("\nvalue in adress 0x%p is %i\n", p, *p);
 
-    String s = "Hi!";
-    printf("the pointer to string s is %p\n", s);
-    printf("the 0th address %p\n", &s[0]);
-    printf("the 1th address %p\n", &s[1]);
-    printf("the 2th address %p\n", &s[2]);
-    printf("the 3th address %p\n", &s[3]);
+    // String s = "Hi!";
+    // printf("the pointer to string s is %p\n", s);
+    // printf("the 0th address %p\n", &s[0]);
+    // printf("the 1th address %p\n", &s[1]);
+    // printf("the 2th address %p\n", &s[2]);
+    // printf("the 3th address %p\n", &s[3]);
 
-    printf("the 0th char %c\n", *s);
-    printf("the 1th char %c\n", *(s + 1));
-    printf("the 2th char %c\n", *(s + 2));
-    printf("the 3th char %c\n", *(s + 3));
+    // printf("the 0th char %c\n", *s);
+    // printf("the 1th char %c\n", *(s + 1));
+    // printf("the 2th char %c\n", *(s + 2));
+    // printf("the 3th char %c\n", *(s + 3));
 }
 
 void declare_pointer()
@@ -78,16 +78,16 @@ int strLength(char *s)
 
 void main(void)
 {
-    // print_address();
+    print_address();
     // declare_pointer();
 
     // int x[10];
     // printArray(x, 10);
 
     // char s[10] = "abc";
-    int n;
+    // int n;
     // char s[] = "Hello, world!";
-    char *s = "Hello, world!";
-    n = strLength( s);
-    printf("string of %s lenght= %d",s, n);
+    // char *s = "Hello, world!";
+    // n = strLength( s);
+    // printf("string of %s lenght= %d",s, n);
 }

@@ -1,15 +1,50 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> // For malloc and free
 
-int main(void)
-// use valgrind ./memory to valid the memory usage
+/*
+In C, malloc (memory allocation) is a function used to allocate a block of memory on the heap dynamically. 
+This means the size of the memory can be determined during runtime, which is useful when the size of the data is not known at compile time.
+
+Why Use malloc?
+Dynamic Memory Allocation: Useful when the required memory size is not known beforehand.
+Heap Memory: Allocates memory on the heap, which persists until explicitly freed using free.
+Flexibility: Allows creating  dynamic  data structures like linked lists, trees, and dynamic arrays where the size can change during the program execution.
+
+void* malloc(size_t size);
+
+*/
+int main()
 {
-    int *x=malloc(3*sizeof(int));
-    x[1]=1;
-    x[2]=2;
-    x[3] =3;
-    for(int i=0;i<4;i++)
+    int *array;
+    int n, i;
+
+    printf("Enter the number of elements: ");
+    scanf("%d", &n);
+
+    // Allocate memory for n integers
+    array = (int *)malloc(n * sizeof(int)); // (int *) is used to cast the void pointer returned by malloc to an integer pointer.
+    if (array == NULL) // Check if malloc succeeded
     {
-        printf("x[%i]=%i\n",i,x[i]);
+        printf("Memory allocation failed\n");
+        return 1;
     }
+
+    // Initialize array
+    for (i = 0; i < n; i++)
+    {
+        array[i] = i + 1;
+    }
+
+    // Print the array elements
+    printf("Array elements:\n");
+    for (i = 0; i < n; i++)
+    {
+        printf("%d ", array[i]);
+    }
+    printf("\n");
+
+    // Free the allocated memory
+    free(array);
+
+    return 0;
 }
