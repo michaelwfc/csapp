@@ -1,6 +1,6 @@
 
 
-# QA
+## QA
 - why should we spend our time learning machine code?
   the optimization capabilities of the compiler and analyze the underlying
 inefficiencies in the code.
@@ -14,10 +14,19 @@ inefficiencies in the code.
 GCC C compiler:
 source code --- (C compiler) -> assembly code ---(assembler & linker)-> machine code
 
+1. preprocess:
+   the C preprocessor expands the source code to include any files specified with #include commands and to expand any macros, specified with #define declarations.
+2. the compiler generates assembly code *.s
+3. generate binary object-code files *.o
+   the assembler converts the assembly code into binary object-code files *.o
+   Object code is one form of machine code—it contains binary representations of all of the instructions, but the addresses of global values are not yet filled in.
+4. generate final executable code 
+   the linker merges these two object-code files along with code implementing library functions (e.g., printf) and generates the final executable code file
+
 ```shell
 linux> gcc -Og -o p p1.c p2.c
 ```
--Og1
+-Og
 instructs the compiler to apply a level of optimization that yields machine code that follows the overall structure of the original C code  
 In practice, higher levels of optimization (e.g., specified with the option -O1 or -O2) are considered a better choice in terms of the resulting program performance.
 
@@ -31,13 +40,15 @@ linux> gcc -Og -S mstore.c
 -o <file>    Place the output into <file>.
 generating an assembly file mstore.s, and go no further
 
-
+```shell
 linux> gcc -Og -c mstore.c
+```
 -c  Compile and assemble, but do not link 
 generating object file mstore.o
 
-
+```shell
 linux> objdump -d mstore.o
+```
 To inspect the contents of machine-code files
 
 
@@ -56,7 +67,8 @@ The processor hardware is far more elaborate, executing many instructions concur
 2. virtual addresses：  
 the memory addresses used by a machine-level program , providing a memory model that appears to be a very large byte array.
 
-### Parts of the processor state are visible that normally are hidden from the C programmer:
+### Hidden Processor state
+Parts of the processor state are visible that normally are hidden from the C programmer:
 
 
 - Program Counter - %rip 
@@ -70,10 +82,9 @@ the memory addresses used by a machine-level program , providing a memory model 
 - A set of vector registers
   can each hold one or more integer or floating-point values.
 
-# Register
+## Accessing Information
 
-
-
+### Integer Register
 
 %rax: Return value
 %rdi : 1st argument
@@ -84,55 +95,130 @@ the memory addresses used by a machine-level program , providing a memory model 
 %rsp: stack pointer
 
 
-# Instruction
+### Instruction
 
-|Operation code| Operands|
-|---------------|--------|
-| movq          |         |
+- Operation code 操作码
+- Operands  操作数 : specifying the source values to use in performing an operation and the destination location into which to place the result
+  
+
+|Operation code | Operands|
+|---------------|---------|
+| movq          |  （%rdi）,%rax  |
 | addq          |         |  
 | subq          |         |
 | xorq          |          |
 | ret          |           |
 
 
-## Operand Types
+### Operand Types
 
-- Immediate: $0x400 Constant integer data,
-- Register:  %rax one of 16 integer registers 
-- Memory: (%rax) 8 consecutive bytes of memory at address given by register
+- Immediate $\$0x400$: 
+  for constant value, Ex:  
+- Register $r_a$:   
+  denotes the contents of a register, one of the sixteen 8-, 4-, 2-, or 1-byte low-order portions of
+the registers for operands having 64, 32, 16, or 8 bits, respectively
 
-## Memory Reference
+- Memory Reference 内存引用 $M_b[Addr]$: 
+  in which we access some memory location according to a computed address, often called the effective address. 
 
-$ Imm(r_b, r_i, s) = Imm + R[r_b] + R[r_i] *s $
-
-
-## Move Operand
-
-# Practice Problems
-### 3.1 (solution page 361)
-Assume the following values are stored at the indicated memory addresses and
-registers:
-Address Value 
-0x100    0xFF    
-0x104    0xAB    
-0x108    0x13    
-0x10C    0x11
-
-Register Value
-%rax     0x100
-%rcx     0x1
-%rdx     0x3
+    $ Imm(r_b, r_i, s) = Imm + R[r_b] + R[r_i] *s $
 
 
-Fill in the following table showing the values for the indicated operands:
-Operand Value   Comment
-%rax    0x100   Register
-0x104   0x104   Absolute address
-$0x108  0x13    Immediate   
 
-(%rax)  0xFF    
-4(%rax)        4+0x100=0x104 ->  0xAB
-9(%rax,%rdx)   9+0x100+ 0x3=0x10C -> 0x11
-260(%rcx,%rdx) 260+0x1+ 0x3= ?-> ?
-0xFC(,%rcx,4)  0xFC + 0x1*4=0x100 ->  0xFF
-(%rax,%rdx,4)  0x100+ 0x3*4=0x10C ->  0x11
+### Data Movement Instructions
+
+#### MOV class
+- movb
+- movw
+- movl
+- movq
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.4%20Simple%20data%20movement%20instructions.png)
+
+The movabsq instruction: can have an ***arbitrary 64-bit immediate value*** as its source operand and can only have a ***register*** as a destination.
+
+copy data from a source location to a destination location
+
+- The source operand: 
+  designates a value that is immediate, stored in a register, or stored in memory. 
+- The destination operand 
+  designates a location that is either a register or a memory address.  
+
+x86-64 imposes the restriction that a move instruction cannot have both operands refer to memory locations.
+
+For most cases, the mov instructions will only update the specific register bytes or memory locations indicated by ***the destination operand***. 
+The only exception is that when movl has a register as the destination, it will also set the high-order 4
+bytes of the register to 0.
+
+#### MOVZ class
+two classes of data movement instructions for use when copying a smaller source value to a larger destination.
+- the movz class fill out the remaining bytes of the destination with zeros
+- the movs class fill them out by sign extension, replicating copies of the most significant bit of the
+source operand.
+
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.5%20Zero-extending%20data%20movement%20instructions.png) 
+
+#### MOVS class
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.6%20Sign-extending%20data%20movement%20instructions.png)
+
+
+### Pushing and Popping Stack Data
+
+
+
+## Arithmetic and Logical Operations
+
+### Load Effective Address
+
+
+The ability of the leaq instruction to perform addition and limited forms of
+multiplication proves useful when compiling simple arithmetic expressions such
+as this example.
+
+
+### Unary and Binary Operations
+Note :  
+when the second operand is a memory location, the processor must read the value
+from memory, perform the operation, and then write the result back to memory.
+
+### Shift Operations
+
+
+## Control
+
+### condition code registers
+
+- CF: Carry flag. 
+  The most recent operation generated a carry out of the most significant bit. Used to detect overflow for unsigned operations.
+- ZF: Zero flag. 
+  The most recent operation yielded zero.
+- SF: Sign flag. 
+  The most recent operation yielded a negative value.
+- OF: Overflow flag. 
+  The most recent operation caused a two’s-complement overflow—either negative or positive.
+
+
+### Accessing the Condition Codes
+
+Rather than reading the condition codes directly, there are three common ways
+of using the condition codes: 
+- (1) we can set a single byte to 0 or 1 depending on some combination of the condition codes
+- (2) we can conditionally jump to some other part of the program
+- (3) we can conditionally transfer data. 
+ 
+
+For the first case, the instructions described in Figure 3.14 set a single byte to 0 or to 1
+depending on some combination of the condition codes. We refer to this entire class of instructions as the set instructions;
+
+### The set instructions
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.14%20The%20set%20instructions.png)
+
+
+### Jump Instructions
+
+A jump instruction can cause the execution to switch to a completely new position in the program. 
+These jump destinations are generally indicated in assembly code by a label.
+
+In assembly code, jump targets are written using symbolic labels. 
+The assembler, and later the linker, generate the proper encodings of the jump targets.
