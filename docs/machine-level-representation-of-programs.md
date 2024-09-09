@@ -222,3 +222,65 @@ These jump destinations are generally indicated in assembly code by a label.
 
 In assembly code, jump targets are written using symbolic labels. 
 The assembler, and later the linker, generate the proper encodings of the jump targets.
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.15%20The%20jump%20instructions.png)
+
+
+### Implementing Conditional Branches with Conditional Move Instructions
+
+#### Pipelining
+
+processors achieve high performance through pipelining, where an instruction is processed via a sequence of stages, each performing one small portion of the required operations (e.g., fetching the instruction from memory, determining the instruction type, reading from memory, performing an arithmetic operation, writing to memory, and updating the program counter). 
+
+This approach achieves high performance by overlapping the steps of the successive instructions, such as fetching one instruction while performing the arithmetic operations for a previous instruction. 
+
+To do this requires being able to determine the sequence of instructions to be executed well ahead of time in order to keep the pipeline full of instructions to be executed.
+
+When the machine encounters a conditional jump (referred to as a “branch”), it cannot determine which way the branch will go until it has evaluated the branch condition. 
+
+#### branch prediction logic 分支预测器
+
+Processors employ sophisticated branch prediction logic to try to guess whether or not each jump instruction will be followed.
+As long as it can guess reliably (modern microprocessor designs try to achieve success rates on the order of 90%), the instruction pipeline will be kept full of instructions. 
+
+Mispredicting a jump, on the other hand, requires that the processor discard much of the work it has already done on future instructions and then begin filling the pipeline with instructions starting at the correct location. 
+
+As we will see, such a misprediction can incur a serious penalty, say, 15–30 clock cycles of wasted effort, causing a serious degradation of program performance.
+
+
+Unlike conditional jumps, the processor can execute conditional move instructions without having to predict the outcome of the test. The processor simply reads the source value (possibly from memory), checks the condition code, and then either updates the destination register or keeps it the same.
+
+### Switch
+
+jump table.
+A jump table is an array where entry i is the address of a code segment implementing the action the program should take when the switch
+index equals i. 
+The code performs an array reference into the jump table using the switch index to determine the target for a jump instruction. 
+
+The advantage of using a jump table over a long sequence of if-else statements is that the time taken to
+perform the switch is independent of the number of switch cases. 
+Gcc selects the method of translating a switch statement based on the number of cases and the sparsity of the case values. 
+Jump tables are used when there are a number of cases (e.g., four or more) and they span a small range of values.
+
+
+
+## Procedures
+
+For discussion purposes, suppose procedure P calls procedure Q, and Q then executes and returns back to P. These actions
+involve one or more of the following mechanisms:
+
+- Passing control. 
+  The program counter must be set to the starting address of the
+code for Q upon entry and then set to the instruction in P following the
+call to Q upon return.
+- Passing data. 
+  P must be able to provide one or more parameters to Q, and Q must
+be able to return a value back to P.
+- Allocating and deallocating memory. 
+  Q may need to allocate space for local
+variables when it begins and then free that storage before it returns.
+
+
+### The Run-Time Stack
+
+### Control Transfer
