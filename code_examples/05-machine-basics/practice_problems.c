@@ -503,3 +503,310 @@ test:
 Fill in the missing expressions in the C code.
 
 */
+
+
+/*
+Practice Problem 3.19 (solution page 368)
+Running on a new processor model, our code required around 45 cycles when the
+branching pattern was random, and around 25 cycles when the pattern was highly
+predictable.
+A. What is the approximate miss penalty?
+B. How many cycles would the function require when the branch is mispredicted?
+
+T_run = 45
+T_ok = 25
+
+T_run =T_avg(p) = (1-p) *T_ok + p*(T_ok + T_mp) =  T_ok+ p*T_mp
+T_mp = (T_run-T_ok)/p
+if p=0.5, then T_mp = (45-25)/0.5 = 40
+
+T_run = T_ok + T_mp = 25+ 40 = 65
+
+
+*/
+
+
+/*
+Practice Problem 3.20 (solution page 369)
+In the followingCfunction, we have left the definition of operation OP incomplete:
+#define OP  Unknown operator 
+
+short arith(short x) {
+    return x OP 16;
+}
+When compiled, gcc generates the following assembly code:
+
+short arith(short x)
+x in %rdi
+arith:
+    leaq 15(%rdi), %rbx            val = x+15
+    testq %rdi, %rdi               test x
+    cmovns %rdi, %rbx              if x>=0 {val=x}
+    sarq $4, %rbx                  else{val >>4 = val/16}
+    ret
+A. What operation is OP?
+B. Annotate the code to explain how it works.
+
+*/
+
+/*
+Practice Problem 3.21 (solution page 369)
+Starting with C code of the form
+
+short test(short x, short y) {
+short val = ;
+if ( ) {
+    if ( )
+        val = ;
+    else
+        val = ;
+} else if ( )
+    val = ;
+return val;
+}
+
+gcc generates the following assembly code:
+short test(short x, short y)
+x in %rdi, y in %rsi
+test:
+    leaq 12(%rsi), %rbx
+    testq %rdi, %rdi
+    jge .L2
+    movq %rdi, %rbx
+    imulq %rsi, %rbx
+    movq %rdi, %rdx
+    orq %rsi, %rdx
+    cmpq %rsi, %rdi
+    cmovge %rdx, %rbx
+    ret
+.L2:
+    idivq %rsi, %rdi
+    cmpq $10, %rsi
+    cmovge %rdi, %rbx
+    ret
+Fill in the missing expressions in the C code.
+*/
+
+/*
+Practice Problem 3.23 (solution page 370)
+For the C code
+short dw_loop(short x) {
+    short y = x/9;
+    short *p = &x;
+    short n = 4*x;
+    do {
+        x += y;
+        (*p) += 5;
+        n -= 2;
+    } while (n > 0);
+    return x;
+}
+
+gcc generates the following assembly code:
+
+short dw_loop(short x)
+x initially in %rdi           y: %rcx,  n: %rdx
+1 dw_loop:
+2   movq %rdi, %rbx           Copy x to %rbx
+3   movq %rdi, %rcx              
+4   idivq $9, %rcx            y = x/9
+5   leaq (,%rdi,4), %rdx      n  = x*4 
+6 .L2:
+7   leaq 5(%rbx,%rcx), %rcx   y += x+5 ???
+8   subq $2, %rdx             n-=2
+9   testq %rdx, %rdx          if(n>0)
+10  jg .L2
+11  rep; ret
+
+A. Which registers are used to hold program values x, y, and n?
+B. How has the compiler eliminated the need for pointer variable p and the
+pointer dereferencing implied by the expression (*p)+=5?
+C. Add annotations to the assembly code describing the operation of the program,
+similar to those shown in Figure 3.19(c).
+
+*/
+
+/*
+Practice Problem 3.24 (solution page 371)
+For C code having the general form
+short loop_while(short a, short b)
+{
+    short result = 0;
+    while ( b>a ) {
+        result =  a+b+result;
+        a =  a-1 ;
+}
+return result;
+}
+gcc, run with command-line option -Og, produces the following code:
+short loop_while(short a, short b)
+a in %rdi, b in %rsi
+1 loop_while:
+2   movl $0, %eax
+3   jmp .L2
+4 .L3:
+5   leaq (,%rsi,%rdi), %rdx
+6   addq %rdx, %rax
+7   subq $1, %rdi
+8 .L2:
+9   cmpq %rsi, %rdi
+10  jg .L3
+11  rep; ret
+
+We can see that the compiler used a jump-to-middle translation, using the jmp
+instruction on line 3 to jump to the test starting with label .L2. Fill in the missing
+parts of the C code.
+*/
+
+
+/*
+Practice Problem 3.32 (solution page 375)
+The disassembled code for two functions first and last is shown below, along
+with the code for a call of first by function main:
+
+    Disassembly of last(long u, long v)
+    u in %rdi, v in %rsi
+1 0000000000400540 <last>:
+2 400540: 48 89 f8          mov %rdi,%rax           L1: u
+3 400543: 48 0f af c6       imul %rsi,%rax          L2: u*v
+4 400547: c3                retq                    L3: Return
+
+    Disassembly of last(long x)
+    x in %rdi
+5 0000000000400548 <first>:
+6 400548: 48 8d 77 01       lea 0x1(%rdi),%rsi      F1: x+1
+7 40054c: 48 83 ef 01       sub $0x1,%rdi           F2: x-1
+8 400550: e8 eb ff ff ff    callq 400540 <last>     F3: Call last(x-1,x+1)
+9 400555: f3 c3 repz        retq                    F4: Return
+...
+10 400560: e8 e3 ff ff ff   callq 400548 <first>    M1: Call first(10)
+11 400565: 48 89 c2         mov %rax,%rdx           M2: Resume
+
+Each of these instructions is given a label, similar to those in Figure 3.27(a).
+Starting with the calling of first(10) by main, fill in the following table to trace
+instruction execution through to the point where the program returns back to
+main.
+
+
+                Instruction                                 State values (at beginning)
+Label   PC          Instruction     %rdi    %rsi    %rax    %rsp            *%rsp        Description
+M1      0x400560        callq       10       —       —    0x7fffffffe820    —          Call first(10)
+F1      0x400548        lea         10       -       -    0x7fffffffe818   0x400565    Entry of first(10)
+F2      0x40054c        sub         10      11       -    0x7fffffffe818   0x400565     x-1
+F3      0x400550        callq       9       11       -    0x7fffffffe818   0x400565    Call last(x-1,x+1)
+L1      0x400540        movq        9       11       -    0x7fffffffe810   0x400555    entry of last(x-1,x+1)
+L2      0x400543        imul        9       11       9    0x7fffffffe810   0x400555      u*v
+L3      0x400547        retq        -       -        99   0x7fffffffe810   0x400555    return 99 from last
+F4      0x400555        retq        -       -        99   0x7fffffffe818   0x400565    return 99 from first
+M2      0x400565        mov         -       -        99   0x7fffffffe820    —          resume main
+
+
+*/
+
+
+/*
+Practice Problem 3.33 (solution page 375)
+A C function procprob has four arguments u, a, v, and b. Each is either a signed
+number or a pointer to a signed number, where the numbers have different sizes.
+The function has the following body:
+*u += a;
+*v += b;
+return sizeof(a) + sizeof(b);
+
+It compiles to the following x86-64 code:
+1 procprob:
+2 movslq %edi, %rdi
+3 addq %rdi, (%rdx)
+4 addb %sil, (%rcx)
+5 movl $6, %eax
+6 ret
+Determine a valid ordering and types of the four parameters. There are two
+correct answers.
+
+procprob(int a, short b, long *u, char *v )
+// procprob(float a, char b, double *u, double *v )
+    %edi ->a
+    %sil ->b
+    %rdx ->u
+    %rcx ->v
+
+
+*/
+
+/*
+
+Practice Problem 3.34 (solution page 376)
+Consider a function P, which generates local values, named a0–a8. It then calls
+function Q using these generated values as arguments. Gcc produces the following
+code for the first part of P:
+
+
+long P(long x)
+x in %rdi
+1 P:
+2  pushq   %r15
+3  pushq   %r14
+4  pushq   %r13
+5  pushq   %r12
+6  pushq   %rbp
+7  pushq   %rbx
+8  subq    $24, %rsp         // allocate  24 bytes stack frame
+9  movq    %rdi, %rbx        // save a0 to %rbx (callee-saved registers)
+10 leaq    1(%rdi), %r15     // 
+11 leaq    2(%rdi), %r14
+12 leaq    3(%rdi), %r13
+13 leaq    4(%rdi), %r12
+14 leaq    5(%rdi), %rbp     // save a5 to %rbp (callee-saved registers)
+15 leaq    6(%rdi), %rax     // save a6 to %rax (caller-saved registers)
+16 movq    %rax, (%rsp)      // Local values a6 are stored on the stack at offsets 0 
+17 leaq    7(%rdi), %rdx
+18 movq    %rdx, 8(%rsp)     // Local values a7 are stored on the stack at offsets 8
+19 movl    $0, %eax
+20 call    Q
+    . . .
+    
+A. Identify which local values get stored in callee-saved registers.
+B. Identify which local values get stored on the stack.
+C. Explain why the program could not store all of the local values in calleesaved registers.
+
+answer
+A. %r15, %r14, %r13, %r12, %rbp, %rbx 
+B. 
+
+
+*/
+
+/*
+Practice Problem 3.35 (solution page 376)
+For a C function having the general structure
+
+long rfun(unsigned long x) {
+    if ( )
+        return 0;
+    unsigned long nx = x>>2 ;
+    long rv = rfun(nx);
+    return x+rv ;
+}
+
+gcc generates the following assembly code:
+
+    long rfun(unsigned long x)
+    x in %rdi
+1  rfun:
+2     pushq %rbx            // save %rbx
+3     movq %rdi, %rbx       // store x in callee-saved register %rbx
+4     movl $0, %eax         // return x=0
+5     testq %rdi, %rdi      // if(x&x)
+6     je .L2
+7     shrq $2, %rdi         // nv>>2
+8     call rfun
+9     addq %rbx, %rax        // x + rv
+10 .L2:
+11    popq %rbx             // return x
+12    ret
+
+A. What value does rfun store in the callee-saved register %rbx?
+B. Fill in the missing expressions in the C code shown above.
+
+
+*/

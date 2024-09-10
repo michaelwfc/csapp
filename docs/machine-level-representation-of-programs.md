@@ -266,8 +266,7 @@ Jump tables are used when there are a number of cases (e.g., four or more) and t
 
 ## Procedures
 
-For discussion purposes, suppose procedure P calls procedure Q, and Q then executes and returns back to P. These actions
-involve one or more of the following mechanisms:
+For discussion purposes, suppose procedure P calls procedure Q, and Q then executes and returns back to P. These actions involve one or more of the following mechanisms:
 
 - Passing control. 
   The program counter must be set to the starting address of the
