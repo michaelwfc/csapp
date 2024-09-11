@@ -283,3 +283,26 @@ variables when it begins and then free that storage before it returns.
 ### The Run-Time Stack
 
 ### Control Transfer
+
+### Data Transfer
+
+### Local Storage on the Stack
+
+### Local Storage in Registers
+
+### Recursive Procedures
+
+
+## Array Allocation and Access
+
+### Basic Principles
+
+### Pointer Arithmetic
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/Pointer%20Arithmetic%20examples.png)  
+
+
+### Nested Arrays
+
+### Fixed-Size Arrays
+

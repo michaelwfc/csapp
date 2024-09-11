@@ -55,14 +55,16 @@ void swap(int *px, int *py)
     *py = temp;
 }
 
-void pointer_and_array(int i)
+void pointer_and_array()
 {
+    int i =5;
     int a[10];
     int *pa; // a pointer to an integer
-
     pa = &a[0]; // same as pa = a; //assign the address of the first element of array a to pa
 
-    a[i] = 0; // same as *(a+i)
+    a[i] = 99; // same as *(a+i)
+    printf("a[%d] = %d\n", i, a[i]);
+    printf("*(a+%d) = %d\n", i, *(a+i));
 }
 
 /* strlen: return length of string s
@@ -78,7 +80,7 @@ int strLength(char *s)
 
 void main(void)
 {
-    print_address();
+    // print_address();
     // declare_pointer();
 
     // int x[10];
@@ -90,4 +92,7 @@ void main(void)
     // char *s = "Hello, world!";
     // n = strLength( s);
     // printf("string of %s lenght= %d",s, n);
+
+
+    pointer_and_array();
 }

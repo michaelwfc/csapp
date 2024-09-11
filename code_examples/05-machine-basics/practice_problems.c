@@ -810,3 +810,136 @@ B. Fill in the missing expressions in the C code shown above.
 
 
 */
+
+/*
+Practice Problem 3.36 (solution page 377)
+Consider the following declarations:
+int P[5];
+short Q[2];
+int **R[9];
+double *S[10];
+short *T[2];
+
+Fill in the following table describing the element size, the total size, and the
+address of element i for each of these arrays.
+
+Array       Element size        Total size      Start address       Element i
+P              4                    4*5=20       x_p                x_p + i*4
+Q              2
+R              8                                                        x_r+ i*8
+S              8
+T              8
+
+*/
+
+
+/*
+
+Practice Problem 3.37 (solution page 377)
+Suppose xP, the address of short integer array P, and long integer index i are stored
+in registers %rdx and %rcx, respectively. For each of the following expressions, give
+its type, a formula for its value, and an assembly-code implementation. The result
+should be stored in register %rax if it is a pointer and register element %ax if it has
+data type short.
+
+x_p:    %rdx , i :%rcx
+to:
+pointer:%rax,    
+value   %ax  
+
+Expression      Type           Value            Assembly code
+P[1]            short int    M[x_p+ 2]          movw   2(%rdx), %ax
+P + 3 + i       short int*   x_p + 3*2 +i*2     leaq   6(%rdx,%rcx,3), %rax 
+P[i * 6 - 5]    short int    M[x_p+ i*6*2-5*2]  movew -10(%rdx, %rcx,12), %ax
+P[2]            short int    M[x_p +2*2]        movw   4(%rdx), %ax
+&P[i + 2]       short int*   x_p + i*2 +2*2     leaq   4(%rdx,%rcx,2), %rax
+
+
+*/
+
+
+/*
+Practice Problem 3.38 (solution page 377)
+Consider the following source code, where M and N are constants declared with
+
+#define:
+long P[M][N];
+long Q[N][M];
+
+long sum_element(long i, long j) {
+    return P[i][j] + Q[j][i];
+}
+
+In compiling this program, gcc generates the following assembly code:
+
+    long sum_element(long i, long j)
+    i in %rdi, j in %rsi
+1 sum_element:
+2    leaq     0(,%rdi,8), %rdx     // 8*i 
+3    subq     %rdi, %rdx           // 8i - i
+4    addq     %rsi, %rdx           // 7i + j   
+5    leaq     (%rsi,%rsi,4), %rax  // 5j  
+6    addq     %rax, %rdi           // 5j + i
+7    movq     Q(,%rdi,8), %rax     // Q+ 8(5j+ i) = Q[j][i] = Q+L(C*j+i) = Q+L(M*j+i) -> M=5
+8    addq     P(,%rdx,8), %rax     // P+ 8(7i+j)  = P[i][j] = P+L(C*i+j) = P+L(N*i +j) ->N=7
+9    ret
+
+Use your reverse engineering skills to determine the values of M and N based
+on this assembly code.
+*/
+
+
+/*
+Practice Problem 3.39 (solution page 378)
+Use Equation 3.1 to explain how the computations of the initial values for Aptr,
+Bptr, and Bend in the C code of Figure 3.37(b) (lines 3–5) correctly describe their
+computations in the assembly code generated for fix_prod_ele (lines 3–5).
+
+*/
+
+/*
+Practice Problem 3.40 (solution page 378)
+The following C code sets the diagonal elements of one of our fixed-size arrays to val:
+Set all diagonal elements to val
+
+void fix_set_diag(fix_matrix A, int val) {
+long i;
+for (i = 0; i < N; i++)
+A[i][i] = val;
+}
+
+
+void fix_set_diag_opt(fix_matrix A, int val)
+{
+    int *Ap= &A[0][0];
+    long i=0;
+
+    do{
+        *(Ap+i) = val; // same as Ap[i]=val
+        i=i+(N+1);
+
+    }while(i!=N*(N+1))
+
+}
+
+
+When compiled with optimization level -O1, gcc generates the following assembly code:
+
+1 fix_set_diag:
+    void fix_set_diag(fix_matrix A, int val)
+    A in %rdi, val in %rsi
+
+2     movl $0, %eax              // int i = 0
+3 .L13:                                                     
+4     movl %esi, (%rdi,%rax)     // *Ap +i  = val
+5     addq $68, %rax             // int i + 4*16 +4*1 = i +L(N+1)
+6     cmpq $1088, %rax           // 1088= 4*272= 4*16*17 = L*N*(N+1) 
+7     jne .L13
+8     rep; ret
+
+Create a C code program fix_set_diag_opt that uses optimizations similar
+to those in the assembly code, in the same style as the code in Figure 3.37(b). Use
+expressions involving the parameter N rather than integer constants, so that your
+code will work correctly if N is redefined.
+
+*/
