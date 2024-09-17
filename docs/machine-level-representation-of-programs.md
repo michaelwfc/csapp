@@ -128,9 +128,13 @@ the registers for operands having 64, 32, 16, or 8 bits, respectively
 ### Data Movement Instructions
 
 #### MOV class
+copy data from a source location to a destination location, without any transformation
+
+For most cases, the mov instructions will only update the specific register bytes or memory locations indicated by the destination operand.
+
 - movb
 - movw
-- movl
+- movl ： it will also set the high-order 4 bytes of the register to 0.
 - movq
 ![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.4%20Simple%20data%20movement%20instructions.png)
 
@@ -168,15 +172,22 @@ source operand.
 
 ## Arithmetic and Logical Operations
 
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.10%20Integer%20arithmetic%20operations.png)
+
 ### Load Effective Address
 
+reads from memory to a register, but it does not reference memory at all. Its first operand appears to be a memory
+reference, but instead of reading from the designated location, the instruction copies the effective address to the destination.
 
-The ability of the leaq instruction to perform addition and limited forms of
-multiplication proves useful when compiling simple arithmetic expressions such
-as this example.
+compactly describe common arithmetic operations.
+
+The destination operand must be a register
+
+### Unary Operations
 
 
-### Unary and Binary Operations
+### Binary Operations
+
 Note :  
 when the second operand is a memory location, the processor must read the value
 from memory, perform the operation, and then write the result back to memory.
@@ -186,7 +197,15 @@ from memory, perform the operation, and then write the result back to memory.
 
 ## Control
 
+Machine code provides two basic low-level mechanisms for implementing conditional behavior: 
+
+- Data-dependent control flow: it tests data values and then alters either the control flow or the data flow based on the results of these tests.
+- 
+
+
 ### condition code registers
+
+the CPU maintains a set of single-bit condition code registers describing attributes of the most recent arithmetic or logical operation. These registers can then be tested to perform conditional branches. 
 
 - CF: Carry flag. 
   The most recent operation generated a carry out of the most significant bit. Used to detect overflow for unsigned operations.
@@ -197,25 +216,37 @@ from memory, perform the operation, and then write the result back to memory.
 - OF: Overflow flag. 
   The most recent operation caused a two’s-complement overflow—either negative or positive.
 
+#### The CMP instructions 
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.13%20Comparison%20and%20test%20instructions.png)
+
+The cmp instructions set the condition codes according to the differences of their two operands. They behave in the same way as the sub instructions, except that they set the condition codes without updating their destinations
+
+#### The TEST instructions
+
+The test instructions behave in the same manner as the and instructions, except that they
+set the condition codes without altering their destinations.
+
+
 
 ### Accessing the Condition Codes
 
-Rather than reading the condition codes directly, there are three common ways
-of using the condition codes: 
+Rather than reading the condition codes directly, there are three common ways of using the condition codes: 
 - (1) we can set a single byte to 0 or 1 depending on some combination of the condition codes
 - (2) we can conditionally jump to some other part of the program
 - (3) we can conditionally transfer data. 
  
 
-For the first case, the instructions described in Figure 3.14 set a single byte to 0 or to 1
-depending on some combination of the condition codes. We refer to this entire class of instructions as the set instructions;
+For the first case, the instructions described in Figure 3.14 set a single byte to 0 or to 1 depending on some combination of the condition codes. We refer to this entire class of instructions as the set instructions;
 
-### The set instructions
+### The SET instructions
 
 ![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.14%20The%20set%20instructions.png)
 
 
 ### Jump Instructions
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.15%20The%20jump%20instructions.png)
 
 A jump instruction can cause the execution to switch to a completely new position in the program. 
 These jump destinations are generally indicated in assembly code by a label.
@@ -223,7 +254,9 @@ These jump destinations are generally indicated in assembly code by a label.
 In assembly code, jump targets are written using symbolic labels. 
 The assembler, and later the linker, generate the proper encodings of the jump targets.
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.15%20The%20jump%20instructions.png)
+#### Jump Instruction Encodings
+
+PC relative
 
 
 ### Implementing Conditional Branches with Conditional Move Instructions
@@ -293,7 +326,7 @@ variables when it begins and then free that storage before it returns.
 ### Recursive Procedures
 
 
-## Array Allocation and Access
+## 3.8 Array Allocation and Access
 
 ### Basic Principles
 
@@ -305,4 +338,37 @@ variables when it begins and then free that storage before it returns.
 ### Nested Arrays
 
 ### Fixed-Size Arrays
+
+## 3.9 Heterogeneous Data Structures
+
+### 3.9.1 Structures
+
+### 3.9.2 Unions
+
+### 3.9.3 Data Alignment
+
+Alignment restrictions
+
+Many computer systems place restrictions on the allowable addresses for the
+primitive data types, requiring that the address for some objects must be a multiple
+of some valueK (typically 2, 4, or 8).
+
+
+The x86-64 hardware will work correctly regardless of the alignment of data.
+However, Intel recommends that data be aligned to improve memory system
+performance. Their alignment rule is based on the principle that any primitive
+object of K bytes must have an address that is a multiple of K
+
+
+## 3.10 Combining Control and Data in Machine-Level Programs
+
+### 3.10.1 Understanding Pointers
+
+- Every pointer has an associated type.
+- Every pointer has a value
+- Pointers are created with the ‘&’ operator.
+- Pointers are dereferenced with the ‘*’ operator
+- Arrays and pointers are closely related
+- Casting from one type of pointer to another changes its type but not its value
+- Pointers can also point to functions
 

@@ -943,3 +943,149 @@ expressions involving the parameter N rather than integer constants, so that you
 code will work correctly if N is redefined.
 
 */
+
+
+/*
+Practice Problem 3.41 (solution page 379)
+Consider the following structure declaration:
+
+struct test {
+    short *p;
+    struct {
+        short x;
+        short y;
+    } s;
+    struct test *next;
+};
+
+This declaration illustrates that one structure can be embedded within another,
+just as arrays can be embedded within structures and arrays can be embedded
+within arrays.
+The following procedure (with some expressions omitted) operates on this structure:
+
+void st_init(struct test *st) {
+    st->s.y  = st->s.x;
+    st->p    = &(st->s.y) ;
+    st->next = st ;
+}
+
+A. What are the offsets (in bytes) of the following fields?
+p:    0
+s.x:  8
+s.y:  10
+next: 12
+
+B. How many total bytes does the structure require?
+    8+ 2+2+8 = 20
+
+C. The compiler generates the following assembly code for st_init:
+void st_init(struct test *st)
+st in %rdi
+1 st_init:
+2   movl    8(%rdi), %eax    // get st->s.x
+3   movl    %eax, 10(%rdi)   // store st->s.x to st->s.y
+4   leaq    10(%rdi), %rax   // &(st->s.y)
+5   movq    %rax, (%rdi)     // store st->p =&st->s.y   
+6   movq    %rdi, 12(%rdi)   // store st->next = st
+7   ret
+On the basis of this information, fill in the missing expressions in the code
+for st_init.
+
+
+*/
+
+
+/*
+Practice Problem 3.42 (solution page 379)
+The following code shows the declaration of a structure of type ACE and the
+prototype for a function test:
+struct ACE {
+    short v;
+    struct ACE *p;
+};
+
+short test(struct ACE *ptr);
+When the code for fun is compiled, gcc generates the following assembly code:
+
+    short test(struct ACE *ptr)
+    ptr in %rdi
+1   test:
+2       movl $1, %eax       // set val=1
+3       jmp .L2
+4   .L3:
+5       imulq (%rdi), %rax  // val *=ptr->v
+6       movq 2(%rdi), %rdi  // ptr = ptr->p 
+7   .L2:
+8       testq %rdi, %rdi   // if(*ptr != Null)
+9       jne .L3            
+10      rep; ret
+
+A. Use your reverse engineering skills to write C code for test.
+B. Describe the data structure that this structure implements and the operation
+performed by test.
+
+*/
+
+
+/*
+Practice Problem 3.44 (solution page 381)
+For each of the following structure declarations, determine the offset of each field,
+the total size of the structure, and its alignment requirement for x86-64:
+A. struct P1 { short i; int c; int *j; short *d; };
+
+0 | 2 | 6 | 14 =  22  alignment=8 
+0 | 4 | 8 | 16 =  24
+> ?
+
+B. struct P2 { int i[2]; char c[8]; short s[4]; long *j; };
+
+0 | 8 | 16 | 24  = 32
+
+
+C. struct P3 { long w[2]; int *c[2] };
+
+0 |  16 |  =   24    alignment=8 
+> 0 |  16 |  =   32   alignment=8      
+
+
+D. struct P4 { char w[16]; char *c[2] };
+
+0 | 16    =18   alignment=8 
+> 0 | 16  = 32  alignment=8 
+
+E. struct P5 { struct P4 a[2]; struct P1 t };
+
+0 | 48  = 72 
+> 0 | 64 = 
+
+
+
+*/
+
+/*
+Practice Problem 3.45 (solution page 381)
+Answer the following for the structure declaration
+struct {
+    int *a;    
+    float b;
+    char c;
+    short d;
+    long e;
+    double f;
+    int g;
+    char *h;
+} rec;
+
+A. What are the byte offsets of all the fields in the structure?
+int *a   float b  char c short d  long e  double f   int g    char *h
+0       | 8     | 12    | 13    |15     | 23        |31     | 35        43
+0       | 8     | 12    | 14    |16     | 24        | 32    | 40        48
+>
+0       | 8     | 12    | 16    |24     | 32        | 40   | 48        56
+
+B. What is the total size of the structure?
+
+C. Rearrange the fields of the structure to minimize wasted space, and then
+show the byte offsets and total size for the rearranged structure.
+
+*/
