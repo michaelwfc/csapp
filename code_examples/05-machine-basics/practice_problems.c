@@ -3,10 +3,10 @@
 ### 3.1 (solution page 361)
 Assume the following values are stored at the indicated memory addresses and
 registers:
-Address Value 
-0x100    0xFF    
-0x104    0xAB    
-0x108    0x13    
+Address Value
+0x100    0xFF
+0x104    0xAB
+0x108    0x13
 0x10C    0x11
 
 Register Value
@@ -19,9 +19,9 @@ Fill in the following table showing the values for the indicated operands:
 Operand Value   Comment
 %rax    0x100   Register
 0x104   0x104   Absolute address
-$0x108  0x13    Immediate   
+$0x108  0x13    Immediate
 
-(%rax)  0xFF    
+(%rax)  0xFF
 4(%rax)        4+0x100=0x104 ->  0xAB
 9(%rax,%rdx)   9+0x100+ 0x3=0x10C -> 0x11
 260(%rcx,%rdx) 260+0x1+ 0x3= ?-> ?
@@ -33,7 +33,7 @@ $0x108  0x13    Immediate
 /*
 Practice Problem 3.2 (solution page 361)
 For each of the following lines of assembly language, determine the appropriate
-instruction suffix based on the operands. 
+instruction suffix based on the operands.
 (For example, mov can be rewritten as movb, movw, movl, or movq.)
 movl     %eax, (%rsp)
 movw     (%rax), %dx
@@ -58,7 +58,6 @@ movb %si, 8(%rbp)      intruction suffixe not matched register ID
 
 */
 
-
 /*
 Practice Problem 3.4 (solution page 362)
 Assume variables sp and dp are declared with types
@@ -69,12 +68,12 @@ the appropriate pair of data movement instructions to implement the operation
     *dp = (dest_t) *sp;
 
 
-Assume that the values of sp and dp are stored in registers %rdi and %rsi,respectively. 
+Assume that the values of sp and dp are stored in registers %rdi and %rsi,respectively.
 For each entry in the table, show the two instructions that implement the specified data movement.
 
-The first instruction in the sequence should read from memory, do the appropriate conversion, 
-and set the appropriate portion of register %rax. 
-The second instruction should then write the appropriate portion of %rax to memory. 
+The first instruction in the sequence should read from memory, do the appropriate conversion,
+and set the appropriate portion of register %rax.
+The second instruction should then write the appropriate portion of %rax to memory.
 In both cases, the portions may be %rax, %eax, %ax, or %al, and they may differ from one another.
 
 Recall that when performing a cast that involves both a size change and a
@@ -91,16 +90,16 @@ char          unsigned     movb (%rdi), %al   > movsbl (%rdi), %eax    Convert c
                            movl %al, (%rsi)   > movl %eax, (%rsi)
 
 unsigned char  long        movb (%rdi), %rax  > movzbl (%rdi), %eax    Read byte and zero-extend (using 2.2.6 principle: Expansion of an unsigned number by zero extension)
-                           movq %rax, (%rsi)  
+                           movq %rax, (%rsi)
 
 int            char        movl (%rdi), %rax  > movl (%rdi), %eax      Read 4 bytes
-                           movb %al, (%rsi)   
+                           movb %al, (%rsi)
 
 unsigned    unsigned char  movl (%rdi), %rax  > movl (%rdi), %eax      Read 4 bytes
-                           movb %al, (%rsi)  
+                           movb %al, (%rsi)
 
 char           short       movb (%rdi), %rax  > movsbw (%rdi), %ax     Read byte and sign-extend  (using 2.2.6 principle: Expansion of a two’s-complement number by sign extension)
-                           movw %ax, (%rsi)   
+                           movw %ax, (%rsi)
 
 
 
@@ -126,7 +125,6 @@ decode1:
 Parameters xp, yp, and zp are stored in registers %rdi, %rsi, and %rdx, respectively.
 Write C code for decode1 that will have an effect equivalent to the assembly code shown.
 */
-
 
 void decode1(long *xp, long *yp, long *zp)
 {
@@ -175,8 +173,9 @@ Fill in the missing expression in the C code.
 
 */
 
-short scale3(short x, short y, short z) {
-    short t =   10*y+z+y*x;//  [(y+y*9) + z] + x +y =11*y+z+x;
+short scale3(short x, short y, short z)
+{
+    short t = 10 * y + z + y * x; //  [(y+y*9) + z] + x +y =11*y+z+x;
     return t;
 }
 
@@ -197,8 +196,8 @@ resulting value:
 Instruction               Destination           Value
 addq   %rcx,(%rax)           0x100           0x100->0xFF+ %rcx->0x1 = 0x100
 subq   %rdx,8(%rax)        8+0x100=0x108     0x108->0xAB - 0x3= 0xA8
-imulq  $16,(%rax,%rdx,8)   0x100+8*0x3=0x118 0x118->0x11 *16 = 0x110 
-incq   16(%rax)            16 + 0x100->0x110 0x110->0x13 +1= 0x14             
+imulq  $16,(%rax,%rdx,8)   0x100+8*0x3=0x118 0x118->0x11 *16 = 0x110
+incq   16(%rax)            16 + 0x100->0x110 0x110->0x13 +1= 0x14
 decq   %rcx                %rcx              %rcx->0x1 -1 = 0x0
 subq   %rdx,%rax           %rax              %rax->0x100- %rdx->0x3= 0xFD
 
@@ -238,7 +237,6 @@ amount.
 
 */
 
-
 /*
 Practice Problem 3.10 (solution page 365)
 Consider the following code, in which we have omitted the expression being computed:
@@ -256,20 +254,19 @@ The portion of the generated assembly code implementing these expressions is as 
 short arith3(short x, short y, short z)
 x in %rdi, y in %rsi, z in %rdx
 arith3:
-    orq %rsi, %rdx        p1 =y|z 
+    orq %rsi, %rdx        p1 =y|z
     sarq $9, %rdx         p2 =p1 >>9
-    notq %rdx             p3= ~p2 
-    movq %rdx, %bax       
+    notq %rdx             p3= ~p2
+    movq %rdx, %bax
     subq %rsi, %rbx       p4=  - y ?
     ret
 
 Based on this assembly code, fill in the missing portions of the C code.
 */
 
-
 /*
 Practice Problem 3.11 (solution page 365)
-It is common to find assembly-code lines of the form 
+It is common to find assembly-code lines of the form
     xorq %rcx,%rcx
 in code that was generated from C where no exclusive-or operations were present.
 
@@ -314,7 +311,7 @@ C. cmpb %sil, %dil
 D. cmpq %rsi, %rdi
    setne %a
 
-   data_t: long int/double 
+   data_t: long int/double
    COMP:   !=
 */
 
@@ -334,7 +331,7 @@ multiple correct answers; list all correct ones.)
 
 A. testq %rdi, %rdi
    setge %al
-   
+
    data_t: long int/double
    TEST:   >=
 
@@ -356,8 +353,6 @@ D. testl %edi, %edi
    data_t:  int/float
    TEST:   <=
 */
-
-
 
 /*
 Practice Problem 3.15 (solution page 366)
@@ -385,7 +380,6 @@ of the jump target?
     4005ed: 90 nop
 
 */
-
 
 /*
 Practice Problem 3.16 (solution page 367)
@@ -418,12 +412,13 @@ B. Explain why the assembly code contains two conditional branches, even
 though the C code has only one if statement.
 
 */
-void goto_cond(short a, short *p){
-    if (a!=0 | *p>=a)
+void goto_cond(short a, short *p)
+{
+    if (a != 0 | *p >= a)
         goto goto_cond;
     *p = a;
-    goto_cond:
-         return;
+goto_cond:
+    return;
 }
 
 /*
@@ -439,22 +434,19 @@ true:
 done:
 */
 long gotodiff(long x, long y)
-{   
+{
     long lt_cnt = 0;
     long ge_cnt = 0;
 
     long result;
-    if(x<y)
+    if (x < y)
         goto true;
     ge_cnt++;
-    result = x-y;
+    result = x - y;
     return result;
-    true:
-        lt_cnt ++;
-        result = y-x;
-        return result;
-
-
+    true : lt_cnt++;
+    result = y - x;
+    return result;
 }
 
 /*
@@ -483,7 +475,7 @@ test:
     cmpq $2, %rsi                if(y >2)
     jle .L3                      else {.L3}
 
-    movq %rdi, %rax              x/z 
+    movq %rdi, %rax              x/z
     idivq %rdx, %rax
     ret
 
@@ -493,17 +485,16 @@ test:
     ret
 
     .L2:
-    cmpq $3, %rdx              if (z <3)   {val = z/y}                      
+    cmpq $3, %rdx              if (z <3)   {val = z/y}
     jge .L4                    else {.L}
-    movq %rdx, %rax              
-    idivq %rsi, %rax              
+    movq %rdx, %rax
+    idivq %rsi, %rax
 
     .L4:
     rep; ret
 Fill in the missing expressions in the C code.
 
 */
-
 
 /*
 Practice Problem 3.19 (solution page 368)
@@ -525,11 +516,10 @@ T_run = T_ok + T_mp = 25+ 40 = 65
 
 */
 
-
 /*
 Practice Problem 3.20 (solution page 369)
 In the followingCfunction, we have left the definition of operation OP incomplete:
-#define OP  Unknown operator 
+#define OP  Unknown operator
 
 short arith(short x) {
     return x OP 16;
@@ -608,9 +598,9 @@ short dw_loop(short x)
 x initially in %rdi           y: %rcx,  n: %rdx
 1 dw_loop:
 2   movq %rdi, %rbx           Copy x to %rbx
-3   movq %rdi, %rcx              
+3   movq %rdi, %rcx
 4   idivq $9, %rcx            y = x/9
-5   leaq (,%rdi,4), %rdx      n  = x*4 
+5   leaq (,%rdi,4), %rdx      n  = x*4
 6 .L2:
 7   leaq 5(%rbx,%rcx), %rcx   y += x+5 ???
 8   subq $2, %rdx             n-=2
@@ -658,7 +648,6 @@ instruction on line 3 to jump to the test starting with label .L2. Fill in the m
 parts of the C code.
 */
 
-
 /*
 Practice Problem 3.32 (solution page 375)
 The disassembled code for two functions first and last is shown below, along
@@ -702,7 +691,6 @@ M2      0x400565        mov         -       -        99   0x7fffffffe820    — 
 
 
 */
-
 
 /*
 Practice Problem 3.33 (solution page 375)
@@ -752,26 +740,26 @@ x in %rdi
 7  pushq   %rbx
 8  subq    $24, %rsp         // allocate  24 bytes stack frame
 9  movq    %rdi, %rbx        // save a0 to %rbx (callee-saved registers)
-10 leaq    1(%rdi), %r15     // 
+10 leaq    1(%rdi), %r15     //
 11 leaq    2(%rdi), %r14
 12 leaq    3(%rdi), %r13
 13 leaq    4(%rdi), %r12
 14 leaq    5(%rdi), %rbp     // save a5 to %rbp (callee-saved registers)
 15 leaq    6(%rdi), %rax     // save a6 to %rax (caller-saved registers)
-16 movq    %rax, (%rsp)      // Local values a6 are stored on the stack at offsets 0 
+16 movq    %rax, (%rsp)      // Local values a6 are stored on the stack at offsets 0
 17 leaq    7(%rdi), %rdx
 18 movq    %rdx, 8(%rsp)     // Local values a7 are stored on the stack at offsets 8
 19 movl    $0, %eax
 20 call    Q
     . . .
-    
+
 A. Identify which local values get stored in callee-saved registers.
 B. Identify which local values get stored on the stack.
 C. Explain why the program could not store all of the local values in calleesaved registers.
 
 answer
-A. %r15, %r14, %r13, %r12, %rbp, %rbx 
-B. 
+A. %r15, %r14, %r13, %r12, %rbp, %rbx
+B.
 
 
 */
@@ -832,7 +820,6 @@ T              8
 
 */
 
-
 /*
 
 Practice Problem 3.37 (solution page 377)
@@ -844,19 +831,18 @@ data type short.
 
 x_p:    %rdx , i :%rcx
 to:
-pointer:%rax,    
-value   %ax  
+pointer:%rax,
+value   %ax
 
 Expression      Type           Value            Assembly code
 P[1]            short int    M[x_p+ 2]          movw   2(%rdx), %ax
-P + 3 + i       short int*   x_p + 3*2 +i*2     leaq   6(%rdx,%rcx,3), %rax 
+P + 3 + i       short int*   x_p + 3*2 +i*2     leaq   6(%rdx,%rcx,3), %rax
 P[i * 6 - 5]    short int    M[x_p+ i*6*2-5*2]  movew -10(%rdx, %rcx,12), %ax
 P[2]            short int    M[x_p +2*2]        movw   4(%rdx), %ax
 &P[i + 2]       short int*   x_p + i*2 +2*2     leaq   4(%rdx,%rcx,2), %rax
 
 
 */
-
 
 /*
 Practice Problem 3.38 (solution page 377)
@@ -875,10 +861,10 @@ In compiling this program, gcc generates the following assembly code:
     long sum_element(long i, long j)
     i in %rdi, j in %rsi
 1 sum_element:
-2    leaq     0(,%rdi,8), %rdx     // 8*i 
+2    leaq     0(,%rdi,8), %rdx     // 8*i
 3    subq     %rdi, %rdx           // 8i - i
-4    addq     %rsi, %rdx           // 7i + j   
-5    leaq     (%rsi,%rsi,4), %rax  // 5j  
+4    addq     %rsi, %rdx           // 7i + j
+5    leaq     (%rsi,%rsi,4), %rax  // 5j
 6    addq     %rax, %rdi           // 5j + i
 7    movq     Q(,%rdi,8), %rax     // Q+ 8(5j+ i) = Q[j][i] = Q+L(C*j+i) = Q+L(M*j+i) -> M=5
 8    addq     P(,%rdx,8), %rax     // P+ 8(7i+j)  = P[i][j] = P+L(C*i+j) = P+L(N*i +j) ->N=7
@@ -887,7 +873,6 @@ In compiling this program, gcc generates the following assembly code:
 Use your reverse engineering skills to determine the values of M and N based
 on this assembly code.
 */
-
 
 /*
 Practice Problem 3.39 (solution page 378)
@@ -930,10 +915,10 @@ When compiled with optimization level -O1, gcc generates the following assembly 
     A in %rdi, val in %rsi
 
 2     movl $0, %eax              // int i = 0
-3 .L13:                                                     
+3 .L13:
 4     movl %esi, (%rdi,%rax)     // *Ap +i  = val
 5     addq $68, %rax             // int i + 4*16 +4*1 = i +L(N+1)
-6     cmpq $1088, %rax           // 1088= 4*272= 4*16*17 = L*N*(N+1) 
+6     cmpq $1088, %rax           // 1088= 4*272= 4*16*17 = L*N*(N+1)
 7     jne .L13
 8     rep; ret
 
@@ -943,7 +928,6 @@ expressions involving the parameter N rather than integer constants, so that you
 code will work correctly if N is redefined.
 
 */
-
 
 /*
 Practice Problem 3.41 (solution page 379)
@@ -985,7 +969,7 @@ st in %rdi
 2   movl    8(%rdi), %eax    // get st->s.x
 3   movl    %eax, 10(%rdi)   // store st->s.x to st->s.y
 4   leaq    10(%rdi), %rax   // &(st->s.y)
-5   movq    %rax, (%rdi)     // store st->p =&st->s.y   
+5   movq    %rax, (%rdi)     // store st->p =&st->s.y
 6   movq    %rdi, 12(%rdi)   // store st->next = st
 7   ret
 On the basis of this information, fill in the missing expressions in the code
@@ -993,7 +977,6 @@ for st_init.
 
 
 */
-
 
 /*
 Practice Problem 3.42 (solution page 379)
@@ -1014,10 +997,10 @@ When the code for fun is compiled, gcc generates the following assembly code:
 3       jmp .L2
 4   .L3:
 5       imulq (%rdi), %rax  // val *=ptr->v
-6       movq 2(%rdi), %rdi  // ptr = ptr->p 
+6       movq 2(%rdi), %rdi  // ptr = ptr->p
 7   .L2:
 8       testq %rdi, %rdi   // if(*ptr != Null)
-9       jne .L3            
+9       jne .L3
 10      rep; ret
 
 A. Use your reverse engineering skills to write C code for test.
@@ -1026,14 +1009,13 @@ performed by test.
 
 */
 
-
 /*
 Practice Problem 3.44 (solution page 381)
 For each of the following structure declarations, determine the offset of each field,
 the total size of the structure, and its alignment requirement for x86-64:
 A. struct P1 { short i; int c; int *j; short *d; };
 
-0 | 2 | 6 | 14 =  22  alignment=8 
+0 | 2 | 6 | 14 =  22  alignment=8
 0 | 4 | 8 | 16 =  24
 > ?
 
@@ -1044,19 +1026,19 @@ B. struct P2 { int i[2]; char c[8]; short s[4]; long *j; };
 
 C. struct P3 { long w[2]; int *c[2] };
 
-0 |  16 |  =   24    alignment=8 
-> 0 |  16 |  =   32   alignment=8      
+0 |  16 |  =   24    alignment=8
+> 0 |  16 |  =   32   alignment=8
 
 
 D. struct P4 { char w[16]; char *c[2] };
 
-0 | 16    =18   alignment=8 
-> 0 | 16  = 32  alignment=8 
+0 | 16    =18   alignment=8
+> 0 | 16  = 32  alignment=8
 
 E. struct P5 { struct P4 a[2]; struct P1 t };
 
-0 | 48  = 72 
-> 0 | 64 = 
+0 | 48  = 72
+> 0 | 64 =
 
 
 
@@ -1066,7 +1048,7 @@ E. struct P5 { struct P4 a[2]; struct P1 t };
 Practice Problem 3.45 (solution page 381)
 Answer the following for the structure declaration
 struct {
-    int *a;    
+    int *a;
     float b;
     char c;
     short d;
@@ -1087,5 +1069,38 @@ B. What is the total size of the structure?
 
 C. Rearrange the fields of the structure to minimize wasted space, and then
 show the byte offsets and total size for the rearranged structure.
+
+*/
+
+/*
+Practice Problem 3.46 (solution page 382)
+Figure 3.41 shows a (low-quality) implementation of a function that reads a line
+from standard input, copies the string to newly allocated storage, and returns a
+pointer to the result.
+Consider the following scenario. Procedure get_line is called with the return
+address equal to 0x400776 and register %rbx equal to 0x0123456789ABCDEF. You
+type in the string
+0123456789012345678901234
+
+The program terminates with a segmentation fault. You run gdb and determine
+that the error occurs during the execution of the ret instruction of get_line.
+
+A. Fill in the diagram that follows, indicating as much as you can about the stack
+just after executing the instruction at line 3 in the disassembly. Label the
+quantities stored on the stack (e.g., “Return address”) on the right, and their
+hexadecimal values (if known) within the box. Each box represents 8 bytes.
+Indicate the position of %rsp. Recall that the ASCII codes for characters 0–9
+are 0x30–0x39.
+
+00 00 00 00 00 40 00 76  | Return address
+
+
+
+
+B. Modify your diagram to show the effect of the call to gets (line 5).
+C. To what address does the program attempt to return?
+D. What register(s) have corrupted value(s) when get_line returns?
+E. Besides the potential for buffer overflow, what two other things are wrong
+with the code for get_line?
 
 */
