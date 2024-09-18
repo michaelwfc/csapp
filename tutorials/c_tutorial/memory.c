@@ -39,7 +39,7 @@ int main()
     printf("Array elements:\n");
     for (i = 0; i < n; i++)
     {
-        printf("%d ", array[i]);
+        printf("arr[%d] = %d\n", i, array[i]);
     }
     printf("\n");
 
