@@ -25,9 +25,32 @@ C/C++ extension does not include a C++ compiler. So, you will need to install on
 - Mac: xcode +  LLDB or GDB
 Also, Make sure to add C++ compiler PATH to environment variable of your platform. 
 
-For Windows MinGW64 add: C:\MinGW64\bin
+For Windows MinGW64 add: C:\MinGW64\bin 
+
+
+### Issues:
+
+#### Exec format error with MYSYS2 GCC
+
+- Description: why run bomb readme.txt on Windows UCRT64 said: cannot execute binary file: Exec format error?
+- Reason: Incompatible Binary Format: 
+The bomb file you're trying to execute is probably not a Windows executable file. It might be a binary compiled for Linux, macOS, or another platform (e.g., ELF format for Linux), which Windows cannot directly execute.
+Windows uses the Portable Executable (PE) format, while Linux commonly uses the ELF format for binaries.
+- Solution
+  1. Check the File Format: Use a tool like file (available on Linux or through MSYS2 on Windows) to inspect the binary format of the file. In MSYS2, you can run the following command in the terminal:
+  This will tell you if the file is in the wrong format, such as an ELF binary for Linux or a 32-bit binary when your system is 64-bit.
+
+  2. Run on the Correct Platform:
+
+    If the binary is meant for Linux or another Unix-like system, you will need to run it on the correct platform.
+    Option 1: Use a Linux machine or a virtual machine (VM) running Linux.
+    Option 2: Use Windows Subsystem for Linux (WSL) to run Linux binaries on your Windows machine.
+
+
+
 
 ## Unix-like C compilers in Windows
+
 - Cygwin : Cygwin是模拟 POSIX 系统，源码移植 Linux 应用到 Windows 下
 - MinGW & MSYS: MinGW 是用于进行 Windows 应用开发的 GNU 工具链（开发环境），它的编译产物一般是原生 Windows 应用
 - MinGW-w64 & MSYS2:  https://www.msys2.org/
@@ -36,7 +59,7 @@ For Windows MinGW64 add: C:\MinGW64\bin
 
 [Using C++ and WSL in VS Code](https://code.visualstudio.com/docs/cpp/config-wsl)
 
-## wsl env 
+## WSL env 
 
 ```shell
 wsl --install
