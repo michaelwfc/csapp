@@ -1,17 +1,54 @@
 
 
 ## QA
+
 - why should we spend our time learning machine code?
   the optimization capabilities of the compiler and analyze the underlying
 inefficiencies in the code.
 
+## Assembly,Mmachine code and C
 
 
+### Code Forms:
+
+- Machine Code: The byte-level programs that a processor executes
+- Assembly Code: A text representation of machine code
+  
+### Assembly/Machine Code View
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/001-CPU-MEMEORY-Structure.png)
+
+#### Programmer-Visible State
+
+- PC: Program counter
+  Address of next instruction
+  Called “RIP” (x86-64)
+- Register file
+  Heavily used program data
+- Condition codes
+  Store status information about most recent arithmetic or logical operation
+  Used for conditional branching
 
 
-## Program Encodings
+#### Memory
+- Byte addressable array
+- Code and user data
+- Stack to support procedures
 
-GCC C compiler:
+
+## 3.2 Program Encodings
+
+
+### Turning C into Object Code
+
+### GCC C compiler:
+```shell
+linux> gcc -Og -o p p1.c p2.c
+# -Og(Use basic optimizations)
+```
+![image](../images/Machine-Level%20Representation%20of%20Programs/002-Turning%20C%20into%20Object%20Code.png)
+
+
 source code --- (C compiler) -> assembly code ---(assembler & linker)-> machine code
 
 1. preprocess:
@@ -23,10 +60,8 @@ source code --- (C compiler) -> assembly code ---(assembler & linker)-> machine 
 4. generate final executable code 
    the linker merges these two object-code files along with code implementing library functions (e.g., printf) and generates the final executable code file
 
-```shell
-linux> gcc -Og -o p p1.c p2.c
-```
--Og
+
+-Og(Use basic optimizations)
 instructs the compiler to apply a level of optimization that yields machine code that follows the overall structure of the original C code  
 In practice, higher levels of optimization (e.g., specified with the option -O1 or -O2) are considered a better choice in terms of the resulting program performance.
 
@@ -68,6 +103,7 @@ The processor hardware is far more elaborate, executing many instructions concur
 the memory addresses used by a machine-level program , providing a memory model that appears to be a very large byte array.
 
 ### Hidden Processor state
+
 Parts of the processor state are visible that normally are hidden from the C programmer:
 
 
@@ -82,7 +118,14 @@ Parts of the processor state are visible that normally are hidden from the C pro
 - A set of vector registers
   can each hold one or more integer or floating-point values.
 
-## Accessing Information
+## 3.3 Data formates
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.1%20C_data_types_assenbly-code-suffix.png)
+
+
+
+## 3.4 Accessing Information
+
 
 ### Integer Register
 
@@ -110,7 +153,11 @@ Parts of the processor state are visible that normally are hidden from the C pro
 | ret          |           |
 
 
-### Operand Types
+### 3.4.1 Operand Specifiers
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.3%20Operand%20forms.png)
+
+#### Operand Types
 
 - Immediate $\$0x400$: 
   for constant value, Ex:  
@@ -125,9 +172,24 @@ the registers for operands having 64, 32, 16, or 8 bits, respectively
 
 
 
-### Data Movement Instructions
+#### Simple Memory Addressing Modes
+
+|            | Form  | Operand value  |  Description                               | C                                |instruction| 
+|------------|-------|----------------|--------------------------------------------|----------------------------------|------------------|
+|Normal      | (R)   | Mem[Reg[R]]    | Register R specifies memory address        | x=*p , Pointer dereferencing in C| movq (%rcx),%rax |
+|Displacement| D(R)  | Mem[Reg[R] + D]| Register R specifies start of memory region| x= int arr[2], Register R specifies start of memory region,Constant displacement D specifies offset| movq 8(%rbp),%rdx|
+|Displacement|        |                |                                            | x= &a                            | leaq 8(%rsp), %rsi|
+
+
+
+
+
+
+
+### 3.4.2 Data Movement Instructions
 
 #### MOV class
+
 copy data from a source location to a destination location, without any transformation
 
 For most cases, the mov instructions will only update the specific register bytes or memory locations indicated by the destination operand.
@@ -170,7 +232,7 @@ source operand.
 
 
 
-## Arithmetic and Logical Operations
+## 3.5 Arithmetic and Logical Operations
 
 ![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.10%20Integer%20arithmetic%20operations.png)
 
@@ -195,7 +257,7 @@ from memory, perform the operation, and then write the result back to memory.
 ### Shift Operations
 
 
-## Control
+## 3.6 Control
 
 Machine code provides two basic low-level mechanisms for implementing conditional behavior: 
 
@@ -318,7 +380,7 @@ x86-64 implementation of a procedure uses only those mechanisms required
 
 
 
-### The Run-Time Stack
+### 3.7.1 The Run-Time Stack
 
 #### x86-64 Stack
 
@@ -342,7 +404,7 @@ x86-64 implementation of a procedure uses only those mechanisms required
 
 ![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.25%20General%20stack%20frame%20structure.png)
 
-### Control Transfer
+### 3.7.2 Control Transfer
 
 #### Procedure Control Flow
 
@@ -367,18 +429,199 @@ generated by the program objdump. The added suffix ‘q’ simply emphasizes tha
 these are x86-64 versions of call and return instructions, not IA32. In x86-64
 assembly code, both versions can be used interchangeably.
 
-### Data Transfer
+### 3.7.3 Data Transfer
 
-### Local Storage on the Stack
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.28%20Registers%20for%20passing%20function%20arguments.png)
+
+#### Registers for first 6 arguments
+
+- %rdi
+- %rsi
+- %rdx
+- %rcx
+- %r8
+- %r9
+
+#### Registers for Return value
+
+- %rax
+
+#### Stack
+
+- Argu n
+- Argu n-1
+- ....
+- Argu 8
+- Argu 7
+
+#### Function has more than 6 integral arguments
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.29%20Example%20of%20function%20with%20multiple%20arguments%20of%20different%20types.png)
+
+### Stack-Based Languages
+
+- Languages that support recursion
+  e.g., C, Pascal, Java
+- Code must be “Reentrant”
+  Multiple simultaneous instantiations of single procedure
+- Need some place to store state of each instantiation
+  - Arguments
+  - Local variables
+  - Return pointer
+  
+#### Stack discipline
+
+Stack is the right data structure for procedure call / return
+
+
+- State for given procedure needed for limited time
+  From when called to when return
+- Callee returns before caller does
+
+- Stack allocated in Frames
+state for single procedure instantiation
+
+#### Stack Frames Contents
+
+- Return information
+- Local storage (if needed)
+- Temporary space (if needed)
+
+#### Stack Frames Management
+
+- Space allocated when enter procedure
+  “Set-up” code
+  Includes push by call instruction
+- Deallocated when return
+  “Finish” code
+  Includes pop by ret instruction
+
+#### x86-64/Linux Stack Frame
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/003-x86-64%20Linux%20Stack%20Frame.png)
+
+##### 1. Current Stack Frame (“Top” to Bottom)
+
+- Argument build(optional): Parameters for function about to call
+- Local variable: If can’t keep in registers
+- Saved register context
+- Old frame pointer (optional)
+
+##### 2. Caller Stack Frame
+
+- Return address
+  Pushed by call instruction
+- Arguments for this call
+
+
+
+### 3.7.4 Local Storage on the Stack
+
+At times, however, local data must be stored in memory. Common cases of this include these:
+
+- There are not enough registers to hold all of the local data.
+- The address operator ‘&’ is applied to a local variable, and hence we must be able to generate an address for it.
+- Some of the local variables are arrays or structures and hence must be accessed by array or structure references. We will discuss this possibility when we describe how arrays and structures are allocated.
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.31%20Example%20of%20procedure%20definition%20and%20call.png)
+
+- Local vairiable: arg1, arg2 
+because The address operator  ‘&’(create a poiter) is applied to them, they will have address, so they will store the value in address %rsp and 8(%rsp) which is in the stack frame of callee as local variable
+
+
 
 ### Local Storage in Registers
 
+The set of program registers acts as a single resource shared by all of the procedures.
+Although only one procedure can be active at a given time, we must make
+sure that when one procedure (the caller) calls another (the callee), the callee does
+not overwrite some register value that the caller planned to use later
+
+#### Convensions
+  
+- Callee saved registers :  %rbx, %rbp, and %r12–%r15
+  Callee saves temporary values in its frame before using
+  Callee restores them before returning to caller
+
+  Saved Registers on stack frame
+
+- Caller Saved: other registers
+  Caller saves temporary values in its frame before the call
+
+
+#### x86-64 Linux Register Usage 
+
+- %rax
+  Return value
+  Also caller-saved
+  Can be modified by procedure
+- %rdi,%rsi, %rdx, %rcx, %r8, %r9
+  Arguments
+  Also caller-saved
+  Can be modified by procedure
+- %r10, %r11
+  Caller-saved
+  Can be modified by procedure
+
+- %rbx, %r12, %r13, %r14
+  Callee-saved
+  Callee must save & restore
+- %rbp
+  Callee-saved
+  Callee must save & restore
+  May be used as frame pointer
+  Can mix & match
+- %rsp
+  Special form of callee save
+  Restored to original value upon exit from procedure
+
+
+
+  
+![images](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.34%20Code%20demonstrating%20use%20of%20callee-saved%20registers.png)
+
+
 ### Recursive Procedures
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.35%20Code%20for%20recursive%20factorial%20program.png)
+
+#### Handled Without Special Consideration
+
+- Stack frames mean that each function call has private storage
+  Saved registers & local variables
+  Saved return pointer
+- Register saving conventions prevent one function call from corrupting another’s data
+  Unless the C code explicitly does so (e.g., buffer overflow in Lecture 9)
+- Stack discipline follows call / return pattern
+  If P calls Q, then Q returns before P
+  Last-In, First-Out
+- Also works for mutual recursion
+  P calls Q; Q calls P
+
 
 
 ## 3.8 Array Allocation and Access
 
 ### Basic Principles
+
+```C
+//array access by index
+int E[10];  
+x= E[i]
+```
+
+```assembly
+//The memory referencing instructions
+// %rdx: the address of E is stored 
+// %rcx: value i
+movl (%rdx,%rcx,4),%eax       // fetch the value in the address: x_E + 4i    
+
+```
+The memory referencing instructions of x86-64 are designed to simplify array access. 
+For example, suppose E is an array of values of type int and we wish to evaluate E[i], where the address of E is stored in register %rdx and i is stored in register %rcx. 
+
+Then the instruction will perform the address computation x_E + 4i, read that memory location, and copy the result to register %eax. The allowed scaling factors of 1, 2, 4, and 8 cover the sizes of the common primitive data types.
+
 
 ### Pointer Arithmetic
 
@@ -415,7 +658,9 @@ object of K bytes must have an address that is a multiple of K
 ### 3.10.1 Understanding Pointers
 
 - Every pointer has an associated type.
-- Every pointer has a value
+- Every pointer has a value: 
+  This value is an address of some object of the designated type. 
+  The special NULL (0) value indicates that the pointer does not point anywhere.
 - Pointers are created with the ‘&’ operator.
 - Pointers are dereferenced with the ‘*’ operator
 - Arrays and pointers are closely related
