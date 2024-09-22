@@ -1,3 +1,13 @@
+# Building the Project
+# To build the project, open a terminal in the project directory and run: 
+# make
+# This will compile the source files into object files and link them to create the executable my_program.
+
+
+# Cleaning the Project
+# To clean the project (remove object files and the executable), run:
+# make clean
+# This removes the compiled files, allowing you to start fresh if needed.
 
 
 # Compiler flags  
@@ -44,16 +54,3 @@ clean:
 
 # clean:
 #     rm -f $(TARGET)
-
-
-
-# Building the Project
-# To build the project, open a terminal in the project directory and run: 
-# make
-# This will compile the source files into object files and link them to create the executable my_program.
-
-
-# Cleaning the Project
-# To clean the project (remove object files and the executable), run:
-# make clean
-# This removes the compiled files, allowing you to start fresh if needed.
