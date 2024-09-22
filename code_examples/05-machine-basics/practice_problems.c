@@ -739,15 +739,15 @@ x in %rdi
 6  pushq   %rbp
 7  pushq   %rbx
 8  subq    $24, %rsp         // allocate  24 bytes stack frame
-9  movq    %rdi, %rbx        // save a0 to %rbx (callee-saved registers)
-10 leaq    1(%rdi), %r15     //
+9  movq    %rdi, %rbx        // save local value a0 to %rbx (callee-saved registers)
+10 leaq    1(%rdi), %r15     // %r15 = &(argu1+1)
 11 leaq    2(%rdi), %r14
 12 leaq    3(%rdi), %r13
 13 leaq    4(%rdi), %r12
 14 leaq    5(%rdi), %rbp     // save a5 to %rbp (callee-saved registers)
-15 leaq    6(%rdi), %rax     // save a6 to %rax (caller-saved registers)
-16 movq    %rax, (%rsp)      // Local values a6 are stored on the stack at offsets 0
-17 leaq    7(%rdi), %rdx
+15 leaq    6(%rdi), %rax     // save local value a6 to %rax (return value)
+16 movq    %rax, (%rsp)      // Local values %rax are stored on the stack at offsets 0
+17 leaq    7(%rdi), %rdx     // &(argu1 +7) local value a7
 18 movq    %rdx, 8(%rsp)     // Local values a7 are stored on the stack at offsets 8
 19 movl    $0, %eax
 20 call    Q
@@ -755,14 +755,16 @@ x in %rdi
 
 A. Identify which local values get stored in callee-saved registers.
 B. Identify which local values get stored on the stack.
-C. Explain why the program could not store all of the local values in calleesaved registers.
+C. Explain why the program could not store all of the local values in callee saved registers.
 
 answer
-A. %r15, %r14, %r13, %r12, %rbp, %rbx
-B.
-
+A. line9-14: save local values a0–a5 into callee-saved registers  %rbx, %r15, %r14, %r13, %r12, %rbp, 
+B. line 15-18, save local values a6,a7 into stack as local variables
+C. only have 6 callee saved registers
 
 */
+
+
 
 /*
 Practice Problem 3.35 (solution page 376)

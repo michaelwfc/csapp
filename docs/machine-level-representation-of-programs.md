@@ -129,13 +129,22 @@ Parts of the processor state are visible that normally are hidden from the C pro
 
 ### Integer Register
 
+An x86-64 central processing unit (CPU) contains a set of 16 general-purpose
+registers storing 64-bit values. These registers are used to store integer data as well
+as pointers.
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.2%20integer-registers.png)
+
+
 %rax: Return value
+
 %rdi : 1st argument
 %rsi: 2nd argument
 %rdx: 3rd argument
 %rcx: 4th argument
 
 %rsp: stack pointer
+
 
 
 ### Instruction
@@ -537,48 +546,100 @@ Although only one procedure can be active at a given time, we must make
 sure that when one procedure (the caller) calls another (the callee), the callee does
 not overwrite some register value that the caller planned to use later
 
-#### Convensions
+#### Callee saved registers:  %rbx, %rbp, and %r12–%r15
+
+- Callee saves temporary values in its frame before using
+- Callee restores them before returning to caller
+- Saved Registers on stack frame
+
+##### Steps to Use Callee-Saved Registers
+
+1. Save the Register’s Value (Prologue):
+At the beginning of the callee function, save the value of any callee-saved register that the function will use. This is usually done by pushing the register onto the stack.
+
+2. Use the Register:
+Perform the required operations using the callee-saved register. Since you've saved the original value, you can now use the register freely.
+
+3. Restore the Register’s Value (Epilogue):
+Before returning from the function, restore the original value of the register from the stack. This ensures that the caller's state is preserved.
   
-- Callee saved registers :  %rbx, %rbp, and %r12–%r15
-  Callee saves temporary values in its frame before using
-  Callee restores them before returning to caller
+##### Example01
 
-  Saved Registers on stack frame
+```assembly
+# Function A
+mov rbx, 10    # Store 10 in callee-saved register %rbx
+call B         # Call function B
+# Expect %rbx to still contain 10 after the call
 
-- Caller Saved: other registers
-  Caller saves temporary values in its frame before the call
+# Function B (callee)
+push rbx       # This instruction pushes the current value of %rbx onto the stack. The stack pointer (%rsp) is decremented by the size of the register (8 bytes on a 64-bit system). This saves the value so that it can be restored later.
+mov rbx, 20    # The callee is now free to use %rbx as needed.In this example, we move the values 10 into %rbx and perform whatever operations are required.  Since the original value is saved, we don't have to worry about overwriting anything important.
+# ... Do some work ...
+pop rbx        # Restore %rbx from the stack.Before the function returns, this instruction pops the saved value of %rbx off the stack, restoring it to its original state. The stack pointer (%rsp) is incremented by 8 bytes to remove the value from the stack.
+ret            # Return to function A.The function returns to the caller. Because %rbx has been restored to its original value, the caller's environment is unchanged, and the program continues executing as expected.
+```
 
 
-#### x86-64 Linux Register Usage 
+In Function A:
+- %rbx is used to store a value (10) that A expects to remain unchanged after the call to B.
+
+In Function B:
+- Before modifying %rbx, B saves the original value (from A) onto the stack.
+- After using %rbx, B restores the original value from the stack before returning.
+
+When B returns, the value of %rbx in A is still 10, as expected, because B preserved the value.
+
+##### Example02 from text book
+  
+![images](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.34%20Code%20demonstrating%20use%20of%20callee-saved%20registers.png)
+
+
+##### What Are Callee-Saved Registers?
+
+Callee-saved registers are a set of CPU registers that a function (the callee) must preserve if it uses them during its execution. If a callee function needs to use one of these registers, it must save the current value of the register at the start of the function (usually by pushing it onto the stack) and then restore the value before returning to the caller.
+
+##### The reason for using callee-saved registers   
+
+preserving the state of a program across function calls, ensuring that the caller function's state is maintained when the callee function is executed.
+  
+#### Caller Saved: other registers
+
+- Caller saves temporary values in its frame before the call
+
+
+
+
+### x86-64 Linux Register Usage 
 
 - %rax
   Return value
   Also caller-saved
   Can be modified by procedure
+
+
 - %rdi,%rsi, %rdx, %rcx, %r8, %r9
-  Arguments
+  Arguments: 6
   Also caller-saved
   Can be modified by procedure
+
 - %r10, %r11
   Caller-saved
   Can be modified by procedure
 
-- %rbx, %r12, %r13, %r14
+- %rbx, %r12, %r13, %r14, %r15
   Callee-saved
   Callee must save & restore
+
 - %rbp
   Callee-saved
   Callee must save & restore
   May be used as frame pointer
   Can mix & match
+  
 - %rsp
   Special form of callee save
   Restored to original value upon exit from procedure
 
-
-
-  
-![images](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.34%20Code%20demonstrating%20use%20of%20callee-saved%20registers.png)
 
 
 ### Recursive Procedures

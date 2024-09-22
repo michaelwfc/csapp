@@ -45,6 +45,9 @@ gdb bomb
 # To start running your program inside gdb, use the run command. You can also pass arguments to your program if needed:
 (gdb) run
 (gdb) run arg1 arg2
+
+# run with arguments from answers.txt
+(gdb) r answers.txt
 ```
 
 ## 4. Set Breakpoints
