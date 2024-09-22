@@ -6,3 +6,4 @@ lecture_notes/*
 *.s
 *.o
 *.exe
+*.out
