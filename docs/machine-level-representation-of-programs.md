@@ -6,19 +6,24 @@
   the optimization capabilities of the compiler and analyze the underlying
 inefficiencies in the code.
 
-## Assembly,Mmachine code and C
+## Assembly,Machine code and C
 
 
 ### Code Forms:
 
-- Machine Code: The byte-level programs that a processor executes
+- Source Code: C code
 - Assembly Code: A text representation of machine code
+- Machine Code: The byte-level programs that a processor executes
+
   
 ### Assembly/Machine Code View
 
 ![image](../images/Machine-Level%20Representation%20of%20Programs/001-CPU-MEMEORY-Structure.png)
 
+
 #### Programmer-Visible State
+
+New forms of visible state: program counter, registers, ...
 
 - PC: Program counter
   Address of next instruction
@@ -31,6 +36,7 @@ inefficiencies in the code.
 
 
 #### Memory
+
 - Byte addressable array
 - Code and user data
 - Stack to support procedures
@@ -39,17 +45,51 @@ inefficiencies in the code.
 ## 3.2 Program Encodings
 
 
-### Turning C into Object Code
+### Turning C into Object Code 
 
-### GCC C compiler:
+Compiler must transform statements, expressions, procedures into low-level instruction sequences
+
+
+#### GCC C compiler
+
 ```shell
 linux> gcc -Og -o p p1.c p2.c
-# -Og(Use basic optimizations)
 ```
+-Og(Use basic optimizations)
+instructs the compiler to apply a level of optimization that yields machine code that follows the overall structure of the original C code  
+In practice, higher levels of optimization (e.g., specified with the option -O1 or -O2) are considered a better choice in terms of the resulting program performance.
+
+```shell
+linux> gcc -Og -S mstore.c
+# -Og use basic optimizations
+# -S Compile only; do not assemble or link
+# -o <file>    Place the output into <file>
+# generating an assembly file mstore.s, and go no further
+
+linux> gcc -Og -c mstore.c
+# -c  Compile and assemble, but do not link 
+# generating object file mstore.o
+```
+
+#### Assembler
+
+  Translates .s into .o
+  Binary encoding of each instruction
+  Nearly-complete image of executable code
+  Missing linkages between code in different files
+  
+#### Linker
+
+  Resolves references between files
+  Combines with static run-time libraries
+  E.g., code for malloc, printf
+  Some libraries are dynamically linked
+  Linking occurs when program begins execution
+
 ![image](../images/Machine-Level%20Representation%20of%20Programs/002-Turning%20C%20into%20Object%20Code.png)
 
 
-source code --- (C compiler) -> assembly code ---(assembler & linker)-> machine code
+source code(*.c) -> [C compiler] -> assembly code(*.s) -> [assembler] -> object program(*.o) -> [linker]-> Executable program(p or *.exe)
 
 1. preprocess:
    the C preprocessor expands the source code to include any files specified with #include commands and to expand any macros, specified with #define declarations.
@@ -61,36 +101,33 @@ source code --- (C compiler) -> assembly code ---(assembler & linker)-> machine 
    the linker merges these two object-code files along with code implementing library functions (e.g., printf) and generates the final executable code file
 
 
--Og(Use basic optimizations)
-instructs the compiler to apply a level of optimization that yields machine code that follows the overall structure of the original C code  
-In practice, higher levels of optimization (e.g., specified with the option -O1 or -O2) are considered a better choice in terms of the resulting program performance.
-
-
-
-```shell
-linux> gcc -Og -S mstore.c
-```
--Og use basic optimizations
--S Compile only; do not assemble or link. 
--o <file>    Place the output into <file>.
-generating an assembly file mstore.s, and go no further
-
-```shell
-linux> gcc -Og -c mstore.c
-```
--c  Compile and assemble, but do not link 
-generating object file mstore.o
+### Disaasember
 
 ```shell
 linux> objdump -d mstore.o
+# To inspect the contents of machine-code files
 ```
-To inspect the contents of machine-code files
+  Useful tool for examining object code
+  Analyzes bit pattern of series of instructions
+  Produces approximate rendition of assembly code
+  Can be run on either a.out (complete executable) or .o file
 
 
-gdb to display the byte representation of a program 
-linux> gdb mstore.exe
-linux> (gdb) disassemble multstore
 
+### gdb debugger
+
+```shell
+# gdb to display the byte representation of a program 
+linux> gdb mstore
+
+# Disassemble procedure
+(gdb) disassemble multstore
+
+# Examine the 14 bytes starting at sumstore
+(gdb) x/14xb sumstore
+
+
+```
 
 ### Machine-Level Code
 
@@ -122,16 +159,40 @@ Parts of the processor state are visible that normally are hidden from the C pro
 
 ![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.1%20C_data_types_assenbly-code-suffix.png)
 
+### Assembly Characteristics
 
+#### Assembly Data Types
+
+- “Integer” data of 1, 2, 4, or 8 bytes
+  Data values
+  Addresses (untyped pointers)
+
+- Floating point data of 4, 8, or 10 bytes
+- Code: Byte sequences encoding series of instructions
+- No aggregate types such as arrays or structures, Just contiguously allocated bytes in memory
+
+#### Operations
+
+- Perform arithmetic function on register or memory data
+- Transfer data between memory and register
+  Load data from memory into register
+  Store register data into memory:      Ex: movq %rax, (%rbx)
+- Transfer control
+  Unconditional jumps to/from procedures
+  Conditional branches
 
 ## 3.4 Accessing Information
 
 
 ### Integer Register
 
-An x86-64 central processing unit (CPU) contains a set of 16 general-purpose
-registers storing 64-bit values. These registers are used to store integer data as well
-as pointers.
+
+
+An x86-64 central processing unit (CPU) contains a set of 16 general-purpose registers storing 64-bit values. These registers are used to store integer data as well as pointers.
+
+|             |IA32     | x86-64    |
+|-------------|---------|-----------|
+|Register Nums|8         |16        |
 
 ![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.2%20integer-registers.png)
 
@@ -153,47 +214,52 @@ as pointers.
 - Operands  操作数 : specifying the source values to use in performing an operation and the destination location into which to place the result
   
 
-|Operation code | Operands|
-|---------------|---------|
-| movq          |  （%rdi）,%rax  |
-| addq          |         |  
-| subq          |         |
-| xorq          |          |
-| ret          |           |
-
-
 ### 3.4.1 Operand Specifiers
 
 ![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.3%20Operand%20forms.png)
 
 #### Operand Types
 
-- Immediate $\$0x400$: 
-  for constant value, Ex:  
-- Register $r_a$:   
+- Immediate: Constant integer data
+  Ex:   $\$0x400$ 
+  Like C constant, but prefixed with ‘$’
+  Encoded with 1, 2, or 4 bytes
+  
+- Register: One of 16 integer registers
+  Ex:  $r_a$
   denotes the contents of a register, one of the sixteen 8-, 4-, 2-, or 1-byte low-order portions of
 the registers for operands having 64, 32, 16, or 8 bits, respectively
 
-- Memory Reference 内存引用 $M_b[Addr]$: 
+- Memory Reference 内存引用  8 consecutive bytes of memory at address given by register
+  Ex: (%rax) -> $M_b[Addr]$
   in which we access some memory location according to a computed address, often called the effective address. 
-
-    $ Imm(r_b, r_i, s) = Imm + R[r_b] + R[r_i] *s $
+  $ Imm(r_b, r_i, s) = Imm + R[r_b] + R[r_i] *s $
 
 
 
 #### Simple Memory Addressing Modes
 
-|            | Form  | Operand value  |  Description                               | C                                |instruction| 
-|------------|-------|----------------|--------------------------------------------|----------------------------------|------------------|
-|Normal      | (R)   | Mem[Reg[R]]    | Register R specifies memory address        | x=*p , Pointer dereferencing in C| movq (%rcx),%rax |
-|Displacement| D(R)  | Mem[Reg[R] + D]| Register R specifies start of memory region| x= int arr[2], Register R specifies start of memory region,Constant displacement D specifies offset| movq 8(%rbp),%rdx|
-|Displacement|        |                |                                            | x= &a                            | leaq 8(%rsp), %rsi|
+|            | Form  | Operand value  |  C                                | Assembly Code      |  Description                               |
+|------------|-------|----------------|-----------------------------------|------------------|--------------------------------------------|
+|Normal      | (R)   | Mem[Reg[R]]    | x=*p (Pointer dereferencing in C) | movq (%rcx),%rax | Register R specifies memory address        |
+|Displacement| D(R)  | Mem[Reg[R] + D]| x= int arr[2]                     | movq 8(%rbp),%rdx| Register R specifies start of memory region,Constant displacement D specifies offset, very useful for different data structure|
 
 
+#### Most General Form
+    
+    D(Rb,Ri,S)	Mem[Reg[Rb]+S*Reg[Ri]+ D]
 
+  D: 	Constant “displacement” 1, 2, or 4 bytes
+  Rb: Base register: Any of 16 integer registers
+  Ri:	Index register: Any, except for %rsp
+  S: 	Scale: 1, 2, 4, or 8 (why these numbers? char array: 1, short int array: 2, int array:4, long int array:8)
 
+Special Cases
+    (Rb,Ri)	Mem[Reg[Rb]+Reg[Ri]]
+    D(Rb,Ri)	Mem[Reg[Rb]+Reg[Ri]+D]
+    (Rb,Ri,S)	Mem[Reg[Rb]+S*Reg[Ri]]
 
-
+Natural for array indexing
 
 ### 3.4.2 Data Movement Instructions
 
@@ -201,31 +267,38 @@ the registers for operands having 64, 32, 16, or 8 bits, respectively
 
 copy data from a source location to a destination location, without any transformation
 
-For most cases, the mov instructions will only update the specific register bytes or memory locations indicated by the destination operand.
-
-- movb
-- movw
-- movl ： it will also set the high-order 4 bytes of the register to 0.
-- movq
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.4%20Simple%20data%20movement%20instructions.png)
-
-The movabsq instruction: can have an ***arbitrary 64-bit immediate value*** as its source operand and can only have a ***register*** as a destination.
-
-copy data from a source location to a destination location
+For most cases, the mov instructions will only update the specific register bytes or memory locations indicated by ***the destination operand***. 
+The only exception is that when movl has a register as the destination, it will also set the high-order 4 bytes of the register to 0.
 
 - The source operand: 
   designates a value that is immediate, stored in a register, or stored in memory. 
 - The destination operand 
   designates a location that is either a register or a memory address.  
 
-x86-64 imposes the restriction that a move instruction cannot have both operands refer to memory locations.
+| instruction | source| destination | Assembly code             | C Analog              |
+|-------------|-------|-------------|---------------------------|-----------------------|
+| movq        | Imm   | Reg         | movq $0x4, %rax           | temp= 0x4;            |
+|             |       | Memory      | movq $0x4, (%rax)         | *p = 0x4;             |
+|             | Reg   | Reg         | movq %rax, %rdx           | temp2= temp1;         |
+|             |       | Memory      | movq %rax, (%rdx)         | *p = temp;            |
+|             | Memory| Reg         | movq (%rax),%rdx          | temp = *p;            |
 
-For most cases, the mov instructions will only update the specific register bytes or memory locations indicated by ***the destination operand***. 
-The only exception is that when movl has a register as the destination, it will also set the high-order 4
-bytes of the register to 0.
+Note : x86-64 imposes the restriction that a move instruction cannot have both operands refer to memory locations.
+
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.4%20Simple%20data%20movement%20instructions.png)
+
+- movb
+- movw
+- movl ： it will also set the high-order 4 bytes of the register to 0.
+- movq
+- movabsq : can have an ***arbitrary 64-bit immediate value*** as its source operand and can only have a ***register*** as a destination.
+
 
 #### MOVZ class
+
 two classes of data movement instructions for use when copying a smaller source value to a larger destination.
+
 - the movz class fill out the remaining bytes of the destination with zeros
 - the movs class fill them out by sign extension, replicating copies of the most significant bit of the
 source operand.
@@ -234,6 +307,7 @@ source operand.
 ![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.5%20Zero-extending%20data%20movement%20instructions.png) 
 
 #### MOVS class
+
 ![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.6%20Sign-extending%20data%20movement%20instructions.png)
 
 
@@ -243,21 +317,55 @@ source operand.
 
 ## 3.5 Arithmetic and Logical Operations
 
+C compiler will figure out different instruction combinations to carry out computation
+
+
 ![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.10%20Integer%20arithmetic%20operations.png)
 
-### Load Effective Address
+### Address Computation Instruction
 
 reads from memory to a register, but it does not reference memory at all. Its first operand appears to be a memory
 reference, but instead of reading from the designated location, the instruction copies the effective address to the destination.
 
 compactly describe common arithmetic operations.
 
-The destination operand must be a register
+```assembly
+leaq Src, Dst
+```
+
+Src is address mode expression
+Set Dst to address denoted by expression, The destination operand must be a register
+
+
+Uses
+  1. Computing addresses without a memory reference 
+      Examples:
+       p = &x[i];
+       x=  &(arr[2])   leaq 8(%rsp), %rsi
+
+  2. Computing arithmetic expressions of the form x + k*y ,   k = 1, 2, 4, or 8
+      Examples:   
+      x*12       leaq (%rdi,%rdi,2), %rax # t <- x+x*2
+                 salq $2, %rax            # return t<<2
+               
+      
+
 
 ### Unary Operations
 
+- incq
+- decq
+- negq
+- notq
 
 ### Binary Operations
+
+- addq
+- subq
+- imulq
+- xorq
+- andq
+- orq
 
 Note :  
 when the second operand is a memory location, the processor must read the value
@@ -265,8 +373,20 @@ from memory, perform the operation, and then write the result back to memory.
 
 ### Shift Operations
 
+- salq
+- sarq
+- shrq
+
 
 ## 3.6 Control
+
+### Information about currently executing program
+
+- Temporary data ( %rax, … )
+- Location of runtime stack ( %rsp: current stack top )
+- Location of current code control point ( %rip: x86-64 instruction pointer, … )
+- Status of recent tests ( CF, ZF, SF, OF )
+
 
 Machine code provides two basic low-level mechanisms for implementing conditional behavior: 
 
@@ -274,35 +394,70 @@ Machine code provides two basic low-level mechanisms for implementing conditiona
 - 
 
 
-### condition code registers
+### Condition Code (Implicit Setting)
 
 the CPU maintains a set of single-bit condition code registers describing attributes of the most recent arithmetic or logical operation. These registers can then be tested to perform conditional branches. 
 
-- CF: Carry flag. 
+- CF: Carry flag （for unsigned）
   The most recent operation generated a carry out of the most significant bit. Used to detect overflow for unsigned operations.
 - ZF: Zero flag. 
   The most recent operation yielded zero.
-- SF: Sign flag. 
+- SF: Sign flag （for signed）
   The most recent operation yielded a negative value.
-- OF: Overflow flag. 
+- OF: Overflow flag （for unsigned）
   The most recent operation caused a two’s-complement overflow—either negative or positive.
 
-#### The CMP instructions 
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.13%20Comparison%20and%20test%20instructions.png)
+Implicitly set (think of it as side effect) by arithmetic operations
+Example: addq Src,Dest ↔ t = a+b
+  CF set if carry out from most significant bit (unsigned overflow)
+  ZF set if t == 0
+  SF set if t < 0 (as signed)
+  OF set if two’s-complement (signed) overflow
+     (a>0 && b>0 && t<0) || (a<0 && b<0 && t>=0)
+
+Not set by leaq instruction
+
+
+
+### Condition Codes (Explicit Setting)
+
+#### The Compare(cmp) instructions 
 
 The cmp instructions set the condition codes according to the differences of their two operands. They behave in the same way as the sub instructions, except that they set the condition codes without updating their destinations
+
+Explicit Setting by Compare Instruction
+cmpq Src2, Src1       cmpq b,a like computing a-b without setting destination
+
+  CF set if carry out from most significant bit (used for unsigned comparisons)
+  ZF set if a == b
+  SF set if (a-b) < 0 (as signed)
+  OF set if two’s-complement (signed) overflow
+      (a>0 && b<0 && (a-b)<0) || (a<0 && b>0 && (a-b)>0)
+
 
 #### The TEST instructions
 
 The test instructions behave in the same manner as the and instructions, except that they
 set the condition codes without altering their destinations.
 
+Explicit Setting by Test instruction
+testq Src2, Src1  testq b,a like computing a&b without setting destination 
+
+  ZF set when a&b == 0
+  SF set when a&b < 0
+
+Sets condition codes based on value of Src1 & Src2
+Useful to have one of the operands be a mask
+
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.13%20Comparison%20and%20test%20instructions.png)
 
 
 ### Accessing the Condition Codes
 
 Rather than reading the condition codes directly, there are three common ways of using the condition codes: 
+
 - (1) we can set a single byte to 0 or 1 depending on some combination of the condition codes
 - (2) we can conditionally jump to some other part of the program
 - (3) we can conditionally transfer data. 
@@ -310,14 +465,33 @@ Rather than reading the condition codes directly, there are three common ways of
 
 For the first case, the instructions described in Figure 3.14 set a single byte to 0 or to 1 depending on some combination of the condition codes. We refer to this entire class of instructions as the set instructions;
 
-### The SET instructions
+#### The SET instructions
+
+- Set low-order byte of destination to 0 or 1 based on combinations of condition codes
+- Does not alter remaining 7 bytes
+
 
 ![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.14%20The%20set%20instructions.png)
 
+Example:
+```c
+int gt (long x, long y)
+{
+  return x > y;
+}
 
-### Jump Instructions
+cmpq   %rsi, %rdi   # Compare x:y
+setg   %al          # Set when >
+movzbl %al, %eax    # Zero rest of %rax， %eax is lower 32 bytes of %rax: in x86-64, when computation result is 32-bit, it will set upper 32 bits to 0
+ret
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.15%20The%20jump%20instructions.png)
+```
+
+
+
+### Conditional Branches
+
+#### Jump Instructions
 
 A jump instruction can cause the execution to switch to a completely new position in the program. 
 These jump destinations are generally indicated in assembly code by a label.
@@ -325,12 +499,16 @@ These jump destinations are generally indicated in assembly code by a label.
 In assembly code, jump targets are written using symbolic labels. 
 The assembler, and later the linker, generate the proper encodings of the jump targets.
 
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.15%20The%20jump%20instructions.png)
+
+
+
 #### Jump Instruction Encodings
 
-PC relative
 
+#### Conditional Move Instructions
 
-### Implementing Conditional Branches with Conditional Move Instructions
+Implementing Conditional Branches with Conditional Move Instructions
 
 #### Pipelining
 
@@ -353,6 +531,8 @@ As we will see, such a misprediction can incur a serious penalty, say, 15–30 c
 
 
 Unlike conditional jumps, the processor can execute conditional move instructions without having to predict the outcome of the test. The processor simply reads the source value (possibly from memory), checks the condition code, and then either updates the destination register or keeps it the same.
+
+### Loop
 
 ### Switch
 
