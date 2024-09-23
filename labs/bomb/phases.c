@@ -161,38 +161,46 @@ End of assembler dump.
 */
 
 /*
+ mov    %fs:0x28,%rax
+The assembly instruction mov %fs:0x28, %rax involves moving the value stored at a specific memory location, which is calculated based on the value of the fs segment register, into the rax register. Here’s a detailed breakdown:
+
+Understanding the Instruction
+%fs:: This refers to the FS segment register. The fs register is one of the segment registers used in x86 architecture. Segment registers are used in conjunction with offsets to access different segments of memory. The fs register is often used to access thread-specific data, such as thread-local storage (TLS) in some operating systems.
+0x28: This is the offset from the base address stored in the fs segment. The fs segment register contains a base address, and 0x28 is added to this base address to calculate the effective address from which the data will be retrieved.
+%rax: This is a 64-bit general-purpose register in x86-64 architecture. The result of the memory fetch operation will be stored in this register.
+
 (gdb) disas
 Dump of assembler code for function phase_5:
-=> 0x0000000000401062 <+0>:     push   %rbx
-   0x0000000000401063 <+1>:     sub    $0x20,%rsp
-   0x0000000000401067 <+5>:     mov    %rdi,%rbx
-   0x000000000040106a <+8>:     mov    %fs:0x28,%rax
-   0x0000000000401073 <+17>:    mov    %rax,0x18(%rsp)
-   0x0000000000401078 <+22>:    xor    %eax,%eax
-   0x000000000040107a <+24>:    call   0x40131b <string_length>
-   0x000000000040107f <+29>:    cmp    $0x6,%eax
-   0x0000000000401082 <+32>:    je     0x4010d2 <phase_5+112>
+=> 0x0000000000401062 <+0>:     push   %rbx                       // 
+   0x0000000000401063 <+1>:     sub    $0x20,%rsp                 // 0x7fffffffe038 - 0x20=  0x7fffffffe018
+   0x0000000000401067 <+5>:     mov    %rdi,%rbx                  // %rbx = &argu1
+   0x000000000040106a <+8>:     mov    %fs:0x28,%rax              // rax   0xd8bdac3c8fd72200  -2828915614807547392
+   0x0000000000401073 <+17>:    mov    %rax,0x18(%rsp)            // x/8x 0x7fffffffe028 > 0x00    0x22    0xd7    0x8f    0x3c    0xac    0xbd    0xd8         
+   0x0000000000401078 <+22>:    xor    %eax,%eax                  // %rax ^ %rax
+   0x000000000040107a <+24>:    call   0x40131b <string_length>   
+   0x000000000040107f <+29>:    cmp    $0x6,%eax                  // if( string_length==6)
+   0x0000000000401082 <+32>:    je     0x4010d2 <phase_5+112>     //    { +112}
    0x0000000000401084 <+34>:    call   0x40143a <explode_bomb>
    0x0000000000401089 <+39>:    jmp    0x4010d2 <phase_5+112>
-   0x000000000040108b <+41>:    movzbl (%rbx,%rax,1),%ecx
+   0x000000000040108b <+41>:    movzbl (%rbx,%rax,1),%ecx            // 
    0x000000000040108f <+45>:    mov    %cl,(%rsp)
    0x0000000000401092 <+48>:    mov    (%rsp),%rdx
    0x0000000000401096 <+52>:    and    $0xf,%edx
    0x0000000000401099 <+55>:    movzbl 0x4024b0(%rdx),%edx
    0x00000000004010a0 <+62>:    mov    %dl,0x10(%rsp,%rax,1)
    0x00000000004010a4 <+66>:    add    $0x1,%rax
-   0x00000000004010a8 <+70>:    cmp    $0x6,%rax
-   0x00000000004010ac <+74>:    jne    0x40108b <phase_5+41>
+   0x00000000004010a8 <+70>:    cmp    $0x6,%rax                      // if( %rax !=6)
+   0x00000000004010ac <+74>:    jne    0x40108b <phase_5+41>          //   { +41}  
    0x00000000004010ae <+76>:    movb   $0x0,0x16(%rsp)
    0x00000000004010b3 <+81>:    mov    $0x40245e,%esi
    0x00000000004010b8 <+86>:    lea    0x10(%rsp),%rdi
    0x00000000004010bd <+91>:    call   0x401338 <strings_not_equal>
-   0x00000000004010c2 <+96>:    test   %eax,%eax
-   0x00000000004010c4 <+98>:    je     0x4010d9 <phase_5+119>
+   0x00000000004010c2 <+96>:    test   %eax,%eax                      //if( %rax ==0)
+   0x00000000004010c4 <+98>:    je     0x4010d9 <phase_5+119>           { +119 }
    0x00000000004010c6 <+100>:   call   0x40143a <explode_bomb>
    0x00000000004010cb <+105>:   nopl   0x0(%rax,%rax,1)
    0x00000000004010d0 <+110>:   jmp    0x4010d9 <phase_5+119>
-   0x00000000004010d2 <+112>:   mov    $0x0,%eax
+   0x00000000004010d2 <+112>:   mov    $0x0,%eax                  // 
    0x00000000004010d7 <+117>:   jmp    0x40108b <phase_5+41>
    0x00000000004010d9 <+119>:   mov    0x18(%rsp),%rax
    0x00000000004010de <+124>:   xor    %fs:0x28,%rax
