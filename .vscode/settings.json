@@ -1,7 +1,7 @@
 {
   "workbench.colorTheme": "Default Dark+",
   "files.autoSave": "onFocusChange",
-  // "terminal.integrated.defaultProfile.windows": "Ubuntu-22.04 (WSL)",
+  "terminal.integrated.defaultProfile.windows": "Ubuntu-22.04 (WSL)", //"UCRT64"
   "terminal.integrated.profiles.windows": {
     "UCRT64": {
       "path": "C:\\msys64\\usr\\bin\\bash.exe",
@@ -12,7 +12,6 @@
       }
     }
   },
-  "terminal.integrated.defaultProfile.windows": "UCRT64",
 
   "window.zoomLevel": 1,
   "autoDocstring.docstringFormat": "google-notypes",
@@ -29,6 +28,13 @@
 
   "files.associations": {
     "string.h": "c",
-    "stdio.h": "c"
+    "stdio.h": "c",
+    "printutils.h": "c",
+    "reverse_polish.h": "c",
+    "stack.h": "c",
+    "input.h": "c",
+    "stdlib.h": "c",
+    "limits.h": "c",
+    "corecrt_wstdlib.h": "c"
   }
 }
