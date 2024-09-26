@@ -129,7 +129,14 @@ The p (or print) command in gdb is used to evaluate and print the value of an ex
 
 # You can also directly print the value of %rdx using the print (or p for short) command with the $ prefix to indicate a register.
 (gdb) print $rdx
-
+# To print the same value as a character:
+(gdb) p (char)$ecx
+# Print the Value in Binary Format:
+(gdb) print/t $eax
+(gdb) print/t 0xF3
+(gdb) x/t 0xADDRESS
+# print the binary representation to character
+print (char)0b1000001
 ```
 
 ##  6.1  Inspect memory
@@ -152,9 +159,11 @@ The x command in gdb is used to examine memory. Examine memory (x): View memory 
 
 # s is a format specifier that tells gdb to interpret the memory at a specified address as a null-terminated string.
 (gdb) x/s <address>
-
+(gdb) x/6c <address>
+(gdb) x/6c $rsi
 # To view an array, you need to specify the number of elements (count) and the format for the type of the elements in the array.
 (gdb) x/5d 0x7fffffffdea0
+
 
 # This examines 4 words of memory starting at the address of x, showing them in hexadecimal.
 (gdb) x/4x &x

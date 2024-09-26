@@ -487,10 +487,6 @@ ret
 
 ```
 
-
-
-### Conditional Branches
-
 #### Jump Instructions
 
 A jump instruction can cause the execution to switch to a completely new position in the program. 
@@ -503,48 +499,349 @@ The assembler, and later the linker, generate the proper encodings of the jump t
 
 
 
-#### Jump Instruction Encodings
+### 3.6.4 Jump Instruction Encodings
+
+In assembly code,
+jump targets are written using symbolic labels. The assembler, and later the linker, generate the proper encodings of the jump targets.
+
+- PC relative
+  they encode the difference between the address of the target instruction and the address of the instruction immediately following the jump. These offsets can be encoded using 1, 2, or 4 bytes.
+
+- absolute address
+  using 4 bytes to directly specify the target
 
 
-#### Conditional Move Instructions
+
+### Conditional Branches
+
+
+```c
+long absdiff(long x, long y)
+{
+    long result;
+    if (x > y)
+        result = x-y;
+    else
+        result = y-x;
+    return result;
+}
+
+//  GOTO version of absdiff
+long absdiff_j(long x, long y)
+{
+    long result;
+    int ntest = x <= y;
+    if (ntest) goto Else;
+    result = x-y;
+    goto Done;
+ Else:
+    result = y-x;
+ Done:
+    return result;
+}
+
+
+
+// Using Branches， without  Conditional Moves
+// >gcc –Og -S –fno-if-conversion control.c
+
+absdiff:
+   cmpq    %rsi, %rdi  # x:y
+   jle     .L4
+   movq    %rdi, %rax
+   subq    %rsi, %rax
+   ret
+.L4:       # x <= y
+   movq    %rsi, %rax
+   subq    %rdi, %rax
+   ret
+
+
+// Using Conditional Moves
+absdiff:
+   movq    %rdi, %rax       # x
+   subq    %rsi, %rax       # result = x-y
+   movq    %rsi, %rdx     
+   subq    %rdi, %rdx       # eval = y-x
+   cmpq    %rsi, %rdi       # x:y
+   cmovle  %rdx, %rax       # if <=, result = eval
+   ret
+
+
+```
+
+
+#### 1. General Conditional Expression Translation (Using Branches)
+
+- Create separate code regions for then & else expressions
+- Execute appropriate one
+
+```c
+# c code
+val = Test ? Then_Expr : Else_Expr;
+
+# Goto Version
+  ntest = !Test;
+  if (ntest) goto Else;
+  val = Then_Expr;
+  goto Done;
+Else:
+  val = Else_Expr;
+Done:
+```
+
+
+#### 2. Using Conditional Moves
 
 Implementing Conditional Branches with Conditional Move Instructions
 
-#### Pipelining
-
-processors achieve high performance through pipelining, where an instruction is processed via a sequence of stages, each performing one small portion of the required operations (e.g., fetching the instruction from memory, determining the instruction type, reading from memory, performing an arithmetic operation, writing to memory, and updating the program counter). 
-
-This approach achieves high performance by overlapping the steps of the successive instructions, such as fetching one instruction while performing the arithmetic operations for a previous instruction. 
-
-To do this requires being able to determine the sequence of instructions to be executed well ahead of time in order to keep the pipeline full of instructions to be executed.
-
-When the machine encounters a conditional jump (referred to as a “branch”), it cannot determine which way the branch will go until it has evaluated the branch condition. 
-
-#### branch prediction logic 分支预测器
-
-Processors employ sophisticated branch prediction logic to try to guess whether or not each jump instruction will be followed.
-As long as it can guess reliably (modern microprocessor designs try to achieve success rates on the order of 90%), the instruction pipeline will be kept full of instructions. 
-
-Mispredicting a jump, on the other hand, requires that the processor discard much of the work it has already done on future instructions and then begin filling the pipeline with instructions starting at the correct location. 
-
-As we will see, such a misprediction can incur a serious penalty, say, 15–30 clock cycles of wasted effort, causing a serious degradation of program performance.
+- Instruction supports: if (Test) Dest <- Src
+- Supported in post-1995 x86 processors
+- GCC tries to use them, But only when known to be safe
 
 
-Unlike conditional jumps, the processor can execute conditional move instructions without having to predict the outcome of the test. The processor simply reads the source value (possibly from memory), checks the condition code, and then either updates the destination register or keeps it the same.
+```C
+# C code
+val = Test ? Then_Expr : Else_Expr;
+
+# Goto Version
+  result = Then_Expr;
+  eval = Else_Expr;
+  nt = !Test;
+  if (nt) result = eval;
+  return result;
+
+```
+
+Why?
+
+- Branches are very disruptive to instruction flow through pipelines
+- Conditional moves do not require control transfer
+  Unlike conditional jumps, the processor can execute conditional move instructions without having to predict the outcome of the test. The processor simply reads the source value (possibly from memory), checks the condition code, and then either updates the destination register or keeps it the same.
+
+#### Bad Cases for Conditional Move
+
+- Expensive Computations
+  val = Test(x) ? Hard1(x) : Hard2(x);
+  Both values get computed
+  Only makes sense when computations are very simple
+  
+- Risky Computations
+  val = p ? *p : 0;
+  Both values get computed
+  May have undesirable effects
+
+- Computations with side effects
+  val = x > 0 ? x*=7 : x+=3;
+  Both values get computed
+  Must be side-effect free
+  
+
 
 ### Loop
 
+#### DO-While Loop
+
+```C
+do
+  body-statement
+  while (test-expr);
+
+
+// translated into conditionals and goto statements
+loop:
+  body-statement
+  t = test-expr;
+  if (t)
+    goto loop;
+
+
+
+// Example 
+long pcount_do(unsigned long x) {
+  long result = 0;
+  do {
+    result += x & 0x1;
+    x >>= 1;
+  } while (x);
+  return result;
+}
+
+// Goto Version of pcount
+long pcount_goto(unsigned long x) {
+  long result = 0;
+  loop:
+    result += x & 0x1;
+    x >>= 1;
+    if(x) goto loop;
+    return result;
+}
+
+// Compilation
+   movl    $0, %eax		  #  result = 0
+.L2:			              # loop:
+   movq    %rdi, %rdx	
+   andl    $1, %edx		  #  t = x & 0x1
+   addq    %rdx, %rax	  #  result += t
+   shrq    %rdi		      #  x >>= 1
+   jne     .L2		      #  if (x) goto loop
+   rep; ret
+
+
+```
+
+#### While Loop
+
+```C
+while (Test)
+  Body
+
+// goto version
+  goto test;
+loop:
+  Body
+test:
+  if (Test)
+    goto loop;
+done:
+
+// Example trasnlated with Jump to Middle 
+long pcount_goto_jtm(unsigned long x) {
+    long result = 0;
+    goto test;
+ loop:
+    result += x & 0x1;
+    x >>= 1;
+ test:
+    if(x) goto loop;
+    return result;
+}
+``` 
+
+#### For Loop 
+
+
+
+
+
 ### Switch
 
-jump table.
-A jump table is an array where entry i is the address of a code segment implementing the action the program should take when the switch
-index equals i. 
-The code performs an array reference into the jump table using the switch index to determine the target for a jump instruction. 
+```C
+long switch_eg(long x, long y, long z)
+{
+    long w = 1;
+    switch(x) {
+    case 1:       // .L3
+        w = y*z;
+        break;
+    case 2:       // Fall Through without break .L5
+        w = y/z;
+    case 3:
+        w += z;
+        break;    //Missing cases 4
+    case 5:       //Multiple case labels   .L7
+    case 6:
+        w -= z;
+        break;
+    default:      //.L8                   
+        w = 2;
+    }
+    return w;
+}
+```
 
-The advantage of using a jump table over a long sequence of if-else statements is that the time taken to
-perform the switch is independent of the number of switch cases. 
+#### Jump table
+
+```Assembly
+
+  .section	.rodata          // within the segment of the object-code file called .rodata (for “read-only data”)
+  .align 8                   // Align address to multiple of 8
+.L4:     
+  .quad	.L8	                 # x = 0          // the label for the default case (loc_def)
+  .quad	.L3	                 # x = 1     
+  .quad	.L5	                 # x = 2     
+  .quad	.L9	                 # x = 3     
+  .quad	.L8	                 # x = 4          // the default case for entry 4 
+  .quad	.L7	                 # x = 5
+  .quad	.L7	                 # x = 6
+
+
+switch_eg:
+    movq    %rdx, %rcx
+    cmpq    $6, %rdi          # x:6
+    ja      .L8               # Use default
+    jmp     *.L4(,%rdi,8)     # goto *JTab[x]
+
+.L3:                          # Case 1
+   movq    %rsi, %rax         # y
+   imulq   %rdx, %rax         # y*z
+   ret        
+        
+.L5:                          # Case 2
+   movq    %rsi, %rax        
+   cqto        
+   idivq   %rcx               #  y/z
+   jmp     .L6                #  goto merge
+.L9:                          # Case 3
+   movl    $1, %eax           #  w = 1
+.L6:                          # merge:
+   addq    %rcx, %rax         #  w += z
+   ret        
+.L7:                          # Case 5,6
+  movl  $1, %eax              #  w = 1
+  subq  %rdx, %rax            #  w -= z
+  ret           
+.L8:                          # Default:
+  movl  $2, %eax              #  2
+  ret
+
+
+
+
+```
+
+##### Jump Table Structure
+
+- A jump table is an array 
+- Each target requires 8 bytes
+- Base address at .L4 (in example)
+  
+##### Jumping
+
+- Direct: jmp .L8
+  Jump target is denoted by label .L8
+
+- Indirect: jmp *.L4(,%rdi,8)
+  Start of jump table: .L4
+  Must scale by factor of 8 (addresses are 8 bytes)
+  Fetch target from effective Address .L4 + x*8 (Only for  0 ≤ x ≤ 6)
+
+
+The advantage of using a jump table
+
+The advantage of using a jump table over a long sequence of if-else statements is that the time taken to perform the switch is independent of the number of switch cases. 
 Gcc selects the method of translating a switch statement based on the number of cases and the sparsity of the case values. 
 Jump tables are used when there are a number of cases (e.g., four or more) and they span a small range of values.
+
+
+#### Summarizing
+
+- C Control
+  if-then-else
+  do-while
+  while, for
+  switch
+
+- Assembler Control
+  Conditional jump
+  Conditional move
+  Indirect jump (via jump tables)
+  Compiler generates code sequence to implement more complex control
+
+- Standard Techniques
+  Loops converted to do-while or jump-to-middle form
+  Large switch statements use jump tables
+  Sparse switch statements may use decision trees (if-elseif-elseif-else)
 
 
 

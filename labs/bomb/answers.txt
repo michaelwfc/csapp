@@ -1,4 +1,17 @@
-Border relations with Canada have never been better.
+Border relations with Canada have never been better.  
 1 2 4 8 16 32
 1 311
 1 0
+flyers  
+"flyers"  need find index from 0x4024b0: [9, 15, 14, 5, 6, 7] 
+and  $0xf,%edx : perform a bitwise AND operation, 0xf(0000 1111 in binary) with six char
+A= 1000001
+Z= 1011010
+a = 1100001 = 97
+z= 
+0000 1111 &  char1 = 9 = 1001 -> char1 = 0b1101001 = i
+0000 1111 &  char2 = 15 = 1111 -> char2 = 0b1101111 = o
+0000 1111 &  char3 = 14 = 1110 -> char3 = 0b1101110  = n
+0000 1111 &  char4 = 5 = 0101 -> char4 = 0b1101110  = e 
+
+input = ionefg
