@@ -28,8 +28,8 @@
             // debug the main.c, it will run prelaunch task:  "demo gcc build" to compile the source files
             // "preLaunchTask": "demo gcc build"
             // "preLaunchTask": "demo build with Makefile"
-             // "preLaunchTask": "C/C++: gcc.exe build active file"
-             "preLaunchTask": "build with Makefile"
+             "preLaunchTask": "C/C++: gcc.exe build active file"
+            //  "preLaunchTask": "build with Makefile"
         }
     ]
 }

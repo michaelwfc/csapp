@@ -21,6 +21,49 @@ http://csapp.cs.cmu.edu/public/students.html
 or “info gdb” at a Unix prompt. Some people also like to run gdb under gdb-mode in
 emacs.
 
+## 3.10.2 Using the gdb Debugger
+
+Figure 3.39 Example gdb commands. These examples illustrate some of the ways gdb supports debugging of machine-level programs.
+
+|Command                         |Effect                                                       |
+|--------------------------------|--------------------------------------------------------------|
+|Starting and stopping           |                                                             |
+|quit                            |Exit gdb                                                 |
+|run                             |Run your program (give command-line arguments here)      |
+|kill                            |Stop your program     |
+|Breakpoints                     |     |
+|break multstore                 |Set breakpoint at entry to function multstore     |
+|break *0x400540                 |Set breakpoint at address 0x400540     |
+|delete 1                        |Delete breakpoint 1     |
+|delete                          |Delete all breakpoints     |
+|Execution                       |                                                             |
+|stepi                           |Execute one instruction     |
+|stepi 4                         |Execute four instructions     |
+|nexti                           |Like stepi, but proceed through function calls     |
+|continue                        |Resume execution     |
+|finish                          |Run until current function returns     |
+|Examining code                  |                                                             |
+|disas                           |Disassemble current function     |
+|disas multstore                 |Disassemble function multstore     |
+|disas 0x400544                  |Disassemble function around address 0x400544     |
+|disas 0x400540, 0x40054d        | Disassemble code within specified address range     |
+|print /x $rip                   |Print program counter in hex     |
+|Examining data                  |                                                             |  
+|print $rax                      |Print contents of %rax in decimal     |
+|print /x $rax                   |Print contents of %rax in hex     |
+|print /t $rax                   |Print contents of %rax in binary     |
+|print 0x100                     |Print decimal representation of 0x100     |
+|print /x 555                    |Print hex representation of 555     |
+|print /x ($rsp+8)               |Print contents of %rsp plus 8 in hex     |
+|print *(long*) 0x7fffffffe818  |Print long integer at address 0x7fffffffe818     |
+|print *(long*) ($rsp+8)        |Print long integer at address %rsp + 8     |
+|x/2g 0x7fffffffe818             |Examine two (8-byte) words starting at address 0x7fffffffe818     |
+|x/20b multstore                 |Examine first 20 bytes of function multstore     |
+|Useful information              |                                                             |
+|info frame                      |Information about current stack frame     |
+|info registers                  |Values of all the registers     |
+|help                            |Get information about gdb     |
+
 
 ## 1. Compile the Program with Debugging Information
 
@@ -168,10 +211,6 @@ The x command in gdb is used to examine memory. Examine memory (x): View memory 
 # This examines 4 words of memory starting at the address of x, showing them in hexadecimal.
 (gdb) x/4x &x
 
-
-
-```
-### Summary of x Command Formats
 - x/d <address>: View the memory as a signed integer.
 - x/u <address>: View the memory as an unsigned integer.
 - x/f <address>: View the memory as a floating-point number.
@@ -179,6 +218,7 @@ The x command in gdb is used to examine memory. Examine memory (x): View memory 
 - x/<count>d <address>: View an array of integers.
 - x/<count>f <address>: View an array of floats.
 
+```
 
 ## 7. View the Call Stack
 
@@ -203,9 +243,11 @@ list: Lists the source code around the current line of execution, with the curre
 ## 8. Modify Variables
 
 You can modify the value of variables while the program is paused:
+
 ```bash
 (gdb) set var x = 10
 ```
+
 This changes the value of x to 10.
 
 
