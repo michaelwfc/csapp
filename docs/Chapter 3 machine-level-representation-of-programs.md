@@ -1065,24 +1065,84 @@ preserving the state of a program across function calls, ensuring that the calle
 
 ### Basic Principles
 
+T  A[L];
+
+- Array of data type T and length L
+- **Contiguously** allocated region of L * sizeof(T) bytes in memory
+- Identifier A can be used as a pointer to array element 0: Type T*
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.8%20Array%20Allocation.png)
+
 ```C
+// declare a integer array
+int val[5];
 //array access by index
-int E[10];  
-x= E[i]
-```
-
-```assembly
-//The memory referencing instructions
-// %rdx: the address of E is stored 
-// %rcx: value i
-movl (%rdx,%rcx,4),%eax       // fetch the value in the address: x_E + 4i    
+x= val[i]
 
 ```
 
-The memory referencing instructions of x86-64 are designed to simplify array access.
-For example, suppose E is an array of values of type int and we wish to evaluate E[i], where the address of E is stored in register %rdx and i is stored in register %rcx.
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.8%20Array%20Allocation-example01.png)
 
-Then the instruction will perform the address computation x_E + 4i, read that memory location, and copy the result to register %eax. The allowed scaling factors of 1, 2, 4, and 8 cover the sizes of the common primitive data types.
+|Reference  |Type    |Value   |  
+|-----------|--------|--------|
+|val[4]     |int    | 3      |  
+|val       |int *  | x      |
+|val+1     |int *  | x + 4  |  
+|&val[2]   |int *  | x + 8  |
+|val[5]     |int    |    ??  |
+|*(val+1)   |int 5  |        |
+|val + i   |int *  | x + 4 i|
+
+#### Array Accessing Example
+
+```C
+#define ZLEN 5
+typedef int zip_dig[ZLEN];  //// Alias for an array of 5 integers
+
+zip_dig cmu = { 1, 5, 2, 1, 3 };
+zip_dig mit = { 0, 2, 1, 3, 9 };
+zip_dig ucb = { 9, 4, 7, 2, 0 };
+
+
+// Function to get the value by index
+int get_digit(zip_dig z, int digit)
+{
+  // IntArray is defined as an alias for an array of 5 integers. However, when you use zip_dig in a function parameter, it is treated as a pointer to int because of the array decay. the array will  "decays" to a pointer
+  // effectively has the same signature as int get_digit(int *arr, int index)
+
+  return z[digit]; // Accessing the value at the given index
+}
+
+
+// The memory referencing instructions
+// %rdx: Register %rdi contains starting address of array 
+// %rcx: Register %rcx contains array index
+// Desired vakue at %rdi + 4*%rsi 
+// Use memory reference (%rdi,%rsi,4), The memory referencing instructions of x86-64 are designed to simplify array access.
+// Then the instruction will perform the address computation x_E + 4i, read that memory location, and copy the result to register %eax. The allowed scaling factors of 1, 2, 4, and 8 cover the sizes of the common primitive data types.
+movl (%rdx,%rcx,4),%eax       // fetch the value in the address: x_val + 4i 
+
+
+void zincr(zip_dig z) {
+  size_t i;
+  for (i = 0; i < ZLEN; i++)
+    z[i]++;
+}
+
+  // %rdi = z
+  movl    $0, %eax            #   i = 0
+  jmp     .L3                 #   goto middle
+.L4:                          # loop:
+  addl    $1, (%rdi,%rax,4)   #   z[i]++ , read the value from the memory, do the addition and store it back to memory
+  addq    $1, %rax            #   i++
+.L3:                          # middle
+  cmpq    $4, %rax            #   i:4
+  jbe     .L4                 #   if <=, goto loop
+  rep; ret
+
+
+```
+
 
 ### Pointer Arithmetic
 
@@ -1090,7 +1150,9 @@ Then the instruction will perform the address computation x_E + 4i, read that me
 
 ### Nested Arrays
 
+
 ### Fixed-Size Arrays
+ 
 
 ## 3.9 Heterogeneous Data Structures
 
