@@ -9,7 +9,7 @@ the ISA provides a conceptual layer of abstraction between compiler writers, who
 - Intel IA32 and x86-64
 - IBM/Freescale Power
 - ARM processor family
-- 
+  
 This idea of using clever tricks to improve performance while maintaining the functionality of a simpler and more abstract model is well known in computer science. 
 
 Examples 
