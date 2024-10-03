@@ -5,3 +5,5 @@
 - [The CS:APP web site](http://csapp.cs.cmu.edu/public/students.html)
 - [csapp-labs](https://csapp.cs.cmu.edu/3e/labs.html)
 - [Lecture-notes](http://www.cs.cmu.edu/afs/cs/academic/class/15213-f15/www/schedule.html)
+
+- [CMU-ECE-CS-Guide](https://github.com/CMU-HKN/CMU-ECE-CS-Guide)
