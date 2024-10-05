@@ -6,17 +6,25 @@
 vec *new_vec(size_t len)
 {
     /* Allocate header structure */
-    vec *result = (vec *) malloc(sizeof(vec));
+    // Allocating Memory for the Structure:
+    // The malloc function is used to allocate memory dynamically for a vec structure.
+    vec *result = (vec *) malloc(sizeof(vec));        
     if (!result)
         return NULL;  /* Couldn't allocate storage */
+    
+    //Initializing the Structure:
     result->len = len;
     data_t *data = NULL;
+    
+    // Allocating Memory for the Data Array:
+    // calloc(len, sizeof(data_t)) allocates memory for len elements, each of size sizeof(data_t), and initializes the allocated memory to zero.
+    // If the allocation fails (i.e., calloc returns NULL), the function frees the previously allocated memory for the vec structure (result) to avoid a memory leak, and then returns NULL.
     if (len > 0) {
         data = (data_t *) calloc(len, sizeof(data_t));
-	if (!data) {
-	    free((void *) result);
- 	    return NULL; /* Couldn't allocate storage */
-	}
+        if (!data) {
+            free((void *) result);
+            return NULL; /* Couldn't allocate storage */
+        }
     }
     /* data will either be NULL or allocated array */
     result->data = data;

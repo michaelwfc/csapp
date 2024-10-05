@@ -1150,13 +1150,213 @@ void zincr(zip_dig z) {
 
 ### Nested Arrays
 
+#### Multidimensional (Nested) Arrays
 
-### Fixed-Size Arrays
- 
+Declaration : 
+- T  A[R][C];  2D array of data type T
+- R rows, C columns
+- Type T element requires K bytes
+- Array Size: R * C * K bytes
+- Arrangement : Row-Major Ordering
+
+
+```C
+#define PCOUNT 4
+
+zip_dig pgh[PCOUNT] = 
+  {{1, 5, 2, 0, 6},
+   {1, 5, 2, 1, 3 },
+   {1, 5, 2, 1, 7 },
+   {1, 5, 2, 2, 1 }};
+
+// “zip_dig pgh[4]” equivalent to “int pgh[4][5]”
+// Variable pgh: array of 4 elements, allocated contiguously
+// Each element is an array of 5 int’s, allocated contiguously
+
+
+```
+
+![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.8%20Nested%20Array%20Example%2001.png)
+
+
+#### Nested Array Row Access 
+
+Row Vectors
+- A[i] is array of C elements
+- Each element of type T requires K bytes
+- Starting address A +  i * (C * K)
+
+```C
+int *get_pgh_zip(int index)
+{
+  // pgh[index] is array of 5 int’s
+  // Starting address pgh+20*index
+  return pgh[index];
+}
+
+// Computes and returns address
+// Compute as pgh + 4*(index+4*index)
+
+# %rdi = index
+leaq (%rdi,%rdi,4),%rax	   # 5 * index
+leaq pgh(,%rax,4), %rax	   # pgh + (20 * index)
+
+```
+
+#### Nested Array Element Access
+
+Array Elements 
+
+- A[i][j] is element of type T, which requires K bytes
+- Address  A + i * (C * K) +  j * K = A + (i * C +  j)* K
+  
+```C
+int get_pgh_digit(int index, int dig)
+{
+  return pgh[index][dig];
+}
+
+
+leaq	(%rdi,%rdi,4), %rax	   # 5*index
+addl	%rax, %rsi	           # 5*index+dig
+movl	pgh(,%rsi,4), %eax	   # M[pgh + 4*(5*index+dig)]
+
+```
+
+#### Multi-Level Array Example
+
+```C
+zip_dig cmu = { 1, 5, 2, 1, 3 };
+zip_dig mit = { 0, 2, 1, 3, 9 };
+zip_dig ucb = { 9, 4, 7, 2, 0 };
+
+// Variable univ denotes array of 3 elements
+// Each element is a pointer  8 bytes
+// Each pointer points to array of int’s 
+
+#define UCOUNT 3
+int *univ[UCOUNT] = {mit, cmu, ucb};
+
+int get_univ_digit(size_t index, size_t digit)
+{
+  return univ[index][digit];
+}
+
+
+salq    $2, %rsi            # 4*digit
+addq    univ(,%rdi,8), %rsi # p = univ[index] + 4*digit
+movl    (%rsi), %eax        # return *p
+ret
+
+// Computation
+// Element access Mem[Mem[univ+8*index]+4*digit]
+// Must do two memory reads
+  // First get pointer to row array
+  // Then access element within array
+
+
+```
+
+### N X N Matrix 
+
+#### Fixed dimensions
+
+Know value of N at compile time
+
+```C
+#define N 16
+typedef int fix_matrix[N][N];
+/* Get element a[i][j] */
+int fix_ele(fix_matrix a, size_t i, size_t j)
+{
+  return a[i][j];
+}
+
+// a in %rdi, i in %rsi, j in %rdx
+salq    $6, %rsi             # 64*i
+addq    %rsi, %rdi           # a + 64*i
+movl    (%rdi,%rdx,4), %eax  # M[a + 64*i + 4*j]
+ret
+
+```
+
+#### Variable dimensions，explicit indexing
+
+Traditional way to implement dynamic arrays
+
+```C
+
+#define IDX(n, i, j) ((i)*(n)+(j))
+/* Get element a[i][j] */
+int vec_ele(size_t n, int *a, size_t i, size_t j)
+{
+  return a[IDX(n,i,j)];
+}
+```
+
+#### Variable dimensions, implicit indexing
+
+Now supported by gcc
+  
+```C
+
+// /* Get element a[i][j] */
+int var_ele(size_t n, int a[n][n],
+            size_t i, size_t j) {
+  return a[i][j];
+}
+
+// n in %rdi, a in %rsi, i in %rdx, j in %rcx
+imulq   %rdx, %rdi           # n*i
+leaq    (%rsi,%rdi,4), %rax  # a + 4*n*i
+movl    (%rax,%rcx,4), %eax  # a + 4*n*i + 4*j
+ret
+
+```
+
 
 ## 3.9 Heterogeneous Data Structures
 
 ### 3.9.1 Structures
+
+```C
+struct rec {
+    int a[4];
+    size_t i;
+    struct rec *next;
+};
+
+int *get_ap(struct rec *r, size_t idx)
+{
+  return &r->a[idx];
+}
+
+# r in %rdi, idx in %rsi  
+leaq  (%rdi,%rsi,4), %rax
+ret
+
+
+// Following Linked List
+void set_val(struct rec *r, int val)
+{
+  while (r) {
+    int i = r->i;
+    r->a[i] = val;
+    r = r->next;
+  }
+}
+
+
+.L11:                         # loop:
+  movslq  16(%rdi), %rax      #   i = M[r+16]	  
+  movl    %esi, (%rdi,%rax,4) #   M[r+4*i] = val
+  movq    24(%rdi), %rdi      #   r = M[r+24]
+  testq   %rdi, %rdi          #   Test r
+  jne     .L11                #   if !=0 goto loop
+
+
+
+```
 
 ### 3.9.2 Unions
 
@@ -1169,14 +1369,40 @@ Can only use one field at a time
 
 Alignment restrictions
 
-Many computer systems place restrictions on the allowable addresses for the
-primitive data types, requiring that the address for some objects must be a multiple
-of some valueK (typically 2, 4, or 8).
+Many computer systems place restrictions on the allowable addresses for the primitive data types, requiring that the address for some objects must be a multiple of some value K (typically 2, 4, or 8).
+
+- Primitive data type requires K bytes
+- Address must be multiple of K
+- Required on some machines; advised on x86-64
+
+Motivation for Aligning Data
+
+- Memory accessed by (aligned) chunks of 4 or 8 bytes (system dependent)
+- Inefficient to load or store datum that spans quad word boundaries
+- Virtual memory trickier when datum spans 2 pages
+
 
 The x86-64 hardware will work correctly regardless of the alignment of data.
-However, Intel recommends that data be aligned to improve memory system
-performance. Their alignment rule is based on the principle that any primitive
+However, Intel recommends that data be aligned to improve memory system performance. Their alignment rule is based on the principle that any primitive
 object of K bytes must have an address that is a multiple of K
+
+Compiler : Inserts gaps in structure to ensure correct alignment of fields
+
+#### Satisfying Alignment with Structures
+
+Within structure:
+
+- Must satisfy each element’s alignment requirement
+
+Overall structure placement
+
+- each structure has alignment requirement K, K = Largest alignment of any element
+- Initial address & structure length must be multiples of K
+
+### Arrays of Structures
+
+- Overall structure length multiple of K
+- Satisfy alignment requirement for every element
 
 
 ### Summary of Compound Types in C

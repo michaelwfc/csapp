@@ -35,6 +35,7 @@
     "input.h": "c",
     "stdlib.h": "c",
     "limits.h": "c",
-    "corecrt_wstdlib.h": "c"
+    "corecrt_wstdlib.h": "c",
+    "vec.h": "c"
   }
 }

@@ -1106,3 +1106,11 @@ E. Besides the potential for buffer overflow, what two other things are wrong
 with the code for get_line?
 
 */
+
+/*
+Practice Problem 5.4 (solution page 610)
+When we use gcc to compile combine3 with command-line option -O2, we get
+code with substantially better CPE performance than with -O1:
+
+
+*/

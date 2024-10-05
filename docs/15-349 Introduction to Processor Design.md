@@ -5,3 +5,5 @@ Carnegie Mellon University, School of Computer Science,
 Randy Bryant and David O'Hallaron, Summer 2002 (3-week mini-course).
 A well-received mini-course on processor architecture that we taught to help us debug the material in Chapter 4.
 The original course material has been updated for CS:APP3e.
+
+ECE-741
