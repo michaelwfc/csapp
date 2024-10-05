@@ -9,7 +9,13 @@
 #include <stdlib.h>
 
 #define RIDX(i,j,n) ((i)*(n)+(j))
+/* Get element a[i][j] 
+int vec_ele(size_t n, int *a, size_t i, size_t j)
+{
+  return a[RIDX(n,i,j)];
+}
 
+*/
 typedef struct {
   char *team;
   char *name1, *email1;
@@ -23,6 +29,16 @@ typedef struct {
    unsigned short green;
    unsigned short blue;
 } pixel;
+
+typedef struct {
+   unsigned short red;
+   unsigned short green;
+   unsigned short blue;
+   // if the pixel is gap or not
+   unsigned short is_gap;
+
+} pixel_with_gap;
+
 
 typedef void (*lab_test_func) (int, pixel*, pixel*);
 
