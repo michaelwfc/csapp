@@ -1114,3 +1114,228 @@ code with substantially better CPE performance than with -O1:
 
 
 */
+
+
+/*
+Practice Problem 6.1 (solution page 696)
+In the following, let r be the number of rows in a DRAM array, c the number of
+columns, br the number of bits needed to address the rows, and bc the number of
+bits needed to address the columns. 
+For each of the following DRAMs, determine the power-of-2 array dimensions that minimize max(br, bc), the maximum number
+of bits needed to address the rows or columns of the array.
+
+Organization    r       c       br         bc        max(br, bc)
+16 × 1         16       1      1111=4      1= 2        4
+16 × 4                                     11 =2
+128 × 8        128             1111 111=7              7
+512 × 4                        9
+1,024 × 4                      10
+
+*/
+
+
+
+/*
+Practice Problem 6.7 (solution page 698)
+Permute the loops in the following function so that it scans the three-dimensional
+array a with a stride-1 reference pattern.
+int productarray3d(int a[N][N][N])
+{
+    int i, j, k, product = 1;
+
+    for (i = N-1; i >= 0; i--) {
+        for (j = N-1; j >= 0; j--) {
+            for (k = N-1; k >= 0; k--) {
+                product *= a[j][k][i];
+            }
+        }
+    }
+    return product;
+}
+
+In C, arrays are stored in row-major order. 
+This means that the elements of the array are laid out in memory such that the innermost dimension varies the fastest, 
+followed by the second innermost dimension, and so on. 
+For a 3D array a[N][N][N], the index a[i][j][k] is stored in memory in such a way that varying k (the innermost index) will access consecutive memory locations.
+
+
+int productarray3d(int a[N][N][N])
+{
+    int i, j, k, product = 1;
+
+    for (i = 0; i < N; i++) {          // Outer loop
+        for (j = 0; j < N; j++) {      // Middle loop
+            for (k = 0; k < N; k++) {  // Innermost loop
+                product *= a[i][j][k]; // Accessing in row-major order
+            }
+        }
+    }
+    return product;
+}
+
+
+*/
+
+/*
+Practice Problem 6.9 (solution page 699)
+The following table gives the parameters for a number of different caches. For
+each cache, determine the number of cache sets (S), tag bits (t ), set index bits (s),
+and block offset bits (b).
+Cache  m   C      B   E   S     t    s   b
+1.     32  1,024  4   1   256  22    8   2
+2.     32  1,024  8   4   32   24    5   3
+3.     32  1,024  32  32  1    27    0   5
+
+*/
+
+/*
+Practice Problem 6.10 (solution page 699)
+In the previous dotprod example, what fraction of the total references to x and y
+will be hits once we have padded array x?
+miss =4
+hits= 12
+
+
+S =2  = 2^s ->  s=1
+B= 16 = 2^b  -> b=4
+t =  m-(s+b) -> t= 27
+
+
+              Set index  block[0]   block[1]   block[2]   block[3]  ...
+x[0]: miss      0         x[0]        x[1]       x[2]      x[3]
+y[0]: miss      1         y[0]        y[1]       y[2]      y[3]
+x[1]: hit       0
+y[1]: hit       1
+x[2]: hit       0
+y[2]: hit       1
+x[3]: hit       0
+y[3]: hit       1
+
+x[4]: miss      1         x[4]        x[5]       x[6]      x[7]
+y[1]: miss      0         y[4]        y[5]       y[6]      y[7]
+
+*/
+
+
+/*
+Practice Problem 6.11 (solution page 699)
+Imagine a hypothetical cache that uses the high-order s bits of an address as the
+set index. For such a cache, contiguous chunks of memory blocks are mapped to
+the same cache set.
+A. How many blocks are in each of these contiguous array chunks?
+B. Consider the following code that runs on a system with a cache of the form
+(S, E, B, m) = (512, 1, 32, 32):
+
+int array[4096];
+for (i = 0; i < 4096; i++)
+    sum += array[i];
+
+What is the maximum number of array blocks that are stored in the cache 
+at any point in time?
+
+A: 
+C= S*E*B
+
+
+B:
+(S, E, B, m) = (512, 1, 32, 32)
+m =32
+S=512=2^9 -> s=9
+B=32=2^5  -> b=5
+t= m-s-b  -> t= 18
+
+the cache capacity is 512 32-byte blocks with t = 18 tag bits in each cache line.
+
+array addresses
+A
+A + 2^12*4 bytes= A +2^14
+
+because the contiguous chunk of memory(array) will be indexed to the same set 0,
+the maximum block can only be used for set 0, so the maximum block = 32
+
+
+*/
+
+/*
+Practice Problem 6.12 (solution page 699)
+The problems that follow will help reinforce your understanding of how caches
+work. Assume the following:
+. The memory is byte addressable.
+. Memory accesses are to 1-byte words (not to 4-byte words).
+. Addresses are 13 bits wide.
+. The cache is two-way set associative (E = 2), with a 4-byte block size (B = 4)
+and eight sets (S = 8).
+The contents of the cache are as follows, with all numbers given in hexadecimal
+notation.
+
+
+The following figure shows the format of an address (1 bit per box). Indicate
+(by labeling the diagram) the fields that would be used to determine the following:
+CO. The cache block offset
+CI. The cache set index
+CT. The cache tag
+
+
+C= (S,E,B) = (8,2,4)
+m=13
+S=8=2^s -> s=3
+B=4=2^2 -> b=2
+t= m-s-b = 13-3-2 =8
+
+CT CT CT CT  CT CT CT CT    CI CI CI    CO  CO
+12 11 10 9   8  7  6  5     4  3   2    1   0
+
+*/
+
+/*
+Practice Problem 6.13 (solution page 700)
+Suppose a program running on the machine in Problem 6.12 references the 1-byte
+word at address 0x0D53. Indicate the cache entry accessed and the cache byte
+value returned in hexadecimal notation. Indicate whether a cache miss occurs. If
+there is a cache miss, enter “—” for “Cache byte returned.”
+A. Address format (1 bit per box):
+address 0x0D53
+000-0 1101 0101 0011
+      
+B. Memory reference:
+   Parameter Value
+Cache block offset (CO)  11        =0x3
+Cache set index (CI)     1 00      =0x4
+Cache tag (CT)           0 1101 010=0x6A
+Cache hit? (Y/N)                    N
+Cache byte returned                 --
+
+
+Practice Problem 6.14 (solution page 700)
+Repeat Problem 6.13 for memory address 0x0CB4.
+A. Address format (1 bit per box):
+address 0x0CB4
+000-0 1100 1011 0100
+
+12 11 10 9 8 7 6 5 4 3 2 1 0
+
+B. Memory reference:
+    Parameter Value
+Cache block offset (CO)  00 = 0x0
+Cache set index (CI)     101 = 0x5
+Cache tag (CT)           0 1100 100 = 0110 0100 =  0x65
+Cache hit? (Y/N)         N
+Cache byte returned 0x
+
+
+
+Practice Problem 6.15 (solution page 700)
+Repeat Problem 6.13 for memory address 0x0A31.
+A. Address format (1 bit per box):
+address 0x0A31
+000-0 1010 0011 0001
+
+B. Memory reference:
+   Parameter Value
+Cache block offset (CO)      01= 0x1
+Cache set index (CI)         100= 0x4
+Cache tag (CT) 0x            0 1010 001 = 0x51
+Cache hit? (Y/N)
+Cache byte returned 0x
+
+*/

@@ -86,8 +86,9 @@ void ijk(array A, array B, array C, int n)
 /* $begin mm-ijk */
 for (i = 0; i < n; i++) 
     for (j = 0; j < n; j++) {
-	sum = 0.0;
+	    sum = 0.0;
         for (k = 0; k < n; k++)
+            // A: row-wise, B:column-wise
             sum += A[i][k]*B[k][j];
         C[i][j] += sum;
     }
@@ -105,6 +106,7 @@ for (j = 0; j < n; j++)
     for (i = 0; i < n; i++) {
 	sum = 0.0;
 	for (k = 0; k < n; k++)
+        // A: row-wise, B:column-wise
 	    sum += A[i][k]*B[k][j];
 	C[i][j] += sum;
     }
