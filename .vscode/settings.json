@@ -36,6 +36,8 @@
     "stdlib.h": "c",
     "limits.h": "c",
     "corecrt_wstdlib.h": "c",
-    "vec.h": "c"
+    "vec.h": "c",
+    "cstdlib": "c",
+    "unistd.h": "c"
   }
 }
