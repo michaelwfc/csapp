@@ -175,7 +175,8 @@ typedef struct LRUCache
     MemAddrSize B;
     MemAddrSize tag_mask;
     MemAddrSize set_mask;
-    MemAddrSize address_mask;
+    MemAddrSize block_mask; // to get the block binary value
+    MemAddrSize address_mask; // to get the address binary value to copy from memory to cache
     CacheSet * sets; // sets is a array of set, and set consists of E lines, lines is build by lined list
 } LRUCache;
 
@@ -195,10 +196,11 @@ LRUCache *lRUCacheCreate(unsigned s, unsigned E, unsigned b)
     MemAddrSize mask = 0xFFFFFFFFFFFFFFFF;
     MemAddrSize tag_mask = mask >> (s + b);
     MemAddrSize set_mask = (mask << t) >> (b + t);
-    MemAddrSize address_mask= (mask<<(s+t) ) >>(s+t);
+    MemAddrSize block_mask= (mask<<(s+t) ) >>(s+t);
+    MemAddrSize address_mask= (mask>> b ) <<b;
 
-    MemAddrSize S = 0x2 << s;
-    MemAddrSize B = 0x2 << b;
+    MemAddrSize S = 0x1 << s;
+    MemAddrSize B = 0x1 << b;
 
     // initialize the sets for cache, Allocating memory to sets
     CacheSet *sets = (CacheSet *)malloc(S * sizeof(CacheSet));
@@ -215,6 +217,7 @@ LRUCache *lRUCacheCreate(unsigned s, unsigned E, unsigned b)
     cache->B = B;
     cache->tag_mask = tag_mask;
     cache->set_mask = set_mask;
+    cache->block_mask = block_mask;
     cache->address_mask = address_mask;
     cache->sets = sets;
 
@@ -254,7 +257,7 @@ int lRUCacheGet(LRUCache *cache, char operation, MemAddrSize address, unsigned s
     // find the target set
     CacheSet target_set = cache->sets[target_set_index];
 
-    // if fine the target tag and is valid, which is hit
+    // if find the target tag and is valid, which is hit
     int hit=0;
 
     // find the target tag/line by for loops
@@ -301,13 +304,19 @@ int lRUCacheGet(LRUCache *cache, char operation, MemAddrSize address, unsigned s
         LineNode* new_line = (LineNode*)malloc(sizeof(LineNode));
         new_line->tag = target_tag_index;
         new_line->valid = 1;
+        
+        // move the local memory to block in this cache set line
+        //To copy B bytes from a specific memory address into a dynamically allocated char array (blocks), you can use the memcpy function from the C standard library. Here's how to do it step by step:
+        // Steps:
+        // Allocate memory for the blocks array using malloc.
+        // Use memcpy to copy B bytes from the source address to the dynamically allocated memory (blocks).
+        // each block is a byte, blocks= B=2^b bytes
         new_line->blocks = (char*)malloc(cache->B * sizeof(char)); // Allocate memory to blocks
 
-        //TODO: How to move the local memory to block in this cache set line
-        // each block is a byte, blocks= B=2^b bytes
         MemAddrSize memory_addr = address &(cache->address_mask);
         // Cast the 64-bit integer to a pointer to a char (or another data type you need)
         char *pmemory_addr = (char*)memory_addr;  // Explicitly cast the 64-bit integer to a pointer
+        // TODO:access= 16=1 0000 = memory_addr  can not access the memory address at adress 0x10
         memcpy(new_line->blocks, pmemory_addr,cache->B);
         
         //when i reach the end, evict an existing line node
@@ -397,7 +406,7 @@ void run_cache_simulator(CacheParams cache_params){
         int result = lRUCacheGet(pcache, operation, address, size);
         if(result == -1){          
             misses++;
-  
+
         }
         else{
             hits++;
