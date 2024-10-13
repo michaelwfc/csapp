@@ -180,7 +180,15 @@ The p (or print) command in gdb is used to evaluate and print the value of an ex
 (gdb) x/t 0xADDRESS
 # print the binary representation to character
 print (char)0b1000001
+
+# Format Specifiers in GDB:
+# /t - binary
+# /x - hexadecimal
+# /d - decimal
+# /o - octal
 ```
+
+
 
 ##  6.1  Inspect memory
 
@@ -377,3 +385,25 @@ more than you ever wanted to know about the GNU Assembler. Also, the web may als
 of information. If you get stumped, feel free to ask your instructor for help.
 
 
+
+# Debug C with WSL gcc  in vscode
+
+## show the value of varible
+
+查看变量直接在 DEBUG CONSOLE 中输入变量名称就可以
+
+```C
+// directory 
+> var_name
+
+>(char) var_name
+// use gdb command, need add -exec
+>-exec print var_name
+
+// print address_mask as binary format
+-exec print /x address_mask
+
+// run expression 1<<4
+>-exec print 1 << 4
+
+```

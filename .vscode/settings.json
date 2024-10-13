@@ -2,16 +2,16 @@
   "workbench.colorTheme": "Default Dark+",
   "files.autoSave": "onFocusChange",
   "terminal.integrated.defaultProfile.windows": "Ubuntu-22.04 (WSL)", //"UCRT64"
-  "terminal.integrated.profiles.windows": {
-    "UCRT64": {
-      "path": "C:\\msys64\\usr\\bin\\bash.exe",
-      "args": ["--login", "-i"],
-      "env": {
-        "MSYSTEM": "UCRT64",
-        "CHERE_INVOKING": "1"
-      }
-    }
-  },
+  // "terminal.integrated.profiles.windows": {
+  //   "UCRT64": {
+  //     "path": "C:\\msys64\\usr\\bin\\bash.exe",
+  //     "args": ["--login", "-i"],
+  //     "env": {
+  //       "MSYSTEM": "UCRT64",
+  //       "CHERE_INVOKING": "1"
+  //     }
+  //   }
+  // },
 
   "window.zoomLevel": 1,
   "autoDocstring.docstringFormat": "google-notypes",
