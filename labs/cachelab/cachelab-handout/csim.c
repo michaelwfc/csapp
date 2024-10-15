@@ -278,8 +278,8 @@ LRUCache *lRUCacheCreate(unsigned s, unsigned E, unsigned b)
 int lRUCacheLookup(LRUCache *pcache, char operation, MemAddrType address, unsigned size)
 {
     // how to matched by set + tag?
-    unsigned target_set_index = address >> pcache->b & pcache->set_mask;
-    unsigned target_tag_index = address >> (pcache->tag_offset) & pcache->tag_mask;
+    MemAddrType target_set_index = address >> pcache->b & pcache->set_mask;
+    MemAddrType target_tag_index = address >> (pcache->tag_offset) & pcache->tag_mask;
 
     // Use CacheSet pointer to save the cache set at the pointer(memory address), not just use CacheSet(local))
     CacheSet* target_set = pcache->sets[target_set_index];
@@ -335,8 +335,8 @@ int lRUCachePut(LRUCache *pcache, char operation, MemAddrType address, unsigned 
 
     // if miss , when and how to evict the data blocks and update?
     // if the cache set is full, add a new line to the cache set
-    unsigned target_set_index = address >> pcache->b & pcache->set_mask;
-    unsigned target_tag_index = address >> (pcache->tag_offset) & pcache->tag_mask;
+    MemAddrType target_set_index = address >> pcache->b & pcache->set_mask;
+    MemAddrType target_tag_index = address >> (pcache->tag_offset) & pcache->tag_mask;
 
     // find the target set
     CacheSet* target_set = pcache->sets[target_set_index];
@@ -375,6 +375,11 @@ int lRUCachePut(LRUCache *pcache, char operation, MemAddrType address, unsigned 
         // if the target_set is not full, set the new line as head node
         // set the head of the set
         target_set->head = new_line;           // add the new line node to the head of the cach
+        
+        // how to set the tail of the set: if tail is null,update , if not no need to do anything
+        // which will be used in evction by tail with O(1) 
+        if(target_set->tail==NULL){target_set->tail= new_line->next;}
+
         target_set->line_size++;
     }else{   
         // if the target_set is full
@@ -384,7 +389,7 @@ int lRUCachePut(LRUCache *pcache, char operation, MemAddrType address, unsigned 
             LineNode* evicted_line = target_set->head;
             // free(evicted_line->blocks);
             free(evicted_line);
-
+            new_line->next = NULL; // set the next as null
             target_set->head = new_line;
         }
         else{
@@ -418,6 +423,7 @@ void lRUCacheFree(LRUCache *pcache)
             free(current_line);
             current_line = next_line;
         }
+        free(cache_set);
         
     }
     free(pcache->sets);
@@ -432,14 +438,8 @@ void run_cache_simulator(CacheParams cache_params){
     int misses = 0;
     int evictions = 0;
 
-
-
     // initialize LRU cache
     LRUCache *pcache = lRUCacheCreate(cache_params.s, cache_params.E, cache_params.b);
-
-    // initialize the line_code
-    // LineCode line_code;
-    // line_code.blocks = (char *)malloc(cache_params.B * sizeof(char));
 
     // open the trace file
     FILE *ptrace_file = fopen(cache_params.trace_file, "r");
