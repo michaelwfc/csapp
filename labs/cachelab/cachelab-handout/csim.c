@@ -1,4 +1,16 @@
 /*
+scores: 
+                        Your simulator     Reference simulator
+Points (s,E,b)    Hits  Misses  Evicts    Hits  Misses  Evicts
+     3 (1,1,1)       9       8       6       9       8       6  traces/yi2.trace 
+     3 (4,2,4)       4       5       2       4       5       2  traces/yi.trace  
+     3 (2,1,4)       2       3       1       2       3       1  traces/dave.trace
+     3 (2,1,3)     167      71      67     167      71      67  traces/trans.trace
+     0 (2,2,3)     175      63      55     201      37      29  traces/trans.trace
+     0 (2,4,3)     205      33      17     212      26      10  traces/trans.trace
+     3 (5,1,5)     231       7       0     231       7       0  traces/trans.trace
+     6 (5,1,5)  265189   21775   21743  265189   21775   21743  traces/long.trace 
+    21
 
 Reference:
 - [CS:APP Cache Lab 解題筆記](https://hackmd.io/@Chang-Chia-Chi/rkRCq_vbY)
@@ -7,7 +19,10 @@ Reference:
 
 Commands: 
 make csim
-./csim -s 4 -E 1 -b 4 -t traces/yi.trace
+./csim -v -s 4 -E 1 -b 4 -t traces/yi.trace
+
+/test-csim
+
 
 Example:
 linux> ./csim-ref -s 4 -E 1 -b 4 -t traces/yi.trace
@@ -463,7 +478,7 @@ void run_cache_simulator(CacheParams cache_params){
         How to Fix It
         You should compare the char variable operation with a character literal ('I'), not a string literal ("I").
         */
-        if(operation =='I'){break;} 
+        if(operation =='I'){continue;} 
         else if(operation=='L'){
             /*
             1. cache lookup
