@@ -1,7 +1,8 @@
 #include "stdio.h"
 
 /*
-In C, the scanf function is used to read formatted input from the standard input (typically the keyboard). 
+In C, the scanf function is used to read formatted input from the standard input (stdin , typically the keyboard). 
+It reads characters and stores them into variables according to specified format specifiers (like %d, %s, etc.)
 It allows you to read various types of data such as integers, floating-point numbers, characters, strings, etc.
 
 int scanf(const char *format, ...);
@@ -19,6 +20,28 @@ Return Value of scanf:
 
     If scanf reaches the end of input before any successful conversion, it will return EOF (End Of File)
 
+Key Characteristics of scanf:
+- It stops reading on encountering whitespace (space, newline, or tab) unless instructed otherwise.
+- It can handle formatted input, like integers, floating points, and strings.
+- It doesn’t provide a way to specify a maximum buffer size for strings, making it prone to buffer overflow.
+- Suitable for simple input parsing when you know the exact format.
+
+Limitations:
+- No Buffer Size Control: scanf doesn't protect against buffer overflows when reading strings.
+- Stops at Whitespace: If you input a string with spaces (e.g., "Hello World"), scanf("%s", name) will only capture "Hello" (it stops at spaces).
+
+fgets
+fgets reads a line of input from a file or standard input (stdin) until it encounters a newline character or reaches the specified buffer limit.
+
+Key Characteristics of fgets:
+- It reads the entire line (including spaces) until a newline character (\n) or the specified buffer size is reached.
+- You can specify the maximum number of characters to read, preventing buffer overflows.
+- After reading, fgets includes the newline character at the end (unless it reaches the buffer limit), which you may need to strip.
+- More robust for reading strings and lines of text with spaces or special characters.
+
+Limitations:
+- Includes Newline Character: fgets stores the newline character in the buffer if the input fits. You may need to remove it manually if you don’t want it.
+- No Format Handling: Unlike scanf, fgets doesn’t support formatted input (like reading integers or floats). You’ll need to use additional functions like sscanf to process the input after reading it.
 
 */
 

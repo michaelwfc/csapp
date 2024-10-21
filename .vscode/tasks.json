@@ -1,6 +1,21 @@
 {
   "tasks": [
     {
+      "label": "Build with gcc shellex",
+      "type": "shell",
+      "command": "/usr/bin/gcc",
+      "args": [ "-g",  "shellex.c",  "csapp.c","-o",  "shellex"],
+      "options": {
+        "cwd": "D:\\projects\\csapp\\code_examples\\15-ecf-signals\\",
+      },
+      "group": {
+          "kind": "build",
+          "isDefault": true
+      },
+      "problemMatcher": []
+  },
+
+    {
       "label": "Build with make csim",
       "type": "shell",
       "command": "make",

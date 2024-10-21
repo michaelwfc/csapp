@@ -18,6 +18,43 @@
 /* $begin csapp.c */
 #include "csapp.h"
 
+
+
+/*
+    https://github.com/microsoft/vscode-cpptools/issues/1772
+    use freopen to Redirecting stdin to read from a file, stdin is redirected to read from input.txt. Any input operations that would normally come from the keyboard will now read from the file.
+
+    freopen("input.txt", "r", stdin);
+    // code who read from stdin piped from in.txt
+    fclose(stdin);
+
+    filename: The name of the file to open.
+    mode: The file mode (same as in fopen(), e.g., "r", "w", "a", etc.).
+    stream: The existing stream that you want to redirect.
+*/
+
+FILE *Freopen(char *ptr,int n,  FILE *stream, const char *filename, char mode){
+
+    // Redirect stdin to read from a file instead of the keyboard
+    FILE *rptr;
+    
+    // check if freopen() succeeds by checking its return value:
+    if((rptr=freopen(filename, &mode, stream))==NULL){
+        app_error("Freopen error");
+    }
+     // Reading from the file
+    fgets(ptr, n, stdin);
+    
+    // Output the content read from file
+    printf("Redict stdin to file: %s, then read from file, the chars len=%ld\n", filename,strlen(ptr));
+
+    // Close the file
+    fclose(stdin);
+
+    return rptr;
+}
+
+
 /************************** 
  * Error-handling functions
  **************************/
