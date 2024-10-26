@@ -22,6 +22,8 @@
 
 /*
     https://github.com/microsoft/vscode-cpptools/issues/1772
+    
+    Redirect stdin to read from a file instead of the keyboard
     use freopen to Redirecting stdin to read from a file, stdin is redirected to read from input.txt. Any input operations that would normally come from the keyboard will now read from the file.
 
     freopen("input.txt", "r", stdin);
@@ -33,20 +35,19 @@
     stream: The existing stream that you want to redirect.
 */
 
-FILE *Freopen(char *ptr,int n,  FILE *stream, const char *filename, char mode){
-
-    // Redirect stdin to read from a file instead of the keyboard
+FILE *Freopen(char *ptr,int n,  FILE *stream, const char *filename, char mode){ 
     FILE *rptr;
-    
+    char *cptr;
     // check if freopen() succeeds by checking its return value:
     if((rptr=freopen(filename, &mode, stream))==NULL){
         app_error("Freopen error");
     }
      // Reading from the file
-    fgets(ptr, n, stdin);
+    if((cptr=fgets(ptr, n, stdin))==NULL)
+        app_error("Freopen error");
     
     // Output the content read from file
-    printf("Redict stdin to file: %s, then read from file, the chars len=%ld\n", filename,strlen(ptr));
+    printf("Redict stdin to file: %s,  then read from file, read_sucessed=%c, the chars len=%ld\n", filename,*cptr,strlen(ptr));
 
     // Close the file
     fclose(stdin);

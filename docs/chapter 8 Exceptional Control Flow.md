@@ -127,11 +127,12 @@ int main()
 
 ## 8.2 Processes 
 
-Process: 
+### Process: 
 
 The classic definition of a process is an instance of a program in execution.
 
-Context:
+
+#### Context:
 
 Each program in the system runs in the context of some process. The context consists of the state that the program needs to run correctly. This state includes
 
@@ -182,7 +183,7 @@ pid_t getppid(void);
 
 ### 8.4.2 Creating and Terminating Processes
 
-#### a process as being in one of three states:
+#### Process  three states:
 
 - Running
   The process is either executing on the CPU or waiting to be executed and will eventually be scheduled by the kernel.
@@ -201,7 +202,9 @@ A process stops as a result of receiving a SIGSTOP, SIGTSTP, SIGTTIN, or SIGTTOU
 ```C
 #include <stdlib.h>
 void exit(int status);
-<!-- This function does not return -->
+// This function does not return
+// The exit function terminates the process with an exit status of status. (The other
+// way to set the exit status is to return an integer value from the main routine.)
 ```
 
 
@@ -217,7 +220,7 @@ called once but it returns twice:
 
 - once in the newly created child process.  
   In the child,fork returns a value of 0.
-  Since the PID of the child is always nonzero, the return value provides an nambiguous way to tell whether the program is executing in the parent or the child.
+  Since the PID of the child is always nonzero, the return value provides an unambiguous way to tell whether the program is executing in the parent or the child.
 
 
 ```C
@@ -229,6 +232,17 @@ pid_t fork(void);
 ```
 
 ### 8.4.3 Reaping Child Processes(回收子进程)
+
+#### Zombie Process
+
+A terminated process that has not yet been reaped is called a zombie.
+Even though zombies are not running, they still consume system memory resources.
+
+When a process terminates for any reason, the kernel does not remove it from the system immediately. 
+Instead, the process is kept around in a terminated state until it is reaped by its parent. 
+When the parent reaps the terminated child, the kernel passes the child’s exit status to the parent and then discards the terminated process, at which point it ceases to exist. 
+
+#### waitpid & wait
 
 ```C
 #include <sys/types.h>
@@ -252,6 +266,7 @@ If the statusp argument is non-NULL, then waitpid encodes status information
 about the child that caused the return in status, which is the value pointed to
 by statusp. The wait.h include file defines several macros for interpreting the
 status argument:
+
 - WIFEXITED(status). Returns true if the child terminated normally, via a call to exit or a return.
 - WEXITSTATUS(status). Returns the exit status of a normally terminated child. This status is only defined if WIFEXITED() returned true.
 - WIFSIGNALED(status). Returns true if the child process terminated because of a signal that was not caught.
@@ -296,8 +311,7 @@ int main()
 
 ### 8.4.4 Putting Processes to Sleep
 
-### 8.4.5 Loading and Running Programs
-
+#### sleep
 
 ```C
 #include <unistd.h>
@@ -311,8 +325,14 @@ unsigned int sleep(unsigned int secs);
 #include <unistd.h>
 int pause(void);
 // Always returns −1
+```
 
 
+### 8.4.5 Loading and Running Programs
+
+#### execve
+
+```C
 // The execve function loads and runs a new program in the context of the current process.
 #include <unistd.h>
 int execve(const char *filename, const char *argv[],
@@ -345,12 +365,17 @@ void unsetenv(const char *name);
 // Returns: nothing
 
 ```
+
+
 ### 8.4.6 Using fork and execve to Run Programs
 
 Programs such as Unix shells and Web servers make heavy use of the fork and execve functions. 
 
+#### Shell
+
 A shell is an interactive application-level program that runs other programs on behalf of the user. 
-The original shell was the sh program, which was followed by variants such as csh, tcsh, ksh, and bash.Ashell performs a sequence of read/evaluate steps and then terminates. 
+The original shell was the sh program, which was followed by variants such as csh, tcsh, ksh, and bash.
+A shell performs a sequence of read/evaluate steps and then terminates. 
 
 - The read step reads a command line from the user. 
 - The evaluate step parses the command line and runs programs on behalf of the user.
@@ -358,19 +383,130 @@ The original shell was the sh program, which was followed by variants such as cs
 ## 8.5 Signals 
 
 signal is a small message that notifies a process that an event of some type has occurred in the system. 
+
+
+#### 30 different types of signals on Linux systems
+
 Figure 8.26 shows the 30 different types of signals that are supported on Linux systems.
 
-Each signal type corresponds to some kind of system event. Low-level hardware exceptions are processed by the kernel’s exception handlers and would not normally be visible to user processes. Signals provide a mechanism for exposing the occurrence of such exceptions to user processes
+Each signal type corresponds to some kind of system event. 
+Low-level hardware exceptions are processed by the kernel’s exception handlers and would not normally be visible to user processes.
+Signals provide a mechanism for exposing the occurrence of such exceptions to user processes
 
+
+|Number  |Name      |Default action              |Corresponding event|
+|--------|----------|----------------------------|-------------------------------------------------|
+|1       |SIGHUP    |Terminate                   |Terminal line hangup|
+|2       |SIGINT    |Terminate                   |Interrupt from keyboard|
+|3       |SIGQUIT   |Terminate                   |Quit from keyboard|
+|4       |SIGILL    |Terminate                   |Illegal instruction|
+|5       |SIGTRAP   |Terminate and dump core a   |Trace trap|
+|6       |SIGABRT   |Terminate and dump core a   |Abort signal from abort function|
+|7       |SIGBUS    |Terminate                   |Bus error|
+|8       |SIGFPE    |Terminate and dump core a   |Floating-point exception|
+|9       |SIGKILL   |Terminate  b                |Kill program|
+|10      |SIGUSR1   |Terminate                   |User-defined signal 1|
+|11      |SIGSEGV   |Terminate and dump core a   |Invalid memory reference (seg fault)|
+|12      |SIGUSR2   |Terminate                   |User-defined signal 2|
+|13      |SIGPIPE   |Terminate                   |Wrote to a pipe with no reader|
+|14      |SIGALRM   |Terminate                   |Timer signal from alarm function|
+|15      |SIGTERM   |Terminate                   |Software termination signal|
+|16      |SIGSTKFLT |Terminate                   |Stack fault on coprocessor|
+|17      |SIGCHLD   |Ignore                      |A child process has stopped or terminated|
+|18      |SIGCONT   |Ignore                      |Continue process if stopped|
+|19      |SIGSTOP   |Stop until next SIGCONTb    |Stop signal not from terminal|
+|20      |SIGTSTP   |Stop until next SIGCONT     |Stop signal from terminal|
+|21      |SIGTTIN   |Stop until next SIGCONT     |Background process read from terminal|
+|22      |SIGTTOU   |Stop until next SIGCONT     |Background process wrote to terminal|
+|23      |SIGURG    |Ignore                      |Urgent condition on socket|
+|24      |SIGXCPU   |Terminate                   |CPU time limit exceeded|
+|25      |SIGXFSZ   |Terminate                   |File size limit exceeded|
+|26      |SIGVTALRM |Terminate                   |Virtual timer expired|
+|27      |SIGPROF   |Terminate                   |Profiling timer expired|
+|28      |SIGWINCH  |Ignore                      |Window size changed|
+|29      |SIGIO     |Terminate                   |I/O now possible on a descriptor|
+|30      |SIGPWR    |Terminate                   |Power failure|
+
+Figure 8.26 Linux signals. Notes: (a) Years ago, main memory was implemented with a technology known
+as core memory. “Dumping core” is a historical term that means writing an image of the code and data
+memory segments to disk. (b) This signal can be neither caught nor ignored. (Source: man 7 signal. Data
+from the Linux Foundation.)
+
+### 8.5.1 Signal Terminology
+
+The transfer of a signal to a destination process occurs in two distinct steps:
+
+- Sending a signal. 
+  The kernel sends (delivers) a signal to a destination process by updating some state in the context of the destination process. The signal is delivered for one of two reasons: 
+  (1) The kernel has detected a system event such as a divide-by-zero error or the termination of a child process.
+  (2)Aprocess has invoked the kill function (discussed in the next section) to explicitly request the kernel to send a signal to the destination process.
+A process can send a signal to itself.
+
+- Receiving a signal. 
+  A destination process receives a signal when it is forced by the kernel to react in some way to the delivery of the signal. The process can either ignore the signal, terminate, or catch the signal by executing a user-level function called a signal handler. 
+  
+  
+  Figure 8.27 shows the basic idea of a handler catching a signal.
+
+
+#### Signal States 
+
+- Pending signal & the pending bit vector: 
+A signal that has been sent but not yet received is called a pending signal. 
+At any point in time, there can be at most one pending signal of a particular type. 
+If a process has a pending signal of type k, then any subsequent signals of type k sent to that process are not queued; they are simply ***discarded***. 
+
+A pending signal is received at most once. 
+For each process, the kernel maintains the set of pending signals in the pending bit vector and the set of blocked
+signals in the blocked bit vector.
+
+Blocked signal  & the blocked bit vector:
+A process can selectively block the receipt of certain signals.When a signal is blocked, it can be delivered, but the resulting pending signal will not be received until the process unblocks the signal.
 
 ### 8.5.2 Sending Signals
 
+#### Process Groups
+
+Every process belongs to exactly one process group, which is identified by a positive integer process group ID.
+
+```C
+#include <unistd.h>
+pid_t getpgrp(void);
+// Returns: process group ID of calling process
+
+// By default, a child process belongs to the same process group as its parent. A
+// process can change the process group of itself or another process by using the
+// setpgid function:
+
+#include <unistd.h>
+int setpgid(pid_t pid, pid_t pgid);
+// Returns: 0 on success, −1 on error
+// The setpgid function changes the process group of process pid to pgid. 
+// - If pid is zero, the PID of the current process is used. 
+// - If pgid is zero, the PID of the process specified by pid is used for the process group ID
+```
+
 #### Sending Signals with the /bin/kill Program
 
+The /bin/kill program sends an arbitrary signal to another process.
+
 ```shell
-kill -9 15123
+# sends signal 9 (SIGKILL) to process 15213.
+/bin/kill -9 15123
 # kill the pids in group 15123
-kill -9 -15123
+/bin/kill  -9 -15123
+```
+
+
+```C
+#include <sys/types.h>
+#include <signal.h>
+// Processes send signals to other processes (including themselves) by calling the kill function.
+int kill(pid_t pid, int sig);
+// Returns: 0 if OK, −1 on error
+// - If pid is greater than zero, then the kill function sends signal number sig to process pid. 
+// - If pid is equal to zero, then kill sends signal sig to every process in the process group of the calling process, including the calling process itself.
+// - If pid is less than zero, then kill sends signal sig to every process in process group |pid| (the absolute value of pid).
 
 ```
 
@@ -380,7 +516,100 @@ kill -9 -15123
 ls|sort
 ```
 
+- Ctrl+C at the keyboard 
+   causes the kernel to send a SIGINT signal to every process in the foreground process group. 
+   In the default case, the result is to terminate the foreground job. 
+- Ctrl+Z 
+  causes the kernel to send a SIGTSTP signal to every process in the foreground process group. 
+  In the default case, the result is to stop (suspend) the foreground job.
+
+
+
+
 ### 8.5.3 Receiving Signals
+
+```C
+#include <signal.h>
+typedef void (*sighandler_t)(int);
+sighandler_t signal(int signum, sighandler_t handler);
+// Returns: pointer to previous handler if OK, SIG_ERR on error (does not set errno)
+
+```
+
+The signal function can change the action associated with a signal signum in one of three ways:
+
+- If handler is SIG_IGN, then signals of type signum are ignored.
+- If handler is SIG_DFL, then the action for signals of type signum reverts to
+the default action.
+- Otherwise, handler is the address of a user-defined function, called a signal handler, that will be called whenever the process receives a signal of type signum. 
+  Changing the default action by passing the address of a handler to the signal function is known as installing the handler. The invocation of the handler is called catching the signal. The execution of the handler is referred to as handling the signal.
+
+
+### 8.5.4 Blocking and Unblocking Signals
+
+
+Linux provides implicit and explicit mechanisms for blocking signals:
+
+- Implicit blocking mechanism
+  By default, the kernel blocks any pending signals of the type currently being processed by a handler. 
+  For example, in Figure 8.31, suppose the program has caught signal s and is currently running handler S. If another signal s is sent to the process, then s will become pending but will not be received until after handler S returns.
+- Explicit blocking mechanism
+  Applications can explicitly block and unblock selected signals using the sigprocmask function and its helpers.
+
+// The sigprocmask function changes the set of currently blocked signals (the blocked bit vector described in Section 8.5.1).
+
+- SIG_BLOCK. Add the signals in set to blocked (blocked = blocked | set).
+- SIG_UNBLOCK. Remove the signals in set from blocked (blocked =
+blocked & ~set).
+- SIG_SETMASK. blocked = set.
+
+
+```C
+
+
+#include <signal.h>
+int sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
+
+// The sigemptyset initializes set to the empty set.
+int sigemptyset(sigset_t *set);
+
+// The sigfillset function adds every signal to set.
+int sigfillset(sigset_t *set);
+
+// The sigaddset function adds signum to set
+int sigaddset(sigset_t *set, int signum);
+
+// sigdelset deletes signum from set
+int sigdelset(sigset_t *set, int signum);
+// Returns: 0 if OK, −1 on error
+
+// sigismember returns 1 if signum is a member of set, and 0 if not.
+int sigismember(const sigset_t *set, int signum);
+// Returns: 1 if member, 0 if not, −1 on error
+
+```
+
+### 8.5.5 Writing Signal Handlers
+
+Handlers have several attributes that make them difficult to reason about: 
+(1) Handlers run concurrently with the main program and share the same global variables, and thus can interfere with the main program and with other handlers. 
+(2) The rules for how and when signals are received is often counterintuitive. 
+(3) Different systems can have different signal-handling semantics.
+
+
+
+#### Safe Signal Handling
+
+
+#### Correct Signal Handling
+
+The crucial lesson is that signals cannot be used to count the occurrence of events in other processes
+
+
+#### Portable Signal Handling
+
+### 8.5.7 Explicitly Waiting for Signals
+
 
 ## 8.6 Nonlocal Jumps 
 
