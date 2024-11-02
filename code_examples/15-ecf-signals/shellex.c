@@ -29,7 +29,6 @@ int main()
 
         /* Evaluate */
         eval(cmdline);
-        n++;
     }
 }
 /* $end shellmain */
@@ -80,7 +79,6 @@ void eval(char *cmdline)
             int status;
             if (waitpid(pid, &status, 0) < 0)
                 unix_error("waitfg: waitpid error");
-            printf("%d %s", pid, cmdline);
         }
         else
             printf("%d %s", pid, cmdline);

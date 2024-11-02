@@ -33,6 +33,11 @@
     filename: The name of the file to open.
     mode: The file mode (same as in fopen(), e.g., "r", "w", "a", etc.).
     stream: The existing stream that you want to redirect.
+
+
+    file descriptors are low-level, unbuffered I/O handles
+    C also provides FILE * streams (via fopen, fread, etc.) for buffered I/O, making them more suited for general-purpose file handling. 
+
 */
 
 FILE *Freopen(char *ptr,int n,  FILE *stream, const char *filename, char mode){ 
@@ -104,7 +109,7 @@ pid_t Fork(void)
     pid_t pid;
 
     if ((pid = fork()) < 0)
-	unix_error("Fork error");
+	    unix_error("Fork error");
     return pid;
 }
 /* $end forkwrapper */

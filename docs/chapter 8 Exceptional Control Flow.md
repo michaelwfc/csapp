@@ -1,21 +1,56 @@
 # Chapter 8: Exceptional Control Flow
 
-### control flow
+### Control flow
+
+#### React to program state & system state 
+React to changes in program state, two mechanisms for changing control flow:
+
+- Jumps and branches
+- Call and return
+
+
+React to changes in system state 
+
+- Data arrives from a disk or a network adapter
+- Instruction divides by zero
+- User hits Ctrl-C at the keyboard
+- System timer expires
+
+
 
 ### Exceptional Control Flow (ECF)
+
+Exists at all levels of a computer system
+
+#### Low level mechanisms
+
+1. Exceptions 
+Change in control flow in response to a system event(i.e.,  change in system state)
+Implemented using combination of hardware and OS software	
+
+#### Higher level mechanisms
+
+2. Process context switch
+Implemented by OS software and hardware timer
+
+2. Signals
+Implemented by OS software 
+
+3. Nonlocal jumps: setjmp() and longjmp()
+Implemented by C runtime library
 
 
 
 ## 8.1 Exceptions 
 
 An exception is a transfer of control to the OS kernel in response to some event  (i.e., change in processor state)
-Kernel is the memory-resident part of the OS(操作系统的常驻内存部分)
+  
+- Kernel is the memory-resident part of the OS(操作系统的常驻内存部分)
+- Examples of events: Divide by 0, arithmetic overflow, page fault, I/O request completes, typing Ctrl-C
 
-Examples of events: Divide by 0, arithmetic overflow, page fault, I/O request completes, typing Ctrl-C
 
 
-
-exception -> exception table -> exception handler
+Exception -> Exception table -> Exception handler
 
 In any case, when the processor detects that the event has occurred, it makes an indirect procedure call (the exception), through a jump table called an exception table, to an operating system subroutine (the exception handler) that is specifically designed to process this particular kind of event. When the exception handler finishes processing, one of three things happens, depending on the type of event that caused the exception:
 
@@ -32,6 +67,43 @@ In any case, when the processor detects that the event has occurred, it makes an
 |Fault     | Potentially recoverable error |Sync          | Might return to current instruction|
 |Abort     | Nonrecoverable error          |Sync          |Never returns|
 
+#### Asynchronous Exceptions (Interrupts)
+
+Caused by events external to the processor
+Indicated by setting the processor’s interrupt pin
+Handler returns to “next” instruction
+
+Examples:
+- Timer interrupt： 
+  比如 51MCU and stm32 中的定时时钟
+Every few ms, an external timer chip triggers an interrupt
+Used by the kernel to take back control from user programs
+
+- I/O interrupt from external device： 
+    Hitting Ctrl-C at the keyboard
+    Arrival of a packet from a network
+    Arrival of data from a disk
+
+#### Synchronous Exceptions
+
+Caused by events that occur as a result of executing an instruction:
+
+- Traps
+Intentional
+Examples: system calls, breakpoint traps, special instructions
+Returns control to “next” instruction
+
+- Faults
+Unintentional but possibly recoverable 
+Examples: page faults (recoverable), protection faults (unrecoverable), floating point exceptions
+Either re-executes faulting (“current”) instruction or aborts
+
+- Aborts
+Unintentional and unrecoverable
+Examples: illegal instruction, parity error, machine check
+Aborts current program
+
+
 #### Traps and System Calls
 
 The most important use of traps is to provide a procedure-like interface between user programs and the kernel, known as a system call.
@@ -41,17 +113,6 @@ run in user mode, which restricts the types of instructions they can execute, an
 they access the same stack as the calling function. 
 - system call 
   runs in kernel mode, which allows it to execute privileged instructions and access a stack defined in the kernel.
-
-
-##### system-level functions
-
-The C standard library provides a set of convenient wrapper functions for most system calls. The wrapper functions
-package up the arguments, trap to the kernel with the appropriate system call
-instruction, and then pass the return status of the system call back to the calling
-program. Throughout this text, we will refer to system calls and their associated
-wrapper functions interchangeably as system-level functions.
-
-
 
 
 ### 8.1.3 Exceptions in Linux/x86-64 Systems
@@ -124,6 +185,11 @@ int main()
 
 ```
 
+#### System-level functions
+
+The C standard library provides a set of convenient wrapper functions for most system calls. 
+The wrapper functions package up the arguments, trap to the kernel with the appropriate system call instruction, and then pass the return status of the system call back to the calling program. 
+Throughout this text, we will refer to system calls and their associated wrapper functions interchangeably as system-level functions.
 
 ## 8.2 Processes 
 
@@ -131,10 +197,68 @@ int main()
 
 The classic definition of a process is an instance of a program in execution.
 
+- One of the most profound ideas in computer science
+- Not the same as “program” or “processor”
 
-#### Context:
 
-Each program in the system runs in the context of some process. The context consists of the state that the program needs to run correctly. This state includes
+Process provides each program with two key abstractions:
+
+- Logical control flow
+Each program seems to have exclusive use of the CPU
+Provided by kernel mechanism called context switching
+- Private address space
+Each program seems to have exclusive use of main memory. 
+Provided by kernel mechanism called virtual memory
+
+
+
+
+
+#### Multiprocessing: The (Traditional) Reality
+
+Single processor executes multiple processes concurrently
+- Process executions interleaved (multitasking) 
+- Address spaces managed by virtual memory system (later in course)
+- Register values for nonexecuting processes saved in memory
+
+- Save current registers in memory
+
+- Schedule next process for execution
+
+- Load saved registers and switch address space (context switch)
+
+#### Multiprocessing: The (Modern) Reality
+
+Multiple CPUs on single chip
+- Share main memory (and some of the caches)
+- Each can execute a separate process
+- Scheduling of processors onto cores done by kernel
+
+#### Concurrent Processes
+
+- Each process is a logical control flow. 
+- Two processes run concurrently (are concurrent) if their flows overlap in time
+- Otherwise, they are sequential
+
+
+#### Kernel
+
+Processes are managed by a shared chunk of memory-resident OS code called the kernel
+Important: the kernel is not a separate process, but rather runs as part of some existing process.
+Each program in the system runs in the context of some process. 
+
+#### Context Switching:
+
+Control flow passes from one process to another via a context switch
+
+
+
+
+
+
+The context consists of the state that the program needs to run correctly. 
+
+This state includes
 
 - the program’s code and data stored in memory
 - its program counter
@@ -146,7 +270,7 @@ Each program in the system runs in the context of some process. The context cons
 - various kernel data structures
 - environment variables
 - the set of open file descriptors.
-
+  
 
 ```bash
 # 内核相关的数据结构
@@ -159,11 +283,42 @@ cat cpuinfo
 
 ## 8.3 System Call Error Handling 
 
+### errno
+
+When Unix system-level functions encounter an error, they typically return −1 and set the global integer variable errno to indicate what went wrong. 
+Programmers should always check for errors, but unfortunately, many skip error checking because it bloats the code and makes it harder to read.
+
+### Hard and fast rule: 
+
+You must check the return status of every system-level function
+Only exception is the handful of functions that return void
+
+
 ```C
+// check for errors when we call the Linux fork function
+if ((pid = fork()) < 0) {
+    fprintf(stderr, "fork error: %s\n", strerror(errno));
+    exit(0);
+}
+
+// build error-reporting function
 void unix_error(char *msg) /* Unix-style error */
-{
+{   
+    // The strerror function translates errno code into a descriptive string, returns a text string that describes the error associated with a particular value of errno
+    // fprintf(stderr, ...): Commonly used to log errors to stderr instead of stdout, helping users and developers distinguish between regular output and error messages.
     fprintf(stderr, "%s: %s\n", msg, strerror(errno));
     exit(0);
+}
+
+
+/* build a forkwrapper */
+pid_t Fork(void) 
+{
+    pid_t pid;
+
+    if ((pid = fork()) < 0)
+	    unix_error("Fork error");
+    return pid;
 }
 
 ```
@@ -175,30 +330,43 @@ void unix_error(char *msg) /* Unix-style error */
 ```C
 #include <sys/types.h>
 #include <unistd.h>
+// Returns PID of current process
 pid_t getpid(void);
+
+// Returns PID of parent process
 pid_t getppid(void);
-// Returns: PID of either the caller or the parent
+
 
 ```
 
 ### 8.4.2 Creating and Terminating Processes
 
-#### Process  three states:
+From a programmer’s perspective, we can think of a process as being in one of three states
+
+#### Process three states:
 
 - Running
   The process is either executing on the CPU or waiting to be executed and will eventually be scheduled by the kernel.
 - Stopped
   The execution of the process is suspended and will not be scheduled.
-A process stops as a result of receiving a SIGSTOP, SIGTSTP, SIGTTIN, or SIGTTOUsignal, and it remains stopped until it receives a SIGCONT signal, at which point it becomes running again. (A signal is a form of software interrupt that we will describe in detail in Section 8.5.)
-- Terminated. 
-  The process is stopped permanently. A process becomes terminated for one of three reasons: 
-    (1) receiving a signal whose default action is to terminate the process,
-    (2) returning from the main routine
-    (3) calling the exit function.
+A process stops as a result of receiving a SIGSTOP, SIGTSTP, SIGTTIN, or SIGTTOU signal, and it remains stopped until it receives a SIGCONT signal, at which point it becomes running again. (A signal is a form of software interrupt that we will describe in detail in Section 8.5.)
+- Terminated
+  The process is stopped permanently. 
+  
+#### Terminating Processes
 
-    The exit function terminates the process with an exit status of status. 
-    (The other way to set the exit status is to return an integer value from the main routine.)
+A process becomes terminated for one of three reasons: 
+(1) receiving a signal whose ***default action is to terminate*** the process,
+(2) returning from the ***main*** routine
+(3) calling the ***exit*** function.
 
+##### void exit(int status)
+
+- The exit function terminates the process with an exit status of ***status***.
+- Convention: normal return status is 0, nonzero on error
+- Another way to explicitly set the exit status is to return an integer value from the main routine
+ - exit is called ***once*** but ***never*** returns.
+ 
 ```C
 #include <stdlib.h>
 void exit(int status);
@@ -207,13 +375,15 @@ void exit(int status);
 // way to set the exit status is to return an integer value from the main routine.)
 ```
 
+#### Creating Processes
 
+Parent process creates a new running child process by calling fork
 
-#### fork 
+##### fork 
 
 A parent process creates a new running child process by calling the fork function.
 
-called once but it returns twice: 
+called ***once*** but it returns ***twice***: 
 
 - once in the calling process (the parent)
   In the parent, fork returns the PID of the child. 
@@ -221,6 +391,14 @@ called once but it returns twice:
 - once in the newly created child process.  
   In the child,fork returns a value of 0.
   Since the PID of the child is always nonzero, the return value provides an unambiguous way to tell whether the program is executing in the parent or the child.
+
+- Child is almost identical to parent:
+Child get an identical (but separate) copy of the parent’s virtual address space.
+Child gets identical copies of the parent’s open file descriptors
+Child has a different PID than the parent
+
+- Concurrent execution
+Can’t predict execution order of parent and child
 
 
 ```C
@@ -233,6 +411,12 @@ pid_t fork(void);
 
 ### 8.4.3 Reaping Child Processes(回收子进程)
 
+#### Idea
+
+When process terminates, it still consumes system resources
+Examples: Exit status, various OS tables
+Called a “zombie”: Living corpse, half alive and half dead
+
 #### Zombie Process
 
 A terminated process that has not yet been reaped is called a zombie.
@@ -242,7 +426,28 @@ When a process terminates for any reason, the kernel does not remove it from the
 Instead, the process is kept around in a terminated state until it is reaped by its parent. 
 When the parent reaps the terminated child, the kernel passes the child’s exit status to the parent and then discards the terminated process, at which point it ceases to exist. 
 
+#### Reaping 
+
+Performed by parent on terminated child (using wait or waitpid)
+Parent is given exit status information
+Kernel then deletes zombie child process
+
 #### waitpid & wait
+
+wait
+
+- Suspends current process until one of its children terminates
+- Return value is the pid of the child process that terminated
+- If child_status != NULL, then the integer it points to will be set to  a value that indicates reason the child terminated and the exit status:
+- If multiple children completed, will take in arbitrary order
+- Can use macros WIFEXITED and WEXITSTATUS to get information about exit status
+
+waitpid
+pid_t waitpid(pid_t pid, int &status, int options)
+
+- Suspends current process until specific process terminates
+- Various options (see textbook)
+
 
 ```C
 #include <sys/types.h>
@@ -257,23 +462,40 @@ pid_t wait(int *statusp);
 // Returns: PID of child if OK or −1 on error
 
 
+
 ```
 
 
 #### Checking the Exit Status of a Reaped Child
 
+
+
 If the statusp argument is non-NULL, then waitpid encodes status information
 about the child that caused the return in status, which is the value pointed to
-by statusp. The wait.h include file defines several macros for interpreting the
+by statusp. 
+The wait.h include file defines several macros for interpreting the
 status argument:
 
-- WIFEXITED(status). Returns true if the child terminated normally, via a call to exit or a return.
-- WEXITSTATUS(status). Returns the exit status of a normally terminated child. This status is only defined if WIFEXITED() returned true.
-- WIFSIGNALED(status). Returns true if the child process terminated because of a signal that was not caught.
-- WTERMSIG(status). Returns the number of the signal that caused the child process to terminate. This status is only defined if  - WIFSIGNALED() returned true.
-- WIFSTOPPED(status). Returns true if the child that caused the return is currently stopped.
-- WSTOPSIG(status). Returns the number of the signal that caused the child to stop. This status is only defined if WIFSTOPPED() returned - true.
-- WIFCONTINUED(status). Returns true if the child process was restarted by receipt of a SIGCONT signal.
+- WIFEXITED(status)
+  Returns true if the child terminated normally, via a call to exit or a return.
+- WEXITSTATUS(status). 
+  Returns the exit status of a normally terminated child. This status is only defined if WIFEXITED() returned true.
+- WIFSIGNALED(status). 
+  Returns true if the child process terminated because of a signal that was not caught.
+- WTERMSIG(status). 
+  Returns the number of the signal that caused the child process to terminate. This status is only defined if  - WIFSIGNALED() returned true.
+- WIFSTOPPED(status)
+  Returns true if the child that caused the return is currently stopped.
+- WSTOPSIG(status)
+  Returns the number of the signal that caused the child to stop. This status is only defined if WIFSTOPPED() returned - true.
+- WIFCONTINUED(status). 
+  Returns true if the child process was restarted by receipt of a SIGCONT signal.
+
+
+#### Error Conditions
+
+If the calling process has no children, then waitpid returns −1 and sets errno to ECHILD. 
+If the waitpid function was interrupted by a signal, then it returns −1 and sets errno to EINTR.
 
 ```C
 #include "csapp.h"
@@ -307,6 +529,11 @@ int main()
 }
 ```
 
+#### What if parent doesn’t reap?
+
+If any parent terminates without reaping a child, then the orphaned child will be reaped by init process (pid == 1)
+So, only need explicit reaping in long-running processes
+e.g., shells and servers
 
 
 ### 8.4.4 Putting Processes to Sleep
@@ -332,8 +559,49 @@ int pause(void);
 
 #### execve
 
+loads and runs a new program in the context of the current process
+
+- Executable  file filename
+  Can be object file or script file beginning with #!interpreter  (e.g., #!/bin/bash)
+
+- with argument list argv
+    By convention argv[0]==filename
+- environment variable list envp
+    “name=value” strings (e.g., USER=droh)
+    getenv, putenv, printenv
+
+Overwrites code, data, and stack
+    Retains PID, open files and signal context
+Called once and never returns
+    …except if there is an error
+
+
+#####  #! shebang
+
+The #! sequence at the beginning of a script file is called a shebang. It specifies the path to the interpreter that should execute the script, making it clear which program is responsible for running the script's commands. Here’s how it works:
+
+```bash
+#!/path/to/interpreter
+
+# For example:
+#!/bin/bash — runs the script using the Bash shell.
+#!/usr/bin/python3 — runs the script with Python 3.
+
+# in script.py
+#!/usr/bin/python3
+print("Hello, World!")
+
+# If this file has execute permissions, you can run it directly:
+./script.py
+Hello, World!
+
+# Without the shebang, you’d have to specify the interpreter manually:
+python3 script.py
+```
+
+
 ```C
-// The execve function loads and runs a new program in the context of the current process.
+// 
 #include <unistd.h>
 int execve(const char *filename, const char *argv[],
 const char *envp[]);
@@ -366,6 +634,17 @@ void unsetenv(const char *name);
 
 ```
 
+Example: Executes “/bin/ls –lt /usr/include” in child process 
+```C
+  if ((pid = Fork()) == 0) {   /* Child runs program */                                               
+      if (execve(myargv[0], myargv, environ) < 0) {                                                        
+          printf("%s: Command not found.\n", myargv0]);                                                 
+          exit(1);                                                                                     
+      }                                                                                                
+  }                                                                              
+```
+
+
 
 ### 8.4.6 Using fork and execve to Run Programs
 
@@ -382,7 +661,92 @@ A shell performs a sequence of read/evaluate steps and then terminates.
 
 ## 8.5 Signals 
 
-signal is a small message that notifies a process that an event of some type has occurred in the system. 
+### Shell Programs
+
+A shell is an application program that runs programs on behalf of the user.
+- sh 		Original Unix shell (Stephen Bourne, AT&T Bell Labs, 1977)
+- csh/tcsh 	BSD Unix C shell
+- bash 		“Bourne-Again” Shell (default Linux shell)
+
+```C
+int main()
+{
+    char cmdline[MAXLINE]; /* command line */
+
+    while (1) {
+        /* read */
+        printf("> ");
+        Fgets(cmdline, MAXLINE, stdin);
+        if (feof(stdin))
+            exit(0);
+
+        /* evaluate */
+        eval(cmdline);
+    }
+}
+
+void eval(char *cmdline)
+{
+    char *argv[MAXARGS]; /* Argument list execve() */
+    char buf[MAXLINE];   /* Holds modified command line */
+    int bg;              /* Should the job run in bg or fg? */
+    pid_t pid;           /* Process id */
+
+    strcpy(buf, cmdline);
+    bg = parseline(buf, argv);
+    if (argv[0] == NULL)
+        return;   /* Ignore empty lines */
+
+    if (!builtin_command(argv)) {
+        if ((pid = Fork()) == 0) {   /* Child runs user job */
+            if (execve(argv[0], argv, environ) < 0) {
+                printf("%s: Command not found.\n", argv[0]);
+                exit(0);
+            }
+        }
+
+        /* Parent waits for foreground job to terminate */
+        if (!bg) {
+                int status;
+                if (waitpid(pid, &status, 0) < 0)
+                    unix_error("waitfg: waitpid error");
+            }
+            else
+                printf("%d %s", pid, cmdline);
+        }
+    return;
+}
+
+```
+
+#### Problem with Simple Shell Example
+
+Our example shell correctly waits for and reaps foreground jobs
+
+But what about background jobs?
+Will become zombies when they terminate
+Will never be reaped because shell (typically) will not terminate
+Will create a memory leak that could run the kernel out of memory
+
+Solution: Exceptional control flow
+The kernel will interrupt regular processing to alert us when a background process completes
+In Unix, the alert mechanism is called a signal
+
+
+
+
+### Signal
+
+https://cs341.cs.illinois.edu/coursebook/Signals
+
+In UNIX-like operating systems, signals are a form of asynchronous notification sent to a process. 
+
+A signal is a small message that notifies a process that an event of some type has occurred in the system. 
+
+- Akin to exceptions and interrupts
+- Sent from the kernel (sometimes at the request of another process) to a - process
+- Signal type is identified by small integer ID’s (1-30)
+- Only information in a signal is its ID and the fact that it arrived
 
 
 #### 30 different types of signals on Linux systems
@@ -432,14 +796,17 @@ as core memory. “Dumping core” is a historical term that means writing an im
 memory segments to disk. (b) This signal can be neither caught nor ignored. (Source: man 7 signal. Data
 from the Linux Foundation.)
 
+
+
 ### 8.5.1 Signal Terminology
 
+#### The transfer of a signal 
 The transfer of a signal to a destination process occurs in two distinct steps:
 
 - Sending a signal. 
   The kernel sends (delivers) a signal to a destination process by updating some state in the context of the destination process. The signal is delivered for one of two reasons: 
   (1) The kernel has detected a system event such as a divide-by-zero error or the termination of a child process.
-  (2)Aprocess has invoked the kill function (discussed in the next section) to explicitly request the kernel to send a signal to the destination process.
+  (2)A process has invoked the kill function (discussed in the next section) to explicitly request the kernel to send a signal to the destination process.
 A process can send a signal to itself.
 
 - Receiving a signal. 
@@ -449,21 +816,52 @@ A process can send a signal to itself.
   Figure 8.27 shows the basic idea of a handler catching a signal.
 
 
-#### Signal States 
+#### Pending signal
 
-- Pending signal & the pending bit vector: 
 A signal that has been sent but not yet received is called a pending signal. 
-At any point in time, there can be at most one pending signal of a particular type. 
-If a process has a pending signal of type k, then any subsequent signals of type k sent to that process are not queued; they are simply ***discarded***. 
+
+- At any point in time, there can be ***at most one*** pending signal of a particular type. 
+- [Important] If a process has a pending signal of type k, then any subsequent signals of type k sent to that process are  ***not queued***; they are simply ***discarded***. 
 
 A pending signal is received at most once. 
 For each process, the kernel maintains the set of pending signals in the pending bit vector and the set of blocked
 signals in the blocked bit vector.
 
-Blocked signal  & the blocked bit vector:
-A process can selectively block the receipt of certain signals.When a signal is blocked, it can be delivered, but the resulting pending signal will not be received until the process unblocks the signal.
+#### Blocked signal 
+
+- A process can block the receipt of certain signals
+- Blocked signals can be delivered, but will not be received until the signal is unblocked
+  
+A process can selectively block the receipt of certain signals.
+When a signal is blocked, it can be delivered, but the resulting pending signal will not be received until the process unblocks the signal.
+
+ When a signal is blocked, it cannot interrupt the process's execution until it is unblocked
+
+
+#### Pending/Blocked bit vector: 
+
+Kernel maintains pending and blocked bit vectors in the context of each process
+
+pending: represents the set of pending signals
+
+- Kernel sets bit k in pending when a signal of type k is delivered
+- Kernel clears bit k in pending when a signal of type k is received 
+
+blocked: represents the set of blocked signals
+
+- Can be set and cleared by using the sigprocmask function
+- Also referred to as the signal mask.
+
 
 ### 8.5.2 Sending Signals
+
+Kernel sends (delivers) a signal to a destination process by updating some state in the context of the destination process
+
+Kernel sends a signal for one of the following reasons:
+
+- Kernel has detected a system event such as divide-by-zero (SIGFPE) or the termination of a child process (SIGCHLD)
+- Another process has invoked the kill system call to explicitly request the kernel to send a signal to the destination process
+
 
 #### Process Groups
 
@@ -528,9 +926,41 @@ ls|sort
 
 ### 8.5.3 Receiving Signals
 
+A destination process receives a signal when it is forced by the kernel to react in some way to the delivery of the signal
+
+- Suppose kernel is returning from an exception handler and is ready to pass control to process p
+- Kernel computes pnb = pending & ~blocked
+The set of pending nonblocked signals for process p 
+- If  (pnb == 0) 
+Pass control to next instruction in the logical flow for p
+- Else
+Choose least nonzero bit k in pnb and force process p to receive signal k
+The receipt of the signal triggers some action by p
+Repeat for all nonzero k in pnb
+Pass control to next instruction in logical flow for p
+
+
+#### Some possible ways to react:
+
+##### Default Actions
+
+Each signal type has a predefined default action, which is one of:
+
+- Terminate the process (with optional core dump)
+- The process ignores the signal (do nothing)
+- The process stops until restarted by a SIGCONT signal
+  
+##### Installing Signal Handlers
+
+Catch the signal by executing a user-level function called signal handler
+Akin to a hardware exception handler being called in response to an asynchronous interrupt:
+
+The signal function modifies the default action associated with the receipt of signal signum:
+
 ```C
 #include <signal.h>
 typedef void (*sighandler_t)(int);
+
 sighandler_t signal(int signum, sighandler_t handler);
 // Returns: pointer to previous handler if OK, SIG_ERR on error (does not set errno)
 
@@ -538,11 +968,49 @@ sighandler_t signal(int signum, sighandler_t handler);
 
 The signal function can change the action associated with a signal signum in one of three ways:
 
-- If handler is SIG_IGN, then signals of type signum are ignored.
-- If handler is SIG_DFL, then the action for signals of type signum reverts to
-the default action.
+- SIG_IGN: If handler is SIG_IGN, then signals of type signum are ignored.
+- SIG_DFL: If handler is SIG_DFL, then the action for signals of type signum reverts to the default action.
 - Otherwise, handler is the address of a user-defined function, called a signal handler, that will be called whenever the process receives a signal of type signum. 
-  Changing the default action by passing the address of a handler to the signal function is known as installing the handler. The invocation of the handler is called catching the signal. The execution of the handler is referred to as handling the signal.
+  Changing the default action by passing the address of a handler to the signal function is known as installing the handler. 
+  - Called when process receives signal of type signum
+  - Referred to as “installing” the handler
+  - Executing handler is called “catching” or “handling” the signal
+  - When the handler executes its return statement, control passes back to instruction in the control flow of the process that was interrupted by receipt of the signal
+  
+```C
+#include "signal.h"
+#include "csapp.h"
+
+void sigint_handler(int sig) /* SIGINT handler */
+{
+    printf("So you think you can stop the bomb with ctrl-c, do you?\n");
+    sleep(2);
+    printf("Well..."); 
+    fflush(stdout);
+    sleep(1);
+    printf("OK. :-)\n");
+    exit(0);                   
+}                              
+
+int main() 
+{
+    /* Install the SIGINT handler */
+    printf("Let's experiment with sigint_handler, try to press ctrl-c from keyboard\n");      
+    if (signal(SIGINT, sigint_handler) == SIG_ERR)
+	    unix_error("signal error");               
+    
+    /* Wait for the receipt of a signal */
+    pause(); 
+    
+    return 0;
+}
+
+```
+
+#### Signals Handlers as Concurrent Flows
+
+A signal handler is a separate logical flow (not process) that runs concurrently with the main program
+
 
 
 ### 8.5.4 Blocking and Unblocking Signals
@@ -550,25 +1018,42 @@ the default action.
 
 Linux provides implicit and explicit mechanisms for blocking signals:
 
-- Implicit blocking mechanism
+#### Implicit blocking mechanism
+
   By default, the kernel blocks any pending signals of the type currently being processed by a handler. 
   For example, in Figure 8.31, suppose the program has caught signal s and is currently running handler S. If another signal s is sent to the process, then s will become pending but will not be received until after handler S returns.
-- Explicit blocking mechanism
+
+#### Explicit blocking mechanism
+
   Applications can explicitly block and unblock selected signals using the sigprocmask function and its helpers.
 
 // The sigprocmask function changes the set of currently blocked signals (the blocked bit vector described in Section 8.5.1).
 
 - SIG_BLOCK. Add the signals in set to blocked (blocked = blocked | set).
-- SIG_UNBLOCK. Remove the signals in set from blocked (blocked =
-blocked & ~set).
+- SIG_UNBLOCK. Remove the signals in set from blocked (blocked = blocked & ~set).
 - SIG_SETMASK. blocked = set.
 
 
+#### Supporting functions
+
+sigemptyset – Create empty set
+sigfillset – Add every signal number to set
+sigaddset – Add signal number to set
+sigdelset – Delete signal number from set
+
 ```C
-
-
 #include <signal.h>
 int sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
+/*
+how: Specifies the action to be taken. Common values are:
+  SIG_BLOCK: Add the signals in set to the signal mask, blocking them.
+  SIG_UNBLOCK: Remove the signals in set from the signal mask, unblocking them.
+  SIG_SETMASK: Set the signal mask to exactly match set, replacing any existing blocked signals.
+set: A pointer to a sigset_t structure that specifies the signals to be modified in the mask.
+oldset: A pointer to a sigset_t structure where the previous signal mask will be stored if it’s not NULL. This is useful for restoring the old mask later.
+
+*/
+
 
 // The sigemptyset initializes set to the empty set.
 int sigemptyset(sigset_t *set);
@@ -589,6 +1074,25 @@ int sigismember(const sigset_t *set, int signum);
 
 ```
 
+#### Temporarily Blocking Signals
+
+```C
+sigset_t mask, prev_mask;
+
+Sigemptyset(&mask);
+Sigaddset(&mask, SIGINT);
+
+/* Block SIGINT and save previous blocked set */
+Sigprocmask(SIG_BLOCK, &mask, &prev_mask);
+
+    /* Code region that will not be interrupted by SIGINT */
+
+/* Restore previous blocked set, unblocking SIGINT */
+Sigprocmask(SIG_SETMASK, &prev_mask, NULL);
+// Restores the Signal Mask: It sets the process's signal mask back to the previous state stored in prev_mask, 
+// which was saved before temporarily blocking other signals.
+```
+
 ### 8.5.5 Writing Signal Handlers
 
 Handlers have several attributes that make them difficult to reason about: 
@@ -600,6 +1104,54 @@ Handlers have several attributes that make them difficult to reason about:
 
 #### Safe Signal Handling
 
+##### Guidelines for Writing Safe Handlers	
+
+- G0: Keep your handlers as simple as possible
+  e.g., Set a global flag and return
+- G1: Call only async-signal-safe functions in your handlers
+  printf, sprintf,  malloc, and exit are not safe!
+- G2: Save and restore errno on entry and exit
+  So that other handlers don’t overwrite your value of errno	
+- G3: Protect accesses to shared data structures by temporarily blocking all signals. 
+  To prevent possible corruption
+- G4: Declare global variables as volatile
+  To prevent compiler from storing them in a register
+- G5: Declare global flags as volatile sig_atomic_t
+flag: variable that is only read or written (e.g. flag = 1, not flag++)
+Flag declared this way does not need to be protected  like other globals
+
+
+##### Async-Signal-Safety
+
+Function is async-signal-safe if either reentrant (e.g., all variables stored on stack frame, CS:APP3e 12.7.2) or non-interruptible by signals.
+
+Posix guarantees 117 functions to be async-signal-safe 
+
+- Source: “man 7 signal”
+- Popular functions on the list:
+_exit, write, wait, waitpid, sleep, kill
+- Popular functions that are not on the list:
+printf,  sprintf, malloc, exit 
+- Unfortunate fact: write is the only async-signal-safe output function
+
+
+Async-signal-safe functions are guaranteed to be safe to call from within a signal handler (an interrupt that may be triggered asynchronously during program execution). A function is async-signal-safe if it can be executed safely even when an asynchronous signal interrupts the program.
+
+- Requirements: 
+  Functions that modify shared data, rely on external state, or use locks are generally not async-signal-safe, as these operations may leave data in an inconsistent state if interrupted.
+- Common Safe Operations: 
+  Minimal, atomic, and stateless functions like write(), signal(), and _exit() are async-signal-safe.
+- Purpose: 
+  Async-signal-safe functions prevent race conditions, deadlocks, or inconsistent states when signals interrupt processes.
+
+
+##### Thread Safety
+
+Thread safety ensures that multiple threads can safely call a function or access a shared resource simultaneously without causing unintended interactions, such as data races or inconsistent states.
+
+Requirements: Thread-safe functions avoid modifying shared data unless protected by synchronization mechanisms, like mutexes or atomic operations, to prevent race conditions.
+Thread-Safe Library Functions: Standard functions like printf() may be thread-safe in many libraries, as internal locks are applied, but this is not guaranteed everywhere.
+Purpose: Thread-safe functions make sure that shared data remains consistent and accessible when accessed by multiple threads.
 
 #### Correct Signal Handling
 
@@ -608,7 +1160,51 @@ The crucial lesson is that signals cannot be used to count the occurrence of eve
 
 #### Portable Signal Handling
 
+Ugh! Different versions of Unix can have different signal handling semantics
+
+- Some older systems restore action to default after catching signal
+- Some interrupted system calls can return with errno == EINTR
+- Some systems don’t block signals of the type being handled 
+
+Solution: sigaction
+
+```C
+handler_t *Signal(int signum, handler_t *handler)
+{
+    struct sigaction action, old_action;
+
+    action.sa_handler = handler;
+    sigemptyset(&action.sa_mask); /* Block sigs of type being handled */
+    action.sa_flags = SA_RESTART; /* Restart syscalls if possible */
+
+    if (sigaction(signum, &action, &old_action) < 0)
+        unix_error("Signal error");
+    return (old_action.sa_handler);
+}
+
+```
+
+### 8.5.6 Synchronizing Flows to Avoid Nasty Concurrency Bugs
+
+The problem of how to program concurrent flows that read and write the same storage locations has challenged generations of computer scientists.
+
+The fundamental problem is to somehow ***synchronize the concurrent flows*** so as to allow the largest set of feasible interleavings such that each of the feasible interleavings produces a correct answer.
+
+
 ### 8.5.7 Explicitly Waiting for Signals
+
+#### Waiting for Signals with sigsuspend
+
+```C
+int sigsuspend(const sigset_t *mask)
+
+// Equivalent to atomic (uninterruptable) version of:
+sigprocmask(SIG_BLOCK, &mask, &prev);
+pause();
+sigprocmask(SIG_SETMASK, &prev, NULL);
+
+
+```
 
 
 ## 8.6 Nonlocal Jumps 
