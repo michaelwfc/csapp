@@ -9,9 +9,24 @@ TSHREF = ./tshref
 TSHARGS = "-p"
 CC = gcc
 CFLAGS = -Wall -O2
-FILES = $(TSH) ./myspin ./mysplit ./mystop ./myint
 
+
+
+# FILES = $(TSH) ./myspin ./mysplit ./mystop ./myint
+# all: $(FILES)
+# the all target depends on the $(FILES) variable, which includes ./tsh. 
+# Since you haven't specified how to compile tsh explicitly, make assumes the default rule for compiling a C file into an executable. 
+# This implicit rule works as follows:
+# 1. make looks at ./tsh (or tsh).
+# 2. It checks for a source file tsh.c (since tsh is missing but tsh.c exists).
+# 3. make then applies the implicit rule to compile tsh.c into tsh: gcc -Wall -O2 tsh.c -o tsh
+
+FILES = ./myspin ./mysplit ./mystop ./myint
 all: $(FILES)
+
+# To make tsh explicitly part of the Makefile process,
+tsh: tsh.c
+	$(CC) $(CFLAGS) -o tsh tsh.c
 
 ##################
 # Handin your work
