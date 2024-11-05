@@ -24,6 +24,10 @@ CFLAGS = -Wall -O2
 FILES = ./myspin ./mysplit ./mystop ./myint
 all: $(FILES)
 
+# make a shell example
+shell: shell.c
+	$(CC) -o shell shell.c
+
 # To make tsh explicitly part of the Makefile process,
 tsh: tsh.c
 	$(CC) $(CFLAGS) -o tsh tsh.c
