@@ -1,6 +1,9 @@
 #include "stdio.h"
 
 /*
+In C, to properly terminate on End of File (EOF) when reading from input (such as from standard input or a file), you need to handle the EOF condition carefully. 
+This is commonly done when using functions like scanf(), fgets(), or getchar().
+
 In C, the scanf function is used to read formatted input from the standard input (stdin , typically the keyboard). 
 It reads characters and stores them into variables according to specified format specifiers (like %d, %s, etc.)
 It allows you to read various types of data such as integers, floating-point numbers, characters, strings, etc.
@@ -13,10 +16,11 @@ Arguments:
     ...: The list of pointers to variables where the input values will be stored.
 
 Return Value of scanf:
+    scanf() returns the number of items successfully read or EOF when an error occurs or the end of input is reached.
+    
     scanf returns an integer that represents the number of input items successfully read and assigned. 
-    For example, if you use scanf("%d %f", &num, &f); and both the integer and float are successfully read, scanf will return 2
-
-    If an input item cannot be matched or assigned (due to incorrect format or invalid input), scanf will return the number of successful conversions made before the error occurred.
+        For example, if you use scanf("%d %f", &num, &f); and both the integer and float are successfully read, scanf will return 2
+        If an input item cannot be matched or assigned (due to incorrect format or invalid input), scanf will return the number of successful conversions made before the error occurred.
 
     If scanf reaches the end of input before any successful conversion, it will return EOF (End Of File)
 
