@@ -12,6 +12,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include "csapp.h"
+
 
 /* Misc manifest constants */
 #define MAXLINE 1024   /* max line size */
@@ -49,6 +51,10 @@ struct job_t
     int state;             /* UNDEF, BG, FG, or ST */
     char cmdline[MAXLINE]; /* command line */
 };
+
+/*
+jobs is global variable, so when process handle with it will cause race condition
+*/
 struct job_t jobs[MAXJOBS]; /* The job list */
 /* End global variables */
 
@@ -71,7 +77,14 @@ void sigquit_handler(int sig);
 void clearjob(struct job_t *job);
 void initjobs(struct job_t *jobs);
 int maxjid(struct job_t *jobs);
+/*
+when fork(), then add job to jobs
+*/
 int addjob(struct job_t *jobs, pid_t pid, int state, char *cmdline);
+/*
+when child process has stoped or terminated -> SIGCHLD -> SIGCHLD Handler -> delete jobs
+but shell & SIGCHLD Handler are concurrent, so they will have race condition on jobs(global variable)
+*/
 int deletejob(struct job_t *jobs, pid_t pid);
 pid_t fgpid(struct job_t *jobs);
 struct job_t *getjobpid(struct job_t *jobs, pid_t pid);
@@ -116,6 +129,7 @@ int main(int argc, char **argv)
             usage();
         }
     }
+    
 
     /* Install the signal handlers */
 
@@ -129,6 +143,8 @@ int main(int argc, char **argv)
 
     /* Initialize the job list */
     initjobs(jobs);
+
+
 
     /* Execute the shell's read/eval loop */
     while (1)
@@ -160,50 +176,80 @@ int main(int argc, char **argv)
 /*
  * eval - Evaluate the command line that the user has just typed in
  *
- * If the user has requested a built-in command (quit, jobs, bg or fg) then execute it immediately. 
- * Otherwise, fork a child process and  run the job in the context of the child. 
- * If the job is running in  the foreground, wait for it to terminate and then return.  
+ * If the user has requested a built-in command (quit, jobs, bg or fg) then execute it immediately.
+ * Otherwise, fork a child process and  run the job in the context of the child.
+ * If the job is running in  the foreground, wait for it to terminate and then return.
  * Note:
  * each child process must have a unique process group ID so that our background children don't receive SIGINT (SIGTSTP) from the kernel
  * when we type ctrl-c (ctrl-z) at the keyboard.
  */
 void eval(char *cmdline)
-{   
+{
     char *argv[MAXARGS]; /* Argument list execve() */
     char buf[MAXLINE];   /* Holds modified command line */
-    int bg;              /* Should the job run in bg or fg? */
+    int bg;   
+    int status;           
+    // int bg_or_fg;              /* Should the job run in bg or fg? */
+    int is_buildin_cmd;
     pid_t pid;           /* Process id */
+    
+    
+    // sigset_t mask_all,mask_one,prev_one;
+    // Sigfillset(&mask_all);
+    // Sigemptyset(&mask_one);
+    // Sigaddset(&mask_one,SIGCHLD);
+    // Signal(SIGCHLD,sigchld_handler);
 
-    strcpy(buf, cmdline); // copy the cmdline to buf
-    bg= parseline(cmdline,argv); // parse the cmdline to argv and return bg
-    if (argv[0]==NULL){
+
+    strcpy(buf, cmdline);          // copy the cmdline to buf
+    bg = parseline(cmdline, argv); // parse the cmdline to argv and return bg
+
+    if (argv[0] == NULL)
+    {
         return; // if cmdline is empty, return
     }
-    if(!builtin_cmd(argv)){
+    is_buildin_cmd= builtin_cmd(argv);
+    if (!is_buildin_cmd)
+    {
         // if the cmdline is not buildin command
-        // fork a child process and  run the job in the context of the child
-        if((pid=fork()) ==0){
-            if(execve(argv[0], argv,environ)==-1){
-                printf("Error: Failed to execve command %s",argv[0]);
+        // fork a child process and run the job in the context of the child
+
+        if ((pid = fork()) == 0){
+            // execute the command from input by execve function
+            /*
+            The execve() function is used to replace the current process image with a new process image. It does not return if the execution is successful.
+                If the execve() call is successful, the current process is replaced by the new executable, and the code following the execve() call will never be executed.
+                If execve() fails, it returns -1, and the error message can be printed.
+            */
+            printf("Child PID %d: start to execve the command %s\n", getpid(), cmdline);
+            if (execve(argv[0], argv, environ) == -1)
+            {
+                printf("Child PID %d: failed to execve command %s\n", getpid(), cmdline);
                 exit(0);
             }
-        }
+      
+        }else{
+            // critical sectioin: add job to jobs
 
-        if(!bg){
-            // run the job in the foreground
-            int status;
-            if(waitpid(pid,&status,0)==-1){
-                printf("Error: Failed to waitpid for child process");
+            // addjob(jobs,pid, bg_or_fg,cmdline);
+
+            // if a command is a foreground job, we must wait for the termination of the job in child process
+            // if a command is a background job, we not need to wait the job to ternimanted
+            if (!bg){
+                // reap the job in the foreground
+                if (waitpid(pid, &status, 0) == -1){
+                    printf("Parent PID %d error: failed to waitpid for child PID %d\n", getpid(),pid);
+                }else{
+                    if(WIFEXITED(status))
+                        printf("Parent PID %d: succssed to reap the child PID %d, which is terminated normally with exit status=%d for command %s\n",getpid(),  pid, WEXITSTATUS(status),cmdline);
+                    else
+                        printf("Parent PID %d: succssed to reap the child PID %d, but which is terminated abnormally with exit status=%d for command %s\n",getpid(),  pid, WEXITSTATUS(status),cmdline);
+                }
             }else{
-                printf("%d: %s\n",pid, cmdline);
+                printf("Parent PID %d : run a background job with child PID %d and command '%s'\n", getpid(),pid,cmdline);
             }
         }
     }
-    return;
-
-    
-    
-
     return;
 }
 
@@ -276,18 +322,28 @@ int parseline(const char *cmdline, char **argv)
  */
 int builtin_cmd(char **argv)
 {
-    
-    if(!strcmp(argv[0], "quit")){
+
+    if (!strcmp(argv[0], "quit"))
+    {
+        printf("quite(build-in command)\n");
         exit(0);
-    }else if(!strcmp(argv[0], "jobs")){
-
-    }else if(!strcmp(argv[0], "bg")){
-
-    }else if(!strcmp(argv[0], "fg")){
-
     }
-
-
+    else if (!strcmp(argv[0], "jobs"))
+    {
+        printf("jobs(build-in command): show jobs\n");
+        listjobs(jobs);
+        return 1;
+    }
+    else if (!strcmp(argv[0], "bg"))
+    {
+        printf("bg(build-in command): bring the job background\n");
+        return 1;
+    }
+    else if (!strcmp(argv[0], "fg"))
+    {
+        printf("fg(build-in command): \n");
+        return 1;
+    }
 
     return 0; /* not a builtin command */
 }
@@ -504,8 +560,7 @@ void listjobs(struct job_t *jobs)
                 printf("Stopped ");
                 break;
             default:
-                printf("listjobs: Internal error: job[%d].state=%d ",
-                       i, jobs[i].state);
+                printf("listjobs: Internal error: job[%d].state=%d ",i, jobs[i].state);
             }
             printf("%s", jobs[i].cmdline);
         }
