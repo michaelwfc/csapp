@@ -109,6 +109,12 @@ void printf_with_fflush()
     {
         printf("Enter your name: "); // Prompt to ask user for input
         fflush(stdout);              // Make sure the prompt appears before waiting for input
+        /*
+        Using fgets(cmdline, MAXLINE, stdin) == NULL by itself could be misleading because fgets() returns NULL in two cases:
+        - End-of-File (EOF): No more data to read, which isn't an error.
+        - Error while reading: This is the actual problem we want to catch.
+        By combining the fgets() check with ferror(stdin), we can specifically handle the error case (where fgets() failed due to an I/O error) and ignore the EOF case.
+        */
         if ((fgets(name_buffer, sizeof(name_buffer), stdin) == NULL) && ferror(stdin))
         {
             fprintf(stderr, "Error reading input.\n");
