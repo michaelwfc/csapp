@@ -29,7 +29,21 @@ void handler(int sig)
         Sio_error("waitpid error");
     errno = olderrno;
 }
-    
+
+/*
+User mode:
+Child process zombie -> ready send SIGCHLD
+
+Kernal mode:
+send SIGCHLD -> context switch 
+
+User mode:
+if any pending SIGCHLD signal (set & ~blocked) -> SIGCHLD handler : block SIGCHLD here  
+if not any pending signals-> parent process
+
+When block SIGCHLD in handler, execute parent process first -> parent process unblock SIGCHLD ->pending SIGCHLD signal ->  SIGCHLD handler
+
+*/
 int main(int argc, char **argv)
 {
     int pid;
@@ -42,14 +56,22 @@ int main(int argc, char **argv)
     initjobs(); /* Initialize the job list */
 
     while (1) {
-        Sigprocmask(SIG_BLOCK, &mask_one, &prev_one); /* Block SIGCHLD */
+        /* Block SIGCHLD before fork*/
+        Sigprocmask(SIG_BLOCK, &mask_one, &prev_one); 
         if ((pid = Fork()) == 0) { /* Child process */
-            Sigprocmask(SIG_SETMASK, &prev_one, NULL); /* Unblock SIGCHLD */
+            /* Unblock SIGCHLD 
+            
+            */
+            Sigprocmask(SIG_SETMASK, &prev_one, NULL); 
             Execve("/bin/date", argv, NULL);
         }
-        Sigprocmask(SIG_BLOCK, &mask_all, NULL); /* Parent process */  
+        /* Parent process */  
+        Sigprocmask(SIG_BLOCK, &mask_all, NULL); 
         addjob(pid);  /* Add the child to the job list */
-        Sigprocmask(SIG_SETMASK, &prev_one, NULL);  /* Unblock SIGCHLD */
+        /* Unblock SIGCHLD
+        the set & ~bloked, then the kernel will check the pending signal(SIGCHLD), and then go into the handler
+         */
+        Sigprocmask(SIG_SETMASK, &prev_one, NULL);  
     }
     exit(0);
 }

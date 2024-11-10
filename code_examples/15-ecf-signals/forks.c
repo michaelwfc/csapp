@@ -79,7 +79,7 @@ void fork3()
 /* 
  * fork4 - Nested forks in parents
  */
-void fork4()
+ fork4()
 {
     printf("L0\n");
     if (fork() != 0) {

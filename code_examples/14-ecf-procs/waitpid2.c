@@ -1,5 +1,5 @@
 #include "csapp.h"
-#define N 2
+#define N 10
 
 int main()
 {
