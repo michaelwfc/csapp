@@ -148,12 +148,12 @@ int main(int argc, char **argv)
     /* Install the signal handlers */
 
     /* These are the ones you will need to implement */
-    signal(SIGINT, sigint_handler);   /* ctrl-c */
-    signal(SIGTSTP, sigtstp_handler); /* ctrl-z */
-    signal(SIGCHLD, sigchld_handler); /* Terminated or stopped child */
+    Signal(SIGINT, sigint_handler);   /* ctrl-c */
+    Signal(SIGTSTP, sigtstp_handler); /* ctrl-z */
+    Signal(SIGCHLD, sigchld_handler); /* Terminated or stopped child */
 
     /* This one provides a clean way to kill the shell */
-    signal(SIGQUIT, sigquit_handler);
+    Signal(SIGQUIT, sigquit_handler);
 
     /* Initialize the job list */
     initjobs(jobs);
@@ -201,7 +201,7 @@ void eval(char *cmdline)
     char buf[MAXLINE];   /* Holds modified command line */
     int bg;   
     int job_state;
-    // int status;           
+    int status;           
     int is_buildin_cmd;
     pid_t pid;           /* Process id */
     
@@ -210,7 +210,7 @@ void eval(char *cmdline)
     sigfillset(&mask_all);
     sigemptyset(&mask_one);
     sigaddset(&mask_one,SIGCHLD);
-    signal(SIGCHLD,sigchld_handler);
+    Signal(SIGCHLD,sigchld_handler);
 
 
     strcpy(buf, cmdline);          // copy the cmdline to buf
@@ -258,21 +258,25 @@ void eval(char *cmdline)
             addjob(jobs,pid, job_state, cmdline);
             sigprocmask(SIG_SETMASK,&prev_one,NULL);
 
-        //     // if a command is a foreground job, we must wait for the termination of the job in child process
-        //     // if a command is a background job, we not need to wait the job to ternimanted
-        //     if (!bg){
-        //         // reap the job in the foreground
-        //         if (waitpid(pid, &status, 0) == -1){
-        //             printf("Parent PID %d error: failed to waitpid for child PID %d\n", getpid(),pid);
-        //         }else{
-        //             if(WIFEXITED(status))
-        //                 printf("Parent PID %d: succssed to reap the child PID %d, which is terminated normally with exit status=%d for command %s\n",getpid(),  pid, WEXITSTATUS(status),cmdline);
-        //             else
-        //                 printf("Parent PID %d: succssed to reap the child PID %d, but which is terminated abnormally with exit status=%d for command %s\n",getpid(),  pid, WEXITSTATUS(status),cmdline);
-        //         }
-        //     }else{
-        //         printf("Parent PID %d : run a background job with child PID %d and command '%s'\n", getpid(),pid,cmdline);
-        //     }
+            // if a command is a foreground job, we must wait for the termination of the job in child process
+            // if a command is a background job, we not need to wait the job to ternimanted
+            if (!bg){
+                // reap the job in the foreground
+                if (waitpid(pid, &status, 0) == -1){
+                    printf("Parent PID %d error: failed to waitpid for child PID %d\n", getpid(),pid);
+                }
+                // else{
+                //     if(WIFEXITED(status))
+                //         printf("Parent PID %d: succssed to reap the child PID %d, which is terminated normally with exit status=%d for command %s\n",getpid(),  pid, WEXITSTATUS(status),cmdline);
+                //     else
+                //         printf("Parent PID %d: succssed to reap the child PID %d, but which is terminated abnormally with exit status=%d for command %s\n",getpid(),  pid, WEXITSTATUS(status),cmdline);
+                // }
+            }
+            else{
+                // printf("Parent PID %d : run a background job with child PID %d and command '%s'\n", getpid(),pid,cmdline);
+                struct job_t *job = getjobpid(jobs,pid);
+                printf("[%d] %d %s %s\n", job->jid, job->pid, get_job_state(job->state), job->cmdline);
+            }
         }
     }
 }
@@ -405,8 +409,8 @@ void sigchld_handler(int sig)
     sigfillset(&mask_all);
  
     while ((pid = waitpid(-1, NULL, 0)) > 0) { /* Reap a zombie child */
-        if(verbose)
-            printf("PID %d sigchld_handler reap a zombie child pid %d\n", getpid(),pid);
+        // if(verbose)
+        //     printf("PID %d sigchld_handler reap a zombie child pid %d\n", getpid(),pid);
         // get the job by pid ,if the job is a background job, do not wait to reap it
         struct job_t *job = getjobpid(jobs, pid);
         if(job->state ==FG)
@@ -425,22 +429,44 @@ void sigchld_handler(int sig)
 }
 
 /*
- * sigint_handler - The kernel sends a SIGINT to the shell whenver the
- *    user types ctrl-c at the keyboard.  Catch it and send it along
- *    to the foreground job.
+ * sigint_handler - The kernel sends a SIGINT to the shell whenver the user types ctrl-c at the keyboard. 
+   Catch it and send it along to the foreground job.
  */
 void sigint_handler(int sig)
 {
+    // find the foreground job
+    pid_t pid = fgpid(jobs);
+    struct job_t* job= getjobpid(jobs,pid);  
+    
+    sigset_t mask_all, prev_all;
+    sigfillset(&mask_all);
+
+    if(pid> 0)
+    {
+        // Critical Section:: Sigprocmask(SIG_BLOCK, &mask_all, &prev_all); blocks all signals to ensure safe manipulation of the job list, 
+        // specifically to call deletejob(pid) without interruptions.
+        
+        sigprocmask(SIG_BLOCK, &mask_all, &prev_all);
+        /* Send the job a SIGTERM signal */
+        if(kill(pid, SIGTERM)==-1)
+        {
+            unix_error("kill error");
+        }
+        if(verbose)
+            printf("SIGINT: sent SIGTERM to job [%d] %d %s %s\n", job->jid, job->pid, get_job_state(job->state), job->cmdline);
+        sigprocmask(SIG_SETMASK, &prev_all, NULL);
+    }
+
     return;
 }
 
 /*
- * sigtstp_handler - The kernel sends a SIGTSTP to the shell whenever
- *     the user types ctrl-z at the keyboard. Catch it and suspend the
- *     foreground job by sending it a SIGTSTP.
+ * sigtstp_handler - The kernel sends a SIGTSTP to the shell whenever the user types ctrl-z at the keyboard. 
+ Catch it and suspend the foreground job by sending it a SIGTSTP.
  */
 void sigtstp_handler(int sig)
-{
+{   
+
     return;
 }
 
