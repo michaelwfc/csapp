@@ -426,6 +426,20 @@ When a process terminates for any reason, the kernel does not remove it from the
 Instead, the process is kept around in a terminated state until it is reaped by its parent. 
 When the parent reaps the terminated child, the kernel passes the child’s exit status to the parent and then discards the terminated process, at which point it ceases to exist. 
 
+##### Identify zombie process
+
+In Unix-like operating systems, a zombie process is a process that has completed execution (either successfully or with an error) but still has an entry in the process table. This entry remains until the parent process reads the exit status of the child using wait() or waitpid(). Zombie processes do not use system resources (other than the process table entry) but can cause issues if not reaped properly.
+
+```bash
+ps -aux or ps -auf
+
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+user      1234  0.0  0.0      0     0 ?        Z    10:02   0:00 [myprocess] <defunct>
+
+Here, STAT shows Z, and <defunct> in the COMMAND column also indicates a zombie process.
+
+```
+
 #### Reaping 
 
 Performed by parent on terminated child (using wait or waitpid)
@@ -608,8 +622,7 @@ const char *envp[]);
 // Does not return if OK; returns −1 on error
 
 
-// After execve loads filename, it calls the start-up code described in Section
-// 7.9. The start-up code sets up the stack and passes control to the main routine
+// After execve loads filename, it calls the start-up code described in Section 7.9. The start-up code sets up the stack and passes control to the main routine
 // of the new program, which has a prototype of the form
 int main(int argc, char **argv, char **envp);
 // or equivalently,
@@ -748,6 +761,12 @@ A signal is a small message that notifies a process that an event of some type h
 - Signal type is identified by small integer ID’s (1-30)
 - Only information in a signal is its ID and the fact that it arrived
 
+#### Inter Process Communication
+
+- share memeory
+- pipe
+- signal
+
 
 #### 30 different types of signals on Linux systems
 
@@ -800,7 +819,24 @@ from the Linux Foundation.)
 
 ### 8.5.1 Signal Terminology
 
+#### signal run mechanism
+
+Run queue -> CPU scheduler: schedule a process -> Context switch back
+kernal mod-> user model
+check singals : do_signal -> PCB pending signal vector
+
+for(peding){
+  if(signal is SIG_IGN)
+    continue;
+  else if(signal is SIG_DFL)
+    do defalut action;
+  else
+    do signal handler
+}
+
+
 #### The transfer of a signal 
+
 The transfer of a signal to a destination process occurs in two distinct steps:
 
 - Sending a signal. 
@@ -824,8 +860,8 @@ A signal that has been sent but not yet received is called a pending signal.
 - [Important] If a process has a pending signal of type k, then any subsequent signals of type k sent to that process are  ***not queued***; they are simply ***discarded***. 
 
 A pending signal is received at most once. 
-For each process, the kernel maintains the set of pending signals in the pending bit vector and the set of blocked
-signals in the blocked bit vector.
+For each process, the kernel maintains the set of pending signals in the pending bit vector and the set of blocked signals in the blocked bit vector.
+
 
 #### Blocked signal 
 
@@ -851,6 +887,16 @@ blocked: represents the set of blocked signals
 
 - Can be set and cleared by using the sigprocmask function
 - Also referred to as the signal mask.
+
+
+#### Example:
+
+pending bit vector: 
+pending[SIGCHLD]=1
+
+Blocked bit vector:
+blocked[SIGCHLD]=1
+
 
 
 ### 8.5.2 Sending Signals
@@ -940,17 +986,19 @@ Repeat for all nonzero k in pnb
 Pass control to next instruction in logical flow for p
 
 
-#### Some possible ways to react:
 
-##### Default Actions
+
+#### Ways to react:
 
 Each signal type has a predefined default action, which is one of:
 
-- Terminate the process (with optional core dump)
-- The process ignores the signal (do nothing)
-- The process stops until restarted by a SIGCONT signal
-  
-##### Installing Signal Handlers
+- Ignore: The process ignores the signal (do nothing)
+- Default Actions: ignore/Terminate the process (with optional core dump), stop/continue the process
+  SIGKILL/SIGSTOP must exceute the default action, can not be ingored
+- handler: self-defined action
+
+ 
+#### Installing Signal Handlers
 
 Catch the signal by executing a user-level function called signal handler
 Akin to a hardware exception handler being called in response to an asynchronous interrupt:
@@ -1025,46 +1073,50 @@ Linux provides implicit and explicit mechanisms for blocking signals:
 
 #### Explicit blocking mechanism
 
+
+
   Applications can explicitly block and unblock selected signals using the sigprocmask function and its helpers.
 
-// The sigprocmask function changes the set of currently blocked signals (the blocked bit vector described in Section 8.5.1).
-
-- SIG_BLOCK. Add the signals in set to blocked (blocked = blocked | set).
-- SIG_UNBLOCK. Remove the signals in set from blocked (blocked = blocked & ~set).
-- SIG_SETMASK. blocked = set.
-
-
-#### Supporting functions
-
+sigprocmask - changes the set of currently blocked signals (the blocked bit vector described in Section 8.5.1).
 sigemptyset – Create empty set
 sigfillset – Add every signal number to set
 sigaddset – Add signal number to set
 sigdelset – Delete signal number from set
+
 
 ```C
 #include <signal.h>
 int sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
 /*
 how: Specifies the action to be taken. Common values are:
-  SIG_BLOCK: Add the signals in set to the signal mask, blocking them.
+  SIG_BLOCK: Add the signals in set to the signal mask(the set of blocked signals), blocking them.
+             blocked = blocked | set
   SIG_UNBLOCK: Remove the signals in set from the signal mask, unblocking them.
+             blocked = blocked & ~set
   SIG_SETMASK: Set the signal mask to exactly match set, replacing any existing blocked signals.
+             blocked = set
 set: A pointer to a sigset_t structure that specifies the signals to be modified in the mask.
 oldset: A pointer to a sigset_t structure where the previous signal mask will be stored if it’s not NULL. This is useful for restoring the old mask later.
 
+set= [0/1,0/1,....,0/1]
 */
 
 
 // The sigemptyset initializes set to the empty set.
+// set = [0,0,....,0]
+// set = set & 0
 int sigemptyset(sigset_t *set);
 
 // The sigfillset function adds every signal to set.
+// set = set | 0xFFFFFFFFFFFFFFFF
 int sigfillset(sigset_t *set);
 
 // The sigaddset function adds signum to set
+// set= set| (0x1<<x)
 int sigaddset(sigset_t *set, int signum);
 
 // sigdelset deletes signum from set
+// set= set & (~(0x1<<x))
 int sigdelset(sigset_t *set, int signum);
 // Returns: 0 if OK, −1 on error
 
@@ -1095,7 +1147,8 @@ Sigprocmask(SIG_SETMASK, &prev_mask, NULL);
 
 ### 8.5.5 Writing Signal Handlers
 
-Handlers have several attributes that make them difficult to reason about: 
+Handlers have several attributes that make them difficult to reason about:
+
 (1) Handlers run concurrently with the main program and share the same global variables, and thus can interfere with the main program and with other handlers. 
 (2) The rules for how and when signals are received is often counterintuitive. 
 (3) Different systems can have different signal-handling semantics.
@@ -1134,6 +1187,9 @@ _exit, write, wait, waitpid, sleep, kill
 printf,  sprintf, malloc, exit 
 - Unfortunate fact: write is the only async-signal-safe output function
 
+printf not safe: will deal with some global variables
+write is safe: 
+
 
 Async-signal-safe functions are guaranteed to be safe to call from within a signal handler (an interrupt that may be triggered asynchronously during program execution). A function is async-signal-safe if it can be executed safely even when an asynchronous signal interrupts the program.
 
@@ -1152,6 +1208,12 @@ Thread safety ensures that multiple threads can safely call a function or access
 Requirements: Thread-safe functions avoid modifying shared data unless protected by synchronization mechanisms, like mutexes or atomic operations, to prevent race conditions.
 Thread-Safe Library Functions: Standard functions like printf() may be thread-safe in many libraries, as internal locks are applied, but this is not guaranteed everywhere.
 Purpose: Thread-safe functions make sure that shared data remains consistent and accessible when accessed by multiple threads.
+
+#### How to analyze Concurrent process/thread
+
+- Race condition: share global resource by two concurrent programs/threads
+- Critical section
+
 
 #### Correct Signal Handling
 

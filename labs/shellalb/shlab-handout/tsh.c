@@ -3,6 +3,7 @@
  *
  * <Put your name and login ID here>
  */
+// #include "csapp.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -12,7 +13,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
-#include "csapp.h"
+
 
 
 /* Misc manifest constants */
@@ -27,6 +28,19 @@
 #define BG 2    /* running in background */
 #define ST 3    /* stopped */
 
+char* get_job_state(int state){
+    if(state == UNDEF)
+        return "UNDEF";
+    else if(state == FG)
+        return "FG";
+    else if(state == BG)
+        return "BG";
+    else if(state == ST)
+        return "ST";
+    else
+        return "UNKNOWN";
+    
+}
 /*
  * Jobs states: FG (foreground), BG (background), ST (stopped)
  * Job state transitions and enabling actions:
@@ -134,17 +148,15 @@ int main(int argc, char **argv)
     /* Install the signal handlers */
 
     /* These are the ones you will need to implement */
-    Signal(SIGINT, sigint_handler);   /* ctrl-c */
-    Signal(SIGTSTP, sigtstp_handler); /* ctrl-z */
-    Signal(SIGCHLD, sigchld_handler); /* Terminated or stopped child */
+    signal(SIGINT, sigint_handler);   /* ctrl-c */
+    signal(SIGTSTP, sigtstp_handler); /* ctrl-z */
+    signal(SIGCHLD, sigchld_handler); /* Terminated or stopped child */
 
     /* This one provides a clean way to kill the shell */
-    Signal(SIGQUIT, sigquit_handler);
+    signal(SIGQUIT, sigquit_handler);
 
     /* Initialize the job list */
     initjobs(jobs);
-
-
 
     /* Execute the shell's read/eval loop */
     while (1)
@@ -188,69 +200,81 @@ void eval(char *cmdline)
     char *argv[MAXARGS]; /* Argument list execve() */
     char buf[MAXLINE];   /* Holds modified command line */
     int bg;   
-    int status;           
-    // int bg_or_fg;              /* Should the job run in bg or fg? */
+    int job_state;
+    // int status;           
     int is_buildin_cmd;
     pid_t pid;           /* Process id */
     
     
-    // sigset_t mask_all,mask_one,prev_one;
-    // Sigfillset(&mask_all);
-    // Sigemptyset(&mask_one);
-    // Sigaddset(&mask_one,SIGCHLD);
-    // Signal(SIGCHLD,sigchld_handler);
+    sigset_t mask_all,mask_one,prev_one;
+    sigfillset(&mask_all);
+    sigemptyset(&mask_one);
+    sigaddset(&mask_one,SIGCHLD);
+    signal(SIGCHLD,sigchld_handler);
 
 
     strcpy(buf, cmdline);          // copy the cmdline to buf
     bg = parseline(cmdline, argv); // parse the cmdline to argv and return bg
+    if(bg)
+        job_state=BG;
+    else
+        job_state=FG;
 
+    parseline(cmdline, argv); 
+    
     if (argv[0] == NULL)
     {
         return; // if cmdline is empty, return
     }
     is_buildin_cmd= builtin_cmd(argv);
     if (!is_buildin_cmd)
-    {
+    {   
+        /* Block SIGCHLD before fork*/
+        sigprocmask(SIG_BLOCK, &mask_one, &prev_one);
+
         // if the cmdline is not buildin command
         // fork a child process and run the job in the context of the child
-
         if ((pid = fork()) == 0){
+            /* Unblock SIGCHLD*/
+            sigprocmask(SIG_SETMASK,&prev_one,NULL);
             // execute the command from input by execve function
             /*
             The execve() function is used to replace the current process image with a new process image. It does not return if the execution is successful.
                 If the execve() call is successful, the current process is replaced by the new executable, and the code following the execve() call will never be executed.
                 If execve() fails, it returns -1, and the error message can be printed.
             */
-            printf("Child PID %d: start to execve the command %s\n", getpid(), cmdline);
+            if(verbose)
+                printf("Child PID %d: start to execve the command %s\n", getpid(), cmdline);
             if (execve(argv[0], argv, environ) == -1)
             {
                 printf("Child PID %d: failed to execve command %s\n", getpid(), cmdline);
                 exit(0);
             }
       
-        }else{
+        }
+        else{
             // critical sectioin: add job to jobs
+            sigprocmask(SIG_BLOCK,&mask_all,NULL);
+            addjob(jobs,pid, job_state, cmdline);
+            sigprocmask(SIG_SETMASK,&prev_one,NULL);
 
-            // addjob(jobs,pid, bg_or_fg,cmdline);
-
-            // if a command is a foreground job, we must wait for the termination of the job in child process
-            // if a command is a background job, we not need to wait the job to ternimanted
-            if (!bg){
-                // reap the job in the foreground
-                if (waitpid(pid, &status, 0) == -1){
-                    printf("Parent PID %d error: failed to waitpid for child PID %d\n", getpid(),pid);
-                }else{
-                    if(WIFEXITED(status))
-                        printf("Parent PID %d: succssed to reap the child PID %d, which is terminated normally with exit status=%d for command %s\n",getpid(),  pid, WEXITSTATUS(status),cmdline);
-                    else
-                        printf("Parent PID %d: succssed to reap the child PID %d, but which is terminated abnormally with exit status=%d for command %s\n",getpid(),  pid, WEXITSTATUS(status),cmdline);
-                }
-            }else{
-                printf("Parent PID %d : run a background job with child PID %d and command '%s'\n", getpid(),pid,cmdline);
-            }
+        //     // if a command is a foreground job, we must wait for the termination of the job in child process
+        //     // if a command is a background job, we not need to wait the job to ternimanted
+        //     if (!bg){
+        //         // reap the job in the foreground
+        //         if (waitpid(pid, &status, 0) == -1){
+        //             printf("Parent PID %d error: failed to waitpid for child PID %d\n", getpid(),pid);
+        //         }else{
+        //             if(WIFEXITED(status))
+        //                 printf("Parent PID %d: succssed to reap the child PID %d, which is terminated normally with exit status=%d for command %s\n",getpid(),  pid, WEXITSTATUS(status),cmdline);
+        //             else
+        //                 printf("Parent PID %d: succssed to reap the child PID %d, but which is terminated abnormally with exit status=%d for command %s\n",getpid(),  pid, WEXITSTATUS(status),cmdline);
+        //         }
+        //     }else{
+        //         printf("Parent PID %d : run a background job with child PID %d and command '%s'\n", getpid(),pid,cmdline);
+        //     }
         }
     }
-    return;
 }
 
 /*
@@ -369,14 +393,34 @@ void waitfg(pid_t pid)
  *****************/
 
 /*
- * sigchld_handler - The kernel sends a SIGCHLD to the shell whenever
- *     a child job terminates (becomes a zombie), or stops because it
- *     received a SIGSTOP or SIGTSTP signal. The handler reaps all
- *     available zombie children, but doesn't wait for any other
- *     currently running children to terminate.
+ * sigchld_handler - The kernel sends a SIGCHLD to the shell whenever a child job terminates (becomes a zombie), or stops because it received a SIGSTOP or SIGTSTP signal. 
+ * The handler reaps all available zombie children, but doesn't wait for any other currently running children to terminate.
  */
 void sigchld_handler(int sig)
 {
+    // int olderrno = errno;
+    pid_t pid;
+
+    sigset_t mask_all, prev_all;
+    sigfillset(&mask_all);
+ 
+    while ((pid = waitpid(-1, NULL, 0)) > 0) { /* Reap a zombie child */
+        if(verbose)
+            printf("PID %d sigchld_handler reap a zombie child pid %d\n", getpid(),pid);
+        // get the job by pid ,if the job is a background job, do not wait to reap it
+        struct job_t *job = getjobpid(jobs, pid);
+        if(job->state ==FG)
+        {
+            // Critical Section:: Sigprocmask(SIG_BLOCK, &mask_all, &prev_all); blocks all signals to ensure safe manipulation of the job list, 
+            // specifically to call deletejob(pid) without interruptions.
+            sigprocmask(SIG_BLOCK, &mask_all, &prev_all);
+            deletejob(jobs,pid); /* Delete the child from the job list */
+            sigprocmask(SIG_SETMASK, &prev_all, NULL);
+        }
+    }
+    // if (errno != ECHILD)
+    //     app_error("waitpid error");
+    // errno = olderrno;
     return;
 }
 
@@ -415,6 +459,7 @@ void clearjob(struct job_t *job)
     job->jid = 0;
     job->state = UNDEF;
     job->cmdline[0] = '\0';
+
 }
 
 /* initjobs - Initialize the job list */
@@ -437,7 +482,8 @@ int maxjid(struct job_t *jobs)
     return max;
 }
 
-/* addjob - Add a job to the job list */
+/* addjob - Add a job to the job list 
+*/
 int addjob(struct job_t *jobs, pid_t pid, int state, char *cmdline)
 {
     int i;
@@ -457,7 +503,7 @@ int addjob(struct job_t *jobs, pid_t pid, int state, char *cmdline)
             strcpy(jobs[i].cmdline, cmdline);
             if (verbose)
             {
-                printf("Added job [%d] %d %s\n", jobs[i].jid, jobs[i].pid, jobs[i].cmdline);
+                printf("Added job [%d] %d %s %s\n", jobs[i].jid, jobs[i].pid, get_job_state(jobs[i].state), jobs[i].cmdline);
             }
             return 1;
         }
@@ -477,7 +523,9 @@ int deletejob(struct job_t *jobs, pid_t pid)
     for (i = 0; i < MAXJOBS; i++)
     {
         if (jobs[i].pid == pid)
-        {
+        {   
+            if (verbose)
+                printf("Removed job [%d] %d %s %s\n", jobs[i].jid, jobs[i].pid, get_job_state(jobs[i].state), jobs[i].cmdline);
             clearjob(&jobs[i]);
             nextjid = maxjid(jobs) + 1;
             return 1;

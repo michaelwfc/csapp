@@ -59,9 +59,7 @@ int main(int argc, char **argv)
         /* Block SIGCHLD before fork*/
         Sigprocmask(SIG_BLOCK, &mask_one, &prev_one); 
         if ((pid = Fork()) == 0) { /* Child process */
-            /* Unblock SIGCHLD 
-            
-            */
+            /* Unblock SIGCHLD*/
             Sigprocmask(SIG_SETMASK, &prev_one, NULL); 
             Execve("/bin/date", argv, NULL);
         }
