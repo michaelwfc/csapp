@@ -26,7 +26,7 @@
 #define UNDEF 0 /* undefined */
 #define FG 1    /* running in foreground */
 #define BG 2    /* running in background */
-#define ST 3    /* stopped */
+#define ST 3    /* Stopped */
 
 char* get_job_state(int state){
     if(state == UNDEF)
@@ -245,6 +245,7 @@ void eval(char *cmdline)
             */
             if(verbose)
                 printf("Child PID %d: start to execve the command %s\n", getpid(), cmdline);
+            
             if (execve(argv[0], argv, environ) == -1)
             {
                 printf("Child PID %d: failed to execve command %s\n", getpid(), cmdline);
@@ -261,10 +262,9 @@ void eval(char *cmdline)
             // if a command is a foreground job, we must wait for the termination of the job in child process to reap and delete the job
             // if a command is a background job, we not need to wait the job to ternimanted
             if (!bg){
-                // reap the job in the foreground
-                if (waitpid(pid, &status, WNOHANG) == -1){
-                    printf("Parent PID %d error: failed to waitpid for child PID %d\n", getpid(),pid);
-                }else{
+                // TODO: the foreground job can not stuct in the tsh shell as :/bin/tail tsh.c -f -n 10
+                // reap the foreground job with the while loop 
+                while(waitpid(pid, &status, WNOHANG) >0){
                     // delete the jobs after reaped the foreground job
                     // Critical Section:: Sigprocmask(SIG_BLOCK, &mask_all, &prev_all); blocks all signals to ensure safe manipulation of the job list, 
                     // specifically to call deletejob(pid) without interruptions.
@@ -273,20 +273,13 @@ void eval(char *cmdline)
                     sigprocmask(SIG_SETMASK, &prev_all, NULL);
                     if(verbose)
                         printf("reap the Child PID %d\n",pid);
-
-                    // else{
-                    //     if(WIFEXITED(status))
-                    //         printf("Parent PID %d: succssed to reap the child PID %d, which is terminated normally with exit status=%d for command %s\n",getpid(),  pid, WEXITSTATUS(status),cmdline);
-                    //     else
-                    //         printf("Parent PID %d: succssed to reap the child PID %d, but which is terminated abnormally with exit status=%d for command %s\n",getpid(),  pid, WEXITSTATUS(status),cmdline);
-                    // }
                 }
             }
             else{
-                // printf("Parent PID %d : run a background job with child PID %d and command '%s'\n", getpid(),pid,cmdline);
+
                 struct job_t *job = getjobpid(jobs,pid);
                 if(verbose)
-                    printf("show job in Parent process:[%d] %d %s %s\n", job->jid, job->pid, get_job_state(job->state), job->cmdline);
+                    printf("Parent PID %d show a background job in :[%d] %d %s %s\n",getpid(), job->jid, job->pid, get_job_state(job->state), job->cmdline);
             }
         }
     }
@@ -414,6 +407,7 @@ void waitfg(pid_t pid)
 void sigchld_handler(int sig)
 {
     // int olderrno = errno;
+    int status;
     pid_t pid;
 
     sigset_t mask_all, prev_all;
@@ -423,26 +417,27 @@ void sigchld_handler(int sig)
     WNOHANG: The default behavior suspends the calling process until a child terminates; 
     WUNTRACED: Suspend execution of the calling process until a process in the wait set becomes either terminated or stopped. 
             then it will not suspend the calling process if the child not terminated.
+
+    waitpid in your sigchld_handler will detect this as a "stopped" status rather than "terminated," meaning it won’t remove the child process from the job list.
+    replace while loop by if condition, in while loop, if a stopped process come, the loop will not be stopped
     */
-    while ((pid = waitpid(-1, NULL, WUNTRACED)) > 0) { /* Reap a zombie child */
-        // if(verbose)
-        //     printf("PID %d sigchld_handler reap a zombie child pid %d\n", getpid(),pid);
-        // get the job by pid ,if the job is a background job, do not wait to reap it
-        // struct job_t *job = getjobpid(jobs, pid);
-        // if(job->state ==FG)
-        // {
-        // Critical Section:: Sigprocmask(SIG_BLOCK, &mask_all, &prev_all); blocks all signals to ensure safe manipulation of the job list, 
-        // specifically to call deletejob(pid) without interruptions.
-        sigprocmask(SIG_BLOCK, &mask_all, &prev_all);
-        deletejob(jobs,pid); /* Delete the child from the job list */
-        sigprocmask(SIG_SETMASK, &prev_all, NULL);
-        if(verbose)
-            printf("reap the Child PID %d\n",pid);
-        // }
+    if((pid = waitpid(-1, &status, WUNTRACED)) > 0) { /* Reap a zombie child */        
+        //  if child process terminated，  WIFSTOPPED(status): Returns true if the child that caused the return is currently stopped.
+        if(! WIFSTOPPED(status)){ 
+            // Critical Section:
+            //blocks all signals to ensure safe manipulation of the job list,  specifically to call deletejob(pid) without interruptions.
+            sigprocmask(SIG_BLOCK, &mask_all, &prev_all);
+            if(verbose)
+                printf("PID %d sigchld_handler waited a terminated child pid %d\n", getpid(),pid);
+
+            deletejob(jobs,pid); /* Delete the child from the job list */
+            sigprocmask(SIG_SETMASK, &prev_all, NULL);
+
+        }else{
+            if(verbose)
+                printf("PID %d sigchld_handler waited a stopped child pid %d\n", getpid(),pid);
+        }
     }
-    // if (errno != ECHILD)
-    //     app_error("waitpid error");
-    // errno = olderrno;
     return;
 }
 
@@ -463,8 +458,8 @@ void sigchld_handler(int sig)
  */
 void sigint_handler(int sig)
 {
-    // find the pid of foreground job
-    pid_t pid = fgpid(jobs);
+    
+    pid_t pid = fgpid(jobs); // find the pid of foreground job
     struct job_t* job= getjobpid(jobs,pid);  
     
     sigset_t mask_all, prev_all;
@@ -472,10 +467,8 @@ void sigint_handler(int sig)
 
     if(pid> 0)
     {
-        // Critical Section:: Sigprocmask(SIG_BLOCK, &mask_all, &prev_all); blocks all signals to ensure safe manipulation of the job list, 
-        // specifically to call deletejob(pid) without interruptions.
-        
-        sigprocmask(SIG_BLOCK, &mask_all, &prev_all);
+        // Critical Section:
+        sigprocmask(SIG_BLOCK, &mask_all, &prev_all); // Block all signals while accessing and updating shared data to ensure safe manipulation
 
         if(kill(pid, SIGTERM)==-1)
         {
@@ -492,12 +485,13 @@ void sigint_handler(int sig)
 /*
  * sigtstp_handler - The kernel sends a SIGTSTP to the shell whenever the user types ctrl-z at the keyboard. 
  Catch it and suspend the foreground job by sending it a SIGTSTP.
+
  */
 void sigtstp_handler(int sig)
 
 {   
-     // find the pid of foreground job
-    pid_t pid = fgpid(jobs);
+    
+    pid_t pid = fgpid(jobs);  // find the pid of foreground job
     struct job_t* job= getjobpid(jobs,pid);  
     
     sigset_t mask_all, prev_all;
@@ -505,14 +499,18 @@ void sigtstp_handler(int sig)
 
     if(pid> 0)
     {   
-        sigprocmask(SIG_BLOCK, &mask_all, &prev_all);
-        if(kill(pid, SIGTSTP)==-1)
+        // Critical Section:
+        sigprocmask(SIG_BLOCK, &mask_all, &prev_all); // Block all signals while accessing and updating shared data to ensure safe manipulation
+        if(kill(pid, SIGTSTP)==-1) // Send SIGTSTP to the foreground job,This signal stops the process but does not terminate it, so the process remains in a "stopped" state.
         {
             unix_error("stop error");
         }
+        
+        job->state = ST; // Update the job's state to Stopped (ST)
+
         if(verbose)
             printf("sent SIGTSTP to job: [%d] %d %s %s\n", job->jid, job->pid, get_job_state(job->state), job->cmdline);
-        sigprocmask(SIG_SETMASK, &prev_all, NULL);
+        sigprocmask(SIG_SETMASK, &prev_all, NULL); //  Restore the original signal mask
     }
     return;
 }

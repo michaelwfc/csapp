@@ -438,6 +438,8 @@ user      1234  0.0  0.0      0     0 ?        Z    10:02   0:00 [myprocess] <de
 
 Here, STAT shows Z, and <defunct> in the COMMAND column also indicates a zombie process.
 
+
+
 ```
 
 #### Reaping 
@@ -492,13 +494,8 @@ for a child to terminate.
 
 #### Checking the Exit Status of a Reaped Child
 
-
-
-If the statusp argument is non-NULL, then waitpid encodes status information
-about the child that caused the return in status, which is the value pointed to
-by statusp. 
-The wait.h include file defines several macros for interpreting the
-status argument:
+If the statusp argument is non-NULL, then waitpid encodes status information about the child that caused the return in status, which is the value pointed to by statusp. 
+The wait.h include file defines several macros for interpreting the status argument:
 
 - WIFEXITED(status)
   Returns true if the child terminated normally, via a call to exit or a return.
