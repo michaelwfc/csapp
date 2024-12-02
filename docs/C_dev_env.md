@@ -60,13 +60,26 @@ Windows uses the Portable Executable (PE) format, while Linux commonly uses the 
 [Using C++ and WSL in VS Code](https://code.visualstudio.com/docs/cpp/config-wsl)
 
 ## WSL env 
+https://learn.microsoft.com/zh-cn/windows/wsl/setup/environment
 
-```shell
+### 1 install wsl and linux distribution
+```bash
+# 如果在线安装较慢，可以使用离线安装， 所在仓库为https://github.com/microsoft/WSL，只需要下载其中的msi文件安装即可，文件下载地址：https://github.com/microsoft/WSL/releases 
 wsl --install
 wsl --list --online 
+# 离线安装  Linux 发行版  https://learn.microsoft.com/zh-cn/windows/wsl/install-manual#step-6---install-your-linux-distribution-of-choice
 wsl --install Ubuntu-22.04
+```
 
+### 2 set user name and password
+- open Ubuntu-22.04
+- set User name and password
+- show the distribution: wsl -l -v
+
+```bash
+# enter into wsl from cmd
 wsl
+
 sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
 sudo vim /etc/apt/sources.list
 # Ubuntu 20.04 代号为 jammy
@@ -85,14 +98,21 @@ deb-src http://mirrors.aliyun.com/ubuntu/ jammy-backports main restricted univer
 sudo apt update && apt upgrade -y
 
 ## 安装必备的库, 执行
-sudo apt install -y build-essential gcc gdb make libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev 
+sudo apt install -y build-essential gcc gdb make libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev
+
 # Python openssl bindings are available in 22.04 in python3-openssl
-sudo apt install -y python-openssl
+sudo apt install -y python3-openssl
+
+# 在 WSL 下如何访问 Windows 下的所有目录，所以只需要在 WSL 的开发目录下构建一个软链接即可以在避免直接访问 /mnt 目录的同时访问到 Windows 下的目录
+mkdir projects
+ln -s /mnt/e/projects projects
 
 # Navigate to your helloworld project folder and launch VS Code from the WSL terminal with code .
 cd $Home/projects/helloworld/
 code . 
 ```
+
+
 
 ## Run VS Code in WSL
 
