@@ -764,7 +764,7 @@ In UNIX-like operating systems, signals are a form of asynchronous notification 
 A signal is a small message that notifies a process that an event of some type has occurred in the system. 
 
 - Akin to exceptions and interrupts
-- Sent from the kernel (sometimes at the request of another process) to a - process
+- Sent from the kernel (sometimes at the request of another process) to a process
 - Signal type is identified by small integer ID’s (1-30)
 - Only information in a signal is its ID and the fact that it arrived
 

@@ -6,14 +6,7 @@
    
 
 
-## vscode setting on wsl
 
-https://code.visualstudio.com/docs/cpp/config-wsl
-https://code.visualstudio.com/docs/cpp/config-mingw
-https://gourav.io/blog/setup-vscode-to-run-debug-c-cpp-code
-https://code.visualstudio.com/docs/cpp/cpp-debug
-https://code.visualstudio.com/docs/cpp/launch-json-reference
-https://code.visualstudio.com/docs/remote/wsl
 
 
 ## Compilers
@@ -100,6 +93,9 @@ sudo apt update && apt upgrade -y
 ## 安装必备的库, 执行
 sudo apt install -y build-essential gcc gdb make libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev
 
+whereis gcc
+whereis gdb
+
 # Python openssl bindings are available in 22.04 in python3-openssl
 sudo apt install -y python3-openssl
 
@@ -126,7 +122,16 @@ code .
 - c_cpp_properties.json (compiler path and IntelliSense settings)
 - tasks.json (build instructions)
 - launch.json (debugger settings)
-- 
+
+
+
+- https://code.visualstudio.com/docs/cpp/config-wsl
+- https://code.visualstudio.com/docs/cpp/config-mingw
+- https://gourav.io/blog/setup-vscode-to-run-debug-c-cpp-code
+- https://code.visualstudio.com/docs/cpp/cpp-debug
+- https://code.visualstudio.com/docs/cpp/launch-json-reference
+- https://code.visualstudio.com/docs/remote/wsl
+
 
 
 
