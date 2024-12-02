@@ -1,25 +1,17 @@
 {
     "configurations": [
         {
-            "name": "GCC",
+            "name": "Linux",
             "includePath": [
-                //  "${workspaceFolder}/src/**",
-                // for Linux 
-                "/usr/include" 
+                "${workspaceFolder}/labs/shelllab/**",
+                "/usr/include/"
             ],
-            "defines": [
-                "_DEBUG",
-                "UNICODE",
-                "_UNICODE"
-            ],
-            "windowsSdkVersion": "10.0.22621.0",
-            // "compilerPath": "C:\\msys64\\ucrt64\\bin\\gcc.exe",
+            "defines": [],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
-            "cppStandard": "c++17",
-            "intelliSenseMode": "windows-gcc-x64"
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "linux-gcc-x64"
         }
-
     ],
     "version": 4
 }

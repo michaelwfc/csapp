@@ -12,7 +12,8 @@
   //     }
   //   }
   // },
-
+  // "markdown.styles": [".github-markdown-body"],
+  // "markdown-preview-github-styles.colorTheme":"Single theme: Light",
   "window.zoomLevel": 1,
   "autoDocstring.docstringFormat": "google-notypes",
   "workbench.settings.editor": "json",

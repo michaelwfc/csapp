@@ -44,7 +44,7 @@
             "debuggerPath": "/usr/bin/gdb"
         },
         "sourceFileMap": {
-            "/mnt/e": "E:\\", // Mapping WSL filesystem to Windows
+            // "/mnt/e": "E:\\", // Mapping WSL filesystem to Windows
             "/home": "${workspaceFolder}" // Mapping WSL home to your project
         },
 
