@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
+// #include "csapp.h"
 
 
 
@@ -264,7 +265,7 @@ void eval(char *cmdline)
             if (!bg){
                 // TODO: the foreground job can not stuct in the tsh shell as :/bin/tail tsh.c -f -n 10
                 // reap the foreground job with the while loop 
-                while(waitpid(pid, &status, WNOHANG) >0){
+                while(waitpid(pid, &status, 0) >0){
                     // delete the jobs after reaped the foreground job
                     // Critical Section:: Sigprocmask(SIG_BLOCK, &mask_all, &prev_all); blocks all signals to ensure safe manipulation of the job list, 
                     // specifically to call deletejob(pid) without interruptions.
@@ -423,7 +424,7 @@ void sigchld_handler(int sig)
     */
     if((pid = waitpid(-1, &status, WUNTRACED)) > 0) { /* Reap a zombie child */        
         //  if child process terminated，  WIFSTOPPED(status): Returns true if the child that caused the return is currently stopped.
-        if(! WIFSTOPPED(status)){ 
+        if(WIFSTOPPED(status)){ 
             // Critical Section:
             //blocks all signals to ensure safe manipulation of the job list,  specifically to call deletejob(pid) without interruptions.
             sigprocmask(SIG_BLOCK, &mask_all, &prev_all);
@@ -433,10 +434,8 @@ void sigchld_handler(int sig)
             deletejob(jobs,pid); /* Delete the child from the job list */
             sigprocmask(SIG_SETMASK, &prev_all, NULL);
 
-        }else{
-            if(verbose)
-                printf("PID %d sigchld_handler waited a stopped child pid %d\n", getpid(),pid);
         }
+        
     }
     return;
 }
@@ -475,7 +474,7 @@ void sigint_handler(int sig)
             unix_error("kill error");
         }
         if(verbose)
-            printf("SIGINT: sent SIGTERM to terminate the job: [%d] %d %s %s\n", job->jid, job->pid, get_job_state(job->state), job->cmdline);
+            printf("\nSIGINT: sent SIGTERM to terminate the job: [%d] %d %s %s\n", job->jid, job->pid, get_job_state(job->state), job->cmdline);
         sigprocmask(SIG_SETMASK, &prev_all, NULL);
     }
 
