@@ -1,6 +1,20 @@
 {
     "tasks": [
         {
+            "label": "Build with make tsh",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "tsh"
+            ],
+            "options": {
+                "cwd": "E:\\projects\\csapp\\labs\\shellalb\\shlab-handout"
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+
+        {
             "label": "Build with gcc shellex",
             "type": "shell",
             "command": "/usr/bin/gcc",
@@ -17,6 +31,7 @@
             "group": "build",
             "problemMatcher": []
         },
+
         {
             "label": "Build with make csim",
             "type": "shell",
@@ -30,6 +45,7 @@
             "group": "build",
             "problemMatcher": []
         },
+
         {
             "type": "cppbuild",
             "label": "C/C++: gcc build active file",
