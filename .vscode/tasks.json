@@ -1,6 +1,20 @@
 {
     "tasks": [
         {
+            "label": "Build with make tsh in Ubuntu",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "tsh"
+            ],
+            "options": {
+                "cwd": "/home/michael/csapp/labs/shellalb/shlab-handout/"
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+
+        {
             "label": "Build with make tsh",
             "type": "shell",
             "command": "make",

@@ -1,7 +1,7 @@
 {
   "workbench.colorTheme": "Default Dark+",
   "files.autoSave": "onFocusChange",
-  "terminal.integrated.defaultProfile.windows": "Ubuntu-22.04 (WSL)", //"UCRT64"
+  "terminal.integrated.defaultProfile.windows": "Ubuntu", //"Ubuntu-22.04 (WSL)", //"UCRT64"
   // "terminal.integrated.profiles.windows": {
   //   "UCRT64": {
   //     "path": "C:\\msys64\\usr\\bin\\bash.exe",
