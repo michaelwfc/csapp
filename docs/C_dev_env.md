@@ -1,12 +1,21 @@
 # C dev env
 
+## C dev enviroments on Windows
+
+- Windows: MS Visual C++
+- Windows: mingw-w64
+- Windows: wsl
+- Windows: remote wsl
+- Windows: docker container
+- Windows: remote dev container
+- Windows: vm linux 虚拟机
+  
+
+## C dev tools
+
 - IDE : [vscode](https://code.visualstudio.com/docs/languages/cpp)
 - vscode extension: Install recommended C/C++ extension in VSCode and reload
 - compiler : MS Visual C++ /gcc/clang
-   
-
-
-
 
 
 ## Compilers
@@ -48,12 +57,16 @@ Windows uses the Portable Executable (PE) format, while Linux commonly uses the 
 - MinGW & MSYS: MinGW 是用于进行 Windows 应用开发的 GNU 工具链（开发环境），它的编译产物一般是原生 Windows 应用
 - MinGW-w64 & MSYS2:  https://www.msys2.org/
 
+
+
+
 # GCC on Windows WSL
 
 [Using C++ and WSL in VS Code](https://code.visualstudio.com/docs/cpp/config-wsl)
 
 ## WSL env 
-https://learn.microsoft.com/zh-cn/windows/wsl/setup/environment
+
+- https://learn.microsoft.com/zh-cn/windows/wsl/setup/environment
 
 ### 1 install wsl and linux distribution
 ```bash
@@ -110,7 +123,7 @@ code .
 
 
 
-## Run VS Code in WSL
+##  WSL C developing with VS Code
 
 ```shell
 # Navigate to your helloworld project folder and launch VS Code from the WSL terminal with code .
@@ -118,11 +131,10 @@ cd $Home/projects/helloworld/
 code .
 ```
 
-## WSL vscode settings
+### WSL vscode settings
 - c_cpp_properties.json (compiler path and IntelliSense settings)
 - tasks.json (build instructions)
 - launch.json (debugger settings)
-
 
 
 - https://code.visualstudio.com/docs/cpp/config-wsl
@@ -135,7 +147,8 @@ code .
 
 
 
-## wsl operarion 
+### wsl operarion 
+
 cope/paste :
 - win > ubuntu: ctrl+ c/v > right click
 - ubuntu > win : ctrl+shift + c  > ctrl+ v
@@ -146,12 +159,10 @@ export HTTP_PROXY=[username]:[password]@[proxy-web-or-IP-address]:[port-number]
 export HTTP_PROXY=127.0.0.1:7890
 
 
-
-
-
-### run
-
 ### C debug in vscode
+
+- https://code.visualstudio.com/docs/cpp/launch-json-reference
+- 
 
 launch.json
 {
@@ -202,7 +213,15 @@ launch.json
     ]
 }
 
-# make
+
+
+## REMOTE WSL C developing
+
+- https://code.visualstudio.com/docs/remote/wsl
+- https://code.visualstudio.com/api/advanced-topics/remote-extensions
+
+
+# Make
 
 - preprocessing
 - compiling
@@ -222,3 +241,7 @@ https://blog.csdn.net/Nicholas_Liu2017/article/details/78323391
 4.设置环境变量 ： Path 中增加 MinGW/bin  
 5.复制或者重命名  "mingw32-make.exe to make.exe   
 6.在命令行中输入 "mingw32-make" or make 来执行 Makefile 文件中的任务。  
+
+
+
+

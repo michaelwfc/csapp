@@ -483,8 +483,7 @@ pid_t wait(int *statusp);
 - WNOHANG
   Return immediately (with a return value of 0) if none of the child processes in the wait set has terminated yet. 
   The default behavior suspends the calling process until a child terminates; 
-  this option is useful in those cases where you want to continue doing useful work while waiting
-for a child to terminate.
+  this option is useful in those cases where you want to continue doing useful work while waiting for a child to terminate.
 - WUNTRACED
   Suspend execution of the calling process until a process in the wait set becomes either terminated or stopped. 
   Return the PID of the terminated or stopped child that caused the return. 
@@ -1079,8 +1078,6 @@ Linux provides implicit and explicit mechanisms for blocking signals:
   For example, in Figure 8.31, suppose the program has caught signal s and is currently running handler S. If another signal s is sent to the process, then s will become pending but will not be received until after handler S returns.
 
 #### Explicit blocking mechanism
-
-
 
   Applications can explicitly block and unblock selected signals using the sigprocmask function and its helpers.
 
