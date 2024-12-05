@@ -207,10 +207,11 @@ void eval(char *cmdline)
     pid_t pid;           /* Process id */
     
     
-    sigset_t mask_all,prev_all,mask_one,prev_one;
+    sigset_t mask_all,mask_one,prev_one; //prev_all,
     sigfillset(&mask_all);
     sigemptyset(&mask_one);
     sigaddset(&mask_one,SIGCHLD);
+
     Signal(SIGCHLD,sigchld_handler);
 
 
@@ -256,24 +257,31 @@ void eval(char *cmdline)
         }
         else{
             // critical sectioin: add job to jobs
-            sigprocmask(SIG_BLOCK,&mask_all,NULL);
+           
+            sigprocmask(SIG_BLOCK,&mask_all,NULL);   // block all singals
             addjob(jobs,pid, job_state, cmdline);
-            sigprocmask(SIG_SETMASK,&prev_one,NULL);
+            sigprocmask(SIG_SETMASK,&prev_one,NULL);  // restore to the previous blocked set without blocking SIG_BLOCK
 
             // if a command is a foreground job, we must wait for the termination of the job in child process to reap and delete the job
             // if a command is a background job, we not need to wait the job to ternimanted
+
             if (!bg){
-                // TODO: the foreground job can not stuct in the tsh shell as :/bin/tail tsh.c -f -n 10
+                // the foreground job can not stuct in the tsh shell as :/bin/tail tsh.c -f -n 10, change the option to 0
                 // reap the foreground job with the while loop 
-                while(waitpid(pid, &status, 0) >0){
+                // WUNTRACED: wait the foregroud job to be terminated(ctrl+c) or stoped(ctrl+z)
+                while(waitpid(pid, &status, WUNTRACED) >0){
                     // delete the jobs after reaped the foreground job
                     // Critical Section:: Sigprocmask(SIG_BLOCK, &mask_all, &prev_all); blocks all signals to ensure safe manipulation of the job list, 
                     // specifically to call deletejob(pid) without interruptions.
-                    sigprocmask(SIG_BLOCK, &mask_all, &prev_all);
-                    deletejob(jobs,pid); /* Delete the child from the job list */
-                    sigprocmask(SIG_SETMASK, &prev_all, NULL);
-                    if(verbose)
-                        printf("reap the Child PID %d\n",pid);
+
+                    // if(WIFEXITED(status)|WIFSIGNALED(status)){
+                    //     sigprocmask(SIG_BLOCK, &mask_all, &prev_all);
+                    //     deletejob(jobs,pid); /* Delete the child from the job list */
+                    //     sigprocmask(SIG_SETMASK, &prev_all, NULL);
+                    //     if(verbose)
+                    //         printf("reap the Child PID %d\n",pid);
+                    // }
+                    break;
                 }
             }
             else{
@@ -402,17 +410,22 @@ void waitfg(pid_t pid)
  *****************/
 
 /*
- * sigchld_handler - The kernel sends a SIGCHLD to the shell whenever a child job terminates (becomes a zombie), or stops because it received a SIGSTOP or SIGTSTP signal. 
- * The handler reaps all available zombie children, but doesn't wait for any other currently running children to terminate.
+ * sigchld_handler - 
+ 1. whenever a child job terminates (becomes a zombie), or stops because it received a SIGSTOP or SIGTSTP signal,  The kernel sends a SIGCHLD to the shell 
+ 2. trigger the sigchld_handler 
+ 3. in sigchld_handler,the handler reaps all available terminated(zombie) children
  */
-void sigchld_handler(int sig)
+void  sigchld_handler(int sig)
 {
-    // int olderrno = errno;
+    
+    // TODO: why using ctrl+c to terminate a foreground job not trigger this signal handler 
+
     int status;
     pid_t pid;
 
     sigset_t mask_all, prev_all;
     sigfillset(&mask_all);
+
     
     /*
     WNOHANG: The default behavior suspends the calling process until a child terminates; 
@@ -422,9 +435,12 @@ void sigchld_handler(int sig)
     waitpid in your sigchld_handler will detect this as a "stopped" status rather than "terminated," meaning it won’t remove the child process from the job list.
     replace while loop by if condition, in while loop, if a stopped process come, the loop will not be stopped
     */
-    if((pid = waitpid(-1, &status, WUNTRACED)) > 0) { /* Reap a zombie child */        
+   
+    while((pid = waitpid(-1, &status, WUNTRACED)) > 0) { /* Reap a zombie child */        
+        printf("waited pid %d\n",pid);
         //  if child process terminated，  WIFSTOPPED(status): Returns true if the child that caused the return is currently stopped.
-        if(WIFSTOPPED(status)){ 
+        // if(WIFSTOPPED(status)){ 
+        if(WIFEXITED(status)){
             // Critical Section:
             //blocks all signals to ensure safe manipulation of the job list,  specifically to call deletejob(pid) without interruptions.
             sigprocmask(SIG_BLOCK, &mask_all, &prev_all);
@@ -433,17 +449,19 @@ void sigchld_handler(int sig)
 
             deletejob(jobs,pid); /* Delete the child from the job list */
             sigprocmask(SIG_SETMASK, &prev_all, NULL);
-
         }
-        
+    if(verbose)
+        printf("test triggered sigchld_handler\n");
+
     }
     return;
 }
 
 /*
- * sigint_handler - The kernel sends a SIGINT to the shell whenver the user types ctrl-c at the keyboard. 
-   Catch it and send it along to the foreground job.
-   another way to  using kill function to send SIGINT to the foreground: kill(pid[i], SIGINT);
+ * sigint_handler - 
+                    The default action for SIGINT is to terminate the process.
+   1. whenver the user types ctrl-c at the keyboard, the kernel sends a SIGINT and will trigger sigint_handler 
+   2. in sigint_handler, using kill function to send SIGINT to the foreground job: kill(pid[i], SIGINT);
 
    Send the job a SIGTERM signal 
         SIGTERM, on the other hand, gives the process a chance to handle the termination and perform necessary cleanup since it can be caught and handled.
@@ -474,7 +492,7 @@ void sigint_handler(int sig)
             unix_error("kill error");
         }
         if(verbose)
-            printf("\nSIGINT: sent SIGTERM to terminate the job: [%d] %d %s %s\n", job->jid, job->pid, get_job_state(job->state), job->cmdline);
+            printf("\nsigint_handler: sent SIGTERM to terminate the job: [%d] %d %s %s\n", job->jid, job->pid, get_job_state(job->state), job->cmdline);
         sigprocmask(SIG_SETMASK, &prev_all, NULL);
     }
 
@@ -484,6 +502,8 @@ void sigint_handler(int sig)
 /*
  * sigtstp_handler - The kernel sends a SIGTSTP to the shell whenever the user types ctrl-z at the keyboard. 
  Catch it and suspend the foreground job by sending it a SIGTSTP.
+
+
 
  */
 void sigtstp_handler(int sig)
