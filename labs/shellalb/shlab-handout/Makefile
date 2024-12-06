@@ -9,7 +9,7 @@ TSHREF = ./tshref
 TSHARGS = "-p"
 CC = gcc
 CFLAGS = -Wall -O2
-
+DEBUGFLAGS = -Wall -g -O2 -Werror
 
 
 # FILES = $(TSH) ./myspin ./mysplit ./mystop ./myint
@@ -28,9 +28,12 @@ all: $(FILES)
 shell: shell.c
 	$(CC) -o shell shell.c
 
-# To make tsh explicitly part of the Makefile process,
+# To make tsh explicitly part of the Makefile process
+# -g -o0
+# In order to evaluate expressions like getpid() during debugging, the debugger needs to have access to the symbols (variables, functions, etc.) for the program. 
+# If you are using optimization settings in your build, the debug symbols may not be properly included.
 tsh: tsh.c
-	$(CC) $(CFLAGS) -o tsh tsh.c
+	$(CC) -g -o tsh tsh.c
 
 ##################
 # Handin your work

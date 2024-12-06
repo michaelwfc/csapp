@@ -6,7 +6,8 @@ make tch
 tch -v
 
 # test ctrl+c : add job,  reap child process and delete job
-/bin/tail -fn 5 README 
+/bin/head READE
+/bin/tail -fn 5 README
 ctrl+c
 
 # test ctrl+z: stop process

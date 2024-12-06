@@ -8,25 +8,12 @@
                 "tsh"
             ],
             "options": {
-                "cwd": "/home/michael/csapp/labs/shellalb/shlab-handout/"
+                "cwd": "${workspaceFolder}/labs/shellalb/shlab-handout/"
             },
             "group": "build",
             "problemMatcher": []
         },
 
-        {
-            "label": "Build with make tsh",
-            "type": "shell",
-            "command": "make",
-            "args": [
-                "tsh"
-            ],
-            "options": {
-                "cwd": "E:\\projects\\csapp\\labs\\shellalb\\shlab-handout"
-            },
-            "group": "build",
-            "problemMatcher": []
-        },
 
         {
             "label": "Build with gcc shellex",

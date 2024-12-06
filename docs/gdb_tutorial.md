@@ -103,6 +103,7 @@ Breakpoint 1 at 0x400e37: file bomb.c, line 74.
 
 # Set a breakpoint at a specific function:
 (gdb) break main
+(gdb) b main
 
 
 # List breakpoints to find their numbers: info breakpoints
@@ -405,5 +406,20 @@ of information. If you get stumped, feel free to ask your instructor for help.
 
 // run expression 1<<4
 >-exec print 1 << 4
+
+```
+
+# gdb debug for tsh
+
+```bash
+# cd csapp/labs/shellalb/shlab-handout/
+make tsh
+./tsh -v
+>tsh
+
+# find the PID
+top > COMMAND=tsh 
+
+sudo gdb  attach 24208
 
 ```

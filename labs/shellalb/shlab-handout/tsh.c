@@ -155,7 +155,7 @@ int main(int argc, char **argv)
 
     /* This one provides a clean way to kill the shell */
     Signal(SIGQUIT, sigquit_handler);
-
+   
     /* Initialize the job list */
     initjobs(jobs);
 
@@ -212,7 +212,7 @@ void eval(char *cmdline)
     sigemptyset(&mask_one);
     sigaddset(&mask_one,SIGCHLD);
 
-    Signal(SIGCHLD,sigchld_handler);
+    
 
 
     strcpy(buf, cmdline);          // copy the cmdline to buf
@@ -475,7 +475,11 @@ void  sigchld_handler(int sig)
  */
 void sigint_handler(int sig)
 {
-    
+    if (getenv("DEBUG") != NULL) {
+        // If we're debugging, ignore SIGINT
+        signal(SIGINT, SIG_IGN);
+    }
+
     pid_t pid = fgpid(jobs); // find the pid of foreground job
     struct job_t* job= getjobpid(jobs,pid);  
     
