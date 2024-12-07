@@ -1,5 +1,31 @@
 This is an x86-64 bomb for self-study students. 
 
+# gcc
+
+## gcc flags
+
+
+- -o flag 
+  
+To specify the output executable filename, the defalut is a.out
+```bash
+gcc main.c -o main
+```
+
+- -Wall
+
+Enable every warning with -Wall
+
+- -Werror flag 
+tells the compiler to treat any warning as a compilation error, which forces you to address all warnings before the code can be compiled.
+
+- -g 
+ Without debugging symbols, GDB might not have full access to the types and constants used in your program.
+
+  Optimization Flag: Avoid using optimization flags (such as -O2) when compiling your program for debugging, as optimization can make debugging difficult by reordering or removing code. Stick to -g for debugging purposes.
+
+
+
 
 # gdb (GNU Debugger)
 
@@ -407,6 +433,14 @@ of information. If you get stumped, feel free to ask your instructor for help.
 // run expression 1<<4
 >-exec print 1 << 4
 
+// -exec p  getpid(), it shows 'getpid' has unknowun return type, cast the call to its declared return type
+-exec p (int)getpid()
+
+//  -exec p (int)waitpid(-1, &status, WUNTRACED), No symbol WUNTRACED in current context
+(gdb) define WUNTRACED 0x02
+-exec p (int)waitpid(-1, &status, WUNTRACED)
+
+-exec p (int)waitpid(-1, &status, 0x02)
 ```
 
 # gdb debug for tsh
@@ -417,8 +451,9 @@ make tsh
 ./tsh -v
 >tsh
 
-# find the PID
-top > COMMAND=tsh 
+# find the PID in top
+top > press o > input: COMMAND=tsh
+top > press k > input: 24208(PID)
 
 sudo gdb  attach 24208
 

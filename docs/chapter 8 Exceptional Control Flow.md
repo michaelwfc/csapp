@@ -481,14 +481,17 @@ pid_t wait(int *statusp);
 #### Modifying the Default Behavior when reaping child processes
 
 - WNOHANG
+  Non-blocking wait  
   Return immediately (with a return value of 0) if none of the child processes in the wait set has terminated yet. 
   The default behavior suspends the calling process until a child terminates; 
   this option is useful in those cases where you want to continue doing useful work while waiting for a child to terminate.
 - WUNTRACED
+  Wait for stopped children  
   Suspend execution of the calling process until a process in the wait set becomes either terminated or stopped. 
   Return the PID of the terminated or stopped child that caused the return. 
   The default behavior returns only for terminated children; this option is useful when you want to check for both terminated and stopped children.
 - WCONTINUED
+  Wait for continued (resumed) children
   Suspend execution of the calling process until a running process in the wait set is terminated or until a stopped process in the wait set has been resumed by the receipt of a SIGCONT signal. (Signals are explained in Section 8.5.)
 
 #### Checking the Exit Status of a Reaped Child
