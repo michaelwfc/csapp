@@ -212,8 +212,6 @@ void eval(char *cmdline)
     sigemptyset(&mask_one);
     sigaddset(&mask_one,SIGCHLD);
 
-    
-
 
     strcpy(buf, cmdline);          // copy the cmdline to buf
     bg = parseline(cmdline, argv); // parse the cmdline to argv and return bg
@@ -275,11 +273,11 @@ void eval(char *cmdline)
                     // specifically to call deletejob(pid) without interruptions.
 
                     // if(WIFEXITED(status)|WIFSIGNALED(status)){
-                    //     sigprocmask(SIG_BLOCK, &mask_all, &prev_all);
-                    //     deletejob(jobs,pid); /* Delete the child from the job list */
-                    //     sigprocmask(SIG_SETMASK, &prev_all, NULL);
-                    //     if(verbose)
-                    //         printf("reap the Child PID %d\n",pid);
+                    // sigprocmask(SIG_BLOCK, &mask_all, &prev_all);
+                    // deletejob(jobs,pid); /* Delete the child from the job list */
+                    // sigprocmask(SIG_SETMASK, &prev_all, NULL);
+                    // if(verbose)
+                    //     printf("reap the Child PID %d\n",pid);
                     // }
                     break;
                 }
@@ -428,9 +426,6 @@ void  sigchld_handler(int sig)
 
     
     /*
-    WNOHANG: The default behavior suspends the calling process until a child terminates; 
-    WUNTRACED: Suspend execution of the calling process until a process in the wait set becomes either terminated or stopped. 
-            then it will not suspend the calling process if the child not terminated.
 
     waitpid in your sigchld_handler will detect this as a "stopped" status rather than "terminated," meaning it won’t remove the child process from the job list.
     replace while loop by if condition, in while loop, if a stopped process come, the loop will not be stopped

@@ -6,7 +6,7 @@ make tch
 tch -v
 
 # test ctrl+c : add job,  reap child process and delete job
-/bin/head READE
+/bin/head README
 /bin/tail -fn 5 README
 ctrl+c
 
