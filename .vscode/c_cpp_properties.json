@@ -1,16 +1,22 @@
 {
     "configurations": [
         {
-            "name": "Linux",
+            "name": "Linux", // for Remote WSL, Ubuntu
             "includePath": [
-                "${workspaceFolder}/labs/shelllab/**",
-                "/usr/include/"
+                // "\\\\wsl$\\Ubuntu-22.04\\usr\\include",         
+                "/usr/include",           // Standard system includes
+                "/usr/local/include",    // Local includes
+                "${workspaceFolder}/labs/shellalb/shlab-handout/**"  // Workspace-specific includes
             ],
-            "defines": [],
-            "compilerPath": "/usr/bin/gcc",
+            "compilerPath": "/usr/bin/gcc",    // Path to the compiler
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "intelliSenseMode": "linux-gcc-x64",
             "cStandard": "c17",
-            "cppStandard": "gnu++17",
-            "intelliSenseMode": "linux-gcc-x64"
+            "cppStandard": "gnu++17"
         }
     ],
     "version": 4
