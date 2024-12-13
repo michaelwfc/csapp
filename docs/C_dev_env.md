@@ -6,9 +6,10 @@
 - Windows: mingw-w64
 - Windows: wsl
 - Windows: remote wsl
+- Windows: vm linux 虚拟机
 - Windows: docker container
 - Windows: remote dev container
-- Windows: vm linux 虚拟机
+
   
 
 ## C dev tools
@@ -72,15 +73,59 @@ Windows uses the Portable Executable (PE) format, while Linux commonly uses the 
 ```bash
 # 如果在线安装较慢，可以使用离线安装， 所在仓库为https://github.com/microsoft/WSL，只需要下载其中的msi文件安装即可，文件下载地址：https://github.com/microsoft/WSL/releases 
 wsl --install
+
 wsl --list --online 
 # 离线安装  Linux 发行版  https://learn.microsoft.com/zh-cn/windows/wsl/install-manual#step-6---install-your-linux-distribution-of-choice
-wsl --install Ubuntu-22.04
+wsl --install -d Ubuntu-20.04
+
+# To see all installed WSL distributions:
+wsl -l -v
+
+# Set a Default Distribution (Optional)
+wsl --set-default Ubuntu-20.04
+
+# To start a specific distribution, use:
+wsl -d Ubuntu-20.04
+# Codename:       focal
+
+# To check the version of Ubuntu you are running in a Bash shell,
+lsb_release -a
 ```
 
-### 2 set user name and password
+### set user name and password
 - open Ubuntu-22.04
 - set User name and password
 - show the distribution: wsl -l -v
+
+### set user name and password manully
+
+```bash
+sudo adduser michael
+
+# To change the password for your user, use the following command:
+sudo passwd michael
+
+# Give the new user sudo privileges:
+sudo usermod -aG sudo michael
+
+# you can remove the old user
+sudo deluser oldusername
+```
+### set the default wsl distribution user
+
+```Powershell
+# Launch your WSL instance as root:
+wsl  -d Ubuntu -u root
+# Set the default user by editing /etc/wsl.conf:
+nano /etc/wsl.conf
+# Add the following lines to specify the default user:
+[user]
+default=michael
+# Save the file (Ctrl+O, Enter, then Ctrl+X to exit).
+# Restart WSL:
+wsl --shutdown
+wsl
+```
 
 ```bash
 # enter into wsl from cmd
@@ -88,7 +133,9 @@ wsl
 
 sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
 sudo vim /etc/apt/sources.list
-# Ubuntu 20.04 代号为 jammy
+# Ubuntu 18.04 Bionic Beaver（仿生海狸）
+# Ubuntu 20.04 Focal Fossa（马岛长尾狸猫，马达加斯加岛上最大的食肉性哺乳动物）
+# Ubuntu 22.04 代号为 Jammy Jellyfish(幸运水母)
 deb http://mirrors.aliyun.com/ubuntu/ jammy main restricted universe multiverse
 deb-src http://mirrors.aliyun.com/ubuntu/ jammy main restricted universe multiverse
 deb http://mirrors.aliyun.com/ubuntu/ jammy-security main restricted universe multiverse
@@ -165,6 +212,8 @@ export HTTP_PROXY=127.0.0.1:7890
 - 
 
 launch.json
+
+```json
 {
   "version": "0.2.0",
   "configurations": [
@@ -213,7 +262,7 @@ launch.json
     ]
 }
 
-
+```
 
 ## REMOTE WSL C developing
 
