@@ -170,7 +170,7 @@ want to request services from the kernel, such as reading a file, writing a file
 |57      |fork        |Create process|
 |59      |execve      |Execute a program|
 |60      |_exit       |Terminate process|
-|61      |wait4       |Wait for a process to terminate|
+|61      |wait        |Wait for a process to terminate|
 |62      |kill        |Send signal to a process|
 
 
@@ -796,7 +796,7 @@ Signals provide a mechanism for exposing the occurrence of such exceptions to us
 |6       |SIGABRT   |Terminate and dump core a   |Abort signal from abort function|
 |7       |SIGBUS    |Terminate                   |Bus error|
 |8       |SIGFPE    |Terminate and dump core a   |Floating-point exception|
-|9       |SIGKILL   |Terminate  b                |Kill program|
+|9       |SIGKILL   |Terminate                   |Kill program|
 |10      |SIGUSR1   |Terminate                   |User-defined signal 1|
 |11      |SIGSEGV   |Terminate and dump core a   |Invalid memory reference (seg fault)|
 |12      |SIGUSR2   |Terminate                   |User-defined signal 2|

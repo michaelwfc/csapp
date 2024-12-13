@@ -9,7 +9,9 @@ TSHREF = ./tshref
 TSHARGS = "-p"
 CC = gcc
 CFLAGS = -Wall -O2
-DEBUGFLAGS = -g 
+
+#  -D__USE_XOPEN_EXTENDED during the compilation to explicitly define the macro __USE_XOPEN_EXTENDED or __USE_XOPEN2K8
+DEBUGFLAGS = -g  -Wall -Werror -std=gnu99 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE -D__USE_XOPEN_EXTENDED
 
 
 # FILES = $(TSH) ./myspin ./mysplit ./mystop ./myint

@@ -19,8 +19,6 @@
 #include <errno.h>
 // #include "csapp.h"
 
-
-
 /* Misc manifest constants */
 #define MAXLINE 1024   /* max line size */
 #define MAXARGS 128    /* max args on a command line */
@@ -33,18 +31,18 @@
 #define BG 2    /* running in background */
 #define ST 3    /* Stopped */
 
-char* get_job_state(int state){
-    if(state == UNDEF)
+char *get_job_state(int state)
+{
+    if (state == UNDEF)
         return "UNDEF";
-    else if(state == FG)
+    else if (state == FG)
         return "FG";
-    else if(state == BG)
+    else if (state == BG)
         return "BG";
-    else if(state == ST)
+    else if (state == ST)
         return "ST";
     else
         return "UNKNOWN";
-    
 }
 /*
  * Jobs states: FG (foreground), BG (background), ST (stopped)
@@ -117,6 +115,11 @@ void app_error(char *msg);
 typedef void handler_t(int);
 handler_t *Signal(int signum, handler_t *handler);
 
+void print_job(struct job_t *job);
+
+// static sig_atomic_t fg_pid;
+// static sig_atomic_t fg_running;
+
 /*
  * main - The shell's main routine
  */
@@ -148,7 +151,6 @@ int main(int argc, char **argv)
             usage();
         }
     }
-    
 
     /* Install the signal handlers */
 
@@ -159,7 +161,7 @@ int main(int argc, char **argv)
 
     /* This one provides a clean way to kill the shell */
     Signal(SIGQUIT, sigquit_handler);
-   
+
     /* Initialize the job list */
     initjobs(jobs);
 
@@ -204,94 +206,103 @@ void eval(char *cmdline)
 {
     char *argv[MAXARGS]; /* Argument list execve() */
     char buf[MAXLINE];   /* Holds modified command line */
-    int bg;   
+    int bg;
     int job_state;
-    int status;           
+    int status;
     int is_buildin_cmd;
-    pid_t pid;           /* Process id */
-    
-    
-    sigset_t mask_all,mask_one,prev_one; //prev_all,
-    sigfillset(&mask_all);
-    sigemptyset(&mask_one);
-    sigaddset(&mask_one,SIGCHLD);
+    pid_t pid; /* Process id */
+    // pid_t child_pid;
 
+    sigset_t mask, prev;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGCHLD);
+    sigaddset(&mask, SIGINT);
+    sigaddset(&mask, SIGTSTP);
 
     strcpy(buf, cmdline);          // copy the cmdline to buf
     bg = parseline(cmdline, argv); // parse the cmdline to argv and return bg
-    if(bg)
-        job_state=BG;
+    if (bg)
+        job_state = BG;
     else
-        job_state=FG;
+        job_state = FG;
 
-    parseline(cmdline, argv); 
-    
+    parseline(cmdline, argv);
+
     if (argv[0] == NULL)
     {
         return; // if cmdline is empty, return
     }
-    is_buildin_cmd= builtin_cmd(argv);
+    is_buildin_cmd = builtin_cmd(argv);
     if (!is_buildin_cmd)
-    {   
+    {
         /* Block SIGCHLD before fork*/
-        sigprocmask(SIG_BLOCK, &mask_one, &prev_one);
+        sigprocmask(SIG_BLOCK, &mask, &prev);
 
         // if the cmdline is not buildin command
         // fork a child process and run the job in the context of the child
-        if ((pid = fork()) == 0){
-            /* Unblock SIGCHLD*/
-            sigprocmask(SIG_SETMASK,&prev_one,NULL);
+        if ((pid = fork()) == 0)
+        {
+            /* Unblock signals in case child process will use*/
+            sigprocmask(SIG_SETMASK, &prev, NULL);
+            /* puts the child in a new process group whose group ID is identical to the
+            child’s PID. This ensures that there will be only one process, your shell, in the foreground process
+            group. When you type ctrl-c, the shell should catch the resulting SIGINT and then forward it
+            to the appropriate foreground job (or more precisely, the process group that contains the foreground
+            job). */
+            setpgid(pid, pid);
             // execute the command from input by execve function
             /*
             The execve() function is used to replace the current process image with a new process image. It does not return if the execution is successful.
                 If the execve() call is successful, the current process is replaced by the new executable, and the code following the execve() call will never be executed.
                 If execve() fails, it returns -1, and the error message can be printed.
             */
-            if(verbose)
-                printf("Child PID %d: start to execve the command %s\n", getpid(), cmdline);
-            
+            if (verbose)
+                printf("PPID %d Child PID %d: start to execve the command %s\n", getppid(), getpid(), cmdline);
+
             if (execve(argv[0], argv, environ) == -1)
             {
-                printf("Child PID %d: failed to execve command %s\n", getpid(), cmdline);
-                exit(0);
+                printf("PPID %d Child PID %d: failed to execve command %s\n", getppid(), getpid(), cmdline);
+                exit(-1);
             }
-
-      
         }
-        else{
-            // critical sectioin: add job to jobs
-            // sigprocmask(SIG_BLOCK,&mask_all,NULL);   // block all singals
-            addjob(jobs,pid, job_state, cmdline);
-            sigprocmask(SIG_SETMASK,&prev_one,NULL);  // restore to the previous blocked set without blocking SIG_BLOCK
+        else
+        {
+            addjob(jobs, pid, job_state, cmdline);
+
+            sigprocmask(SIG_SETMASK, &prev, NULL); // restore to the previous blocked set without blocking SIG_BLOCK
 
             // if a command is a foreground job, we must wait for the termination of the job in child process to reap and delete the job
             // if a command is a background job, we not need to wait the job to ternimanted
 
-            if (!bg){
-                // the foreground job can not stuct in the tsh shell as :/bin/tail tsh.c -f -n 10, change the option to 0
-                // reap the foreground job with the while loop 
-                // WUNTRACED: wait the foregroud job to be terminated(ctrl+c) or stoped(ctrl+z)
-                while(waitpid(pid, &status, WUNTRACED) >0){
-                    // delete the jobs after reaped the foreground job
-                    // Critical Section:: Sigprocmask(SIG_BLOCK, &mask_all, &prev_all); blocks all signals to ensure safe manipulation of the job list, 
-                    // specifically to call deletejob(pid) without interruptions.
+            if (!bg)
+            {
 
-                    // if(WIFEXITED(status)|WIFSIGNALED(status)){
-                    // sigprocmask(SIG_BLOCK, &mask_all, &prev_all);
-                    // deletejob(jobs,pid); /* Delete the child from the job list */
-                    // sigprocmask(SIG_SETMASK, &prev_all, NULL);
-                    // if(verbose)
-                    //     printf("reap the Child PID %d\n",pid);
-                    // }
-                    // TODO: use  sigsuspend();
-                    break;
+                // The reaping of a process means that the parent process must acknowledge that the child has finished executing and clean up its resources,
+                // which is done through functions like wait() or waitpid().
+                // reap the foreground job with the while loop using waitpid
+                // change the option to 0 to suspend the forground job unit it is ternimated and reaped 
+                while (waitpid(pid, &status, 0) > 0)
+                {
+                    // delete the jobs after reaped the foreground job
+                    // Critical Section:: Sigprocmask(SIG_BLOCK, &mask_all, &prev_all); blocks all signals to ensure safe manipulation of the job list,
+                    // specifically to call deletejob(pid) without interruptions.
+                    if (WIFEXITED(status) | WIFSIGNALED(status))
+                    {
+                        sigprocmask(SIG_BLOCK, &mask, &prev);
+                        deletejob(jobs, pid); /* Delete the child from the job list */
+                        sigprocmask(SIG_SETMASK, &prev, NULL);
+                        if (verbose)
+                            printf("eval function use waitpid reap forground pid: %d \n", pid);
+                    }
                 }
             }
-            else{
+            else
+            {
                 // the backgrund job
-                struct job_t *job = getjobpid(jobs,pid);
-                printf("[%d] (%d)  %s",job->jid, job->pid, job->cmdline );
-                if(verbose)printf("Parent PID %d run a background job\n",getpid());
+                struct job_t *job = getjobpid(jobs, pid);
+                printf("[%d] (%d)  %s", job->jid, job->pid, job->cmdline);
+                if (verbose)
+                    printf("Parent PID %d run a background job\n", getpid());
             }
         }
     }
@@ -378,11 +389,11 @@ int builtin_cmd(char **argv)
         listjobs(jobs);
         return 1;
     }
-    else if (!strcmp(argv[0], "bg") )
+    else if (!strcmp(argv[0], "bg"))
     {
         printf("bg(build-in command): bring the job background\n");
         // do_bgfg(argv);
-  
+
         return 1;
     }
     else if (!strcmp(argv[0], "fg"))
@@ -392,18 +403,15 @@ int builtin_cmd(char **argv)
         // struct job_t *job = getjobjid(jobs,jid);
         return 1;
     }
-    else if (!strcmp(argv[0],"kill"))
+    else if (!strcmp(argv[0], "kill"))
     {
         int jid = atoi(argv[1]);
-        struct job_t *job = getjobjid(jobs,jid);
+        struct job_t *job = getjobjid(jobs, jid);
         int pid = job->pid;
-        if(kill(pid, SIGKILL)==-1)
+        if (kill(pid, SIGKILL) == -1)
         {
             unix_error("stop error");
         }
-
-        
-
     }
 
     return 0; /* not a builtin command */
@@ -430,61 +438,76 @@ void waitfg(pid_t pid)
  *****************/
 
 /*
- * sigchld_handler - 
- 1. whenever a child job terminates (becomes a zombie), or stops because it received a SIGSTOP or SIGTSTP signal,  The kernel sends a SIGCHLD to the shell 
- 2. trigger the sigchld_handler 
+ * sigchld_handler -
+ 1. whenever a child job terminates (becomes a zombie), or stops because it received a SIGSTOP or SIGTSTP signal,  The kernel sends a SIGCHLD to the shell
+ 2. trigger the sigchld_handler
  3. in sigchld_handler,the handler reaps all available terminated(zombie) children
  */
-void  sigchld_handler(int sig)
+void sigchld_handler(int sig)
 {
-    
-    // TODO: why using ctrl+c to terminate a foreground job not trigger this signal handler 
-    if(verbose)printf("sigchld_handler: entering\n");
+    int _errno = errno;
+
+    if (verbose)
+        printf("sigchld_handler: entering with signal %d\n", sig);
     int status;
     pid_t pid;
 
-    sigset_t mask_all, prev_all;
-    sigfillset(&mask_all);
+    sigset_t mask, prev;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGINT);
+    sigaddset(&mask, SIGTSTP);
 
-    /*
-    waitpid in your sigchld_handler will detect this as a "stopped" status rather than "terminated," meaning it won’t remove the child process from the job list.
-    replace while loop by if condition, in while loop, if a stopped process come, the loop will not be stopped
-    */
-    while((pid = waitpid(-1, &status, WUNTRACED| WCONTINUED)) > 0) { /* Reap a zombie child */        
-        struct job_t *job = getjobpid(jobs,pid);
-        if(WIFCONTINUED(status)){
-                // job->state=;
+    sigprocmask(SIG_BLOCK, &mask, &prev);
+
+    // pid = waitpid(-1, &status, WNOHANG| WUNTRACED| WCONTINUED);
+    // if(verbose)printf("sigchld_handler: waitpid for pid: %d,PPID: %d, getpid: %d\n",pid,getppid(),getpid());
+    // Use waitpid(-1, ...) in a loop to reap all pending children.
+    while ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED | WCONTINUED)) > 0)
+    { /* Reap a zombie child */
+        if (verbose)
+            printf("sigchld_handler waitpid: %d\n", pid);
+        struct job_t *job = getjobpid(jobs, pid);
+        if (WIFCONTINUED(status))
+        {
+            // job->state=;
         }
-        else{
+        else
+        {
             //  if child process terminated，  WIFSTOPPED(status): Returns true if the child that caused the return is currently stopped.
-            // if(WIFSTOPPED(status)){ 
-            if(WIFEXITED(status)|WIFSIGNALED(status)){
-                // Critical Section:
-                //blocks all signals to ensure safe manipulation of the job list,  specifically to call deletejob(pid) without interruptions.
-                sigprocmask(SIG_BLOCK, &mask_all, &prev_all);
-                deletejob(jobs,pid); /* Delete the child from the job list */
-                if(verbose)
-                    printf("PID %d sigchld_handler waited a terminated child pid %d\n", getpid(),pid);
+            // if(WIFSTOPPED(status)){
+            if (WIFEXITED(status) | WIFSIGNALED(status))
+            {
 
-                sigprocmask(SIG_SETMASK, &prev_all, NULL);
-            }else if (WIFSTOPPED(status))
+                deletejob(jobs, pid); /* Delete the child from the job list */
+                if (verbose)
+                    printf("PID %d sigchld_handler waited a terminated child pid %d\n", getpid(), pid);
+            }
+            else if (WIFSTOPPED(status))
             {
                 /* change the state of job */
-                job->state=ST;
+                job->state = ST;
+                if (verbose)
+                    printf("PID %d sigchld_handler waited a stopped child pid %d\n", getpid(), pid);
             }
         }
     }
-    if(verbose)printf("sigchld_handler: exiting\n");
+
+    sigprocmask(SIG_SETMASK, &prev, NULL);
+
+    if (verbose)
+        printf("sigchld_handler: exiting\n");
+    errno = _errno;
     return;
 }
 
 /*
- * sigint_handler - 
-                    The default action for SIGINT is to terminate the process.
-   1. whenver the user types ctrl-c at the keyboard, the kernel sends a SIGINT and will trigger sigint_handler 
+ * sigint_handler - The default action for SIGINT is to terminate the process.
+   ctrl+c -> kernel>SIGNT -> sigint_handler -> send SIGNT -> terminate the process -> kernel>SIGCHLD -> sigchld_handler
+
+   1. whenver the user types ctrl-c at the keyboard, the kernel sends a SIGINT and will trigger sigint_handler
    2. in sigint_handler, using kill function to send SIGINT to the foreground job: kill(pid[i], SIGINT);
 
-   Send the job a SIGTERM signal 
+   Send the job a SIGTERM signal
         SIGTERM, on the other hand, gives the process a chance to handle the termination and perform necessary cleanup since it can be caught and handled.
         SIGTERM allows the process to define a handler, which can log the shutdown, save state, or complete any in-progress tasks.
 
@@ -496,62 +519,48 @@ void  sigchld_handler(int sig)
  */
 void sigint_handler(int sig)
 {
-    if (getenv("DEBUG") != NULL) {
-        // If we're debugging, ignore SIGINT
-        signal(SIGINT, SIG_IGN);
-    }
 
     pid_t pid = fgpid(jobs); // find the pid of foreground job
-    struct job_t* job= getjobpid(jobs,pid);  
-    
-    sigset_t mask_all, prev_all;
-    sigfillset(&mask_all);
+    struct job_t *job = getjobpid(jobs, pid);
 
-    if(pid> 0)
+    if (pid > 0)
     {
-        // Critical Section:
-        sigprocmask(SIG_BLOCK, &mask_all, &prev_all); // Block all signals while accessing and updating shared data to ensure safe manipulation
 
-        if(kill(pid, SIGTERM)==-1)
+        if (kill(pid, sig) == -1)
         {
             unix_error("kill error");
         }
-        if(verbose)
-            printf("\nsigint_handler: sent SIGTERM to terminate the job: [%d] %d %s %s\n", job->jid, job->pid, get_job_state(job->state), job->cmdline);
-        sigprocmask(SIG_SETMASK, &prev_all, NULL);
+        if (verbose)
+            printf("\nsigint_handler: sent %d to terminate the job: [%d] %d %s %s\n", sig, job->jid, job->pid, get_job_state(job->state), job->cmdline);
     }
 
     return;
 }
 
 /*
- * sigtstp_handler - The kernel sends a SIGTSTP to the shell whenever the user types ctrl-z at the keyboard. 
+ * sigtstp_handler - The kernel sends a SIGTSTP to the shell whenever the user types ctrl-z at the keyboard.
  Catch it and suspend the foreground job by sending it a SIGTSTP.
  */
 void sigtstp_handler(int sig)
 
-{   
-    
-    pid_t pid = fgpid(jobs);  // find the pid of foreground job
-    struct job_t* job= getjobpid(jobs,pid);  
-    
-    sigset_t mask_all, prev_all;
-    sigfillset(&mask_all);
+{
 
-    if(pid> 0)
-    {   
-        // Critical Section:
-        sigprocmask(SIG_BLOCK, &mask_all, &prev_all); // Block all signals while accessing and updating shared data to ensure safe manipulation
-        if(kill(pid, SIGTSTP)==-1) // Send SIGTSTP to the foreground job,This signal stops the process but does not terminate it, so the process remains in a "stopped" state.
+    pid_t pid = fgpid(jobs); // find the pid of foreground job
+    struct job_t *job = getjobpid(jobs, pid);
+    // if (verbose)
+    //     print_job(job);
+
+    if (pid > 0)
+    {
+        if (kill(pid, SIGTSTP) == -1) // Send SIGTSTP to the foreground job,This signal stops the process but does not terminate it, so the process remains in a "stopped" state.
         {
             unix_error("stop error");
         }
-        
+
         // job->state = ST; // Update the job's state to Stopped (ST)
 
-        if(verbose)
+        if (verbose)
             printf("sigtstp_handler sent SIGTSTP to job: [%d] %d %s %s\n", job->jid, job->pid, get_job_state(job->state), job->cmdline);
-        sigprocmask(SIG_SETMASK, &prev_all, NULL); //  Restore the original signal mask
     }
     return;
 }
@@ -571,7 +580,6 @@ void clearjob(struct job_t *job)
     job->jid = 0;
     job->state = UNDEF;
     job->cmdline[0] = '\0';
-
 }
 
 /* initjobs - Initialize the job list */
@@ -594,8 +602,8 @@ int maxjid(struct job_t *jobs)
     return max;
 }
 
-/* addjob - Add a job to the job list 
-*/
+/* addjob - Add a job to the job list
+ */
 int addjob(struct job_t *jobs, pid_t pid, int state, char *cmdline)
 {
     int i;
@@ -635,7 +643,7 @@ int deletejob(struct job_t *jobs, pid_t pid)
     for (i = 0; i < MAXJOBS; i++)
     {
         if (jobs[i].pid == pid)
-        {   
+        {
             if (verbose)
                 printf("Removed job [%d] %d %s %s\n", jobs[i].jid, jobs[i].pid, get_job_state(jobs[i].state), jobs[i].cmdline);
             clearjob(&jobs[i]);
@@ -720,7 +728,7 @@ void listjobs(struct job_t *jobs)
                 printf("Stopped ");
                 break;
             default:
-                printf("listjobs: Internal error: job[%d].state=%d ",i, jobs[i].state);
+                printf("listjobs: Internal error: job[%d].state=%d ", i, jobs[i].state);
             }
             printf("%s", jobs[i].cmdline);
         }
@@ -788,4 +796,13 @@ void sigquit_handler(int sig)
 {
     printf("Terminating after receipt of SIGQUIT signal\n");
     exit(1);
+}
+
+/******************************
+ * custimised helper routines
+ ******************************/
+
+void print_job(struct job_t *job)
+{
+    printf("job: [%d] %d %s %s\n", job->jid, job->pid, get_job_state(job->state), job->cmdline);
 }
