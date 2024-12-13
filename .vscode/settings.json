@@ -42,7 +42,8 @@
     "cstdlib": "c",
     "unistd.h": "c",
     "getopt.h": "c",
-    "csapp.h": "c"
+    "csapp.h": "c",
+    "cctype": "c"
   },
   "C_Cpp.default.compilerPath": "/usr/bin/gcc"
 }
