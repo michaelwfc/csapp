@@ -15,6 +15,12 @@
   // },
   // "markdown.styles": [".github-markdown-body"],
   // "markdown-preview-github-styles.colorTheme":"Single theme: Light",
+
+  "http_proxy": "http://192.168.1.14:7897",
+  "https_proxy": "http://192.168.1.14:7897",
+  "http.proxyStrictSSL": false,
+
+
   "window.zoomLevel": 1,
   "autoDocstring.docstringFormat": "google-notypes",
   "workbench.settings.editor": "json",
