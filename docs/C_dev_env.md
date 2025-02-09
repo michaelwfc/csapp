@@ -4,9 +4,20 @@
 
 - Windows: MS Visual C++
 - Windows: mingw-w64
+  pros: 
+  cons: 好像有些linux 命令不支持
+
 - Windows: wsl
+  
 - Windows: remote wsl
+  Pros:   
+    - without worrying about pathing issues, binary compatibility, or other cross-OS challenges
+    - 
+
+  
 - Windows: vm linux 虚拟机
+  pros: 使用linux 的系统
+  cons: 需要在虚拟机操作，有时候来回切换比较麻烦，如检索，copy
 - Windows: docker container
 - Windows: remote dev container
 
@@ -60,16 +71,99 @@ Windows uses the Portable Executable (PE) format, while Linux commonly uses the 
 
 
 
+## WSL Vscode settings
+- c_cpp_properties.json (compiler path and IntelliSense settings)
+- tasks.json (build instructions)
+- launch.json (debugger settings)
 
-# GCC on Windows WSL
 
-[Using C++ and WSL in VS Code](https://code.visualstudio.com/docs/cpp/config-wsl)
+- https://code.visualstudio.com/docs/cpp/config-wsl
+- https://code.visualstudio.com/docs/cpp/config-mingw
+- https://gourav.io/blog/setup-vscode-to-run-debug-c-cpp-code
+- https://code.visualstudio.com/docs/cpp/cpp-debug
+- https://code.visualstudio.com/docs/cpp/launch-json-reference
+- https://code.visualstudio.com/docs/remote/wsl
 
-## WSL env 
+
+# WSL 
+
+
+## Remote wsl connect to windows proxy(clash)
+### 1. Configure Clash to Listen on All Interfaces
+Clash for Windows (or similar tools) may be set by default to bind only to 127.0.0.1. To allow WSL to reach Clash via the Windows host IP, you need to change its binding settings.
+Enable “Allow LAN” in Clash
+Open Clash’s settings:
+Look for an option labeled “Allow LAN” or similar. Enabling this option will bind Clash to 0.0.0.0 (all interfaces) instead of just 127.0.0.1.
+
+Restart Clash:
+After changing the setting, restart Clash so that it binds on all interfaces. Then, confirm that it is listening on the Windows host IP.
+
+Verify the Binding on Windows
+You can check which interfaces Clash is listening on by opening a Command Prompt (run as administrator) and executing:
+
+```bash
+netstat -ano | findstr :7897
+# You should see an entry like:
+TCP    0.0.0.0:7897    0.0.0.0:0    LISTENING    <PID>
+# If it shows only 127.0.0.1:7897, then Clash is not listening on the external interface.
+```
+### 2. Test Proxy Connectivity from Windows:
+Testing connectivity from Windows itself could help. They can try using curl on Windows to connect to
+curl -I --proxy http://127.0.0.1:7897 https://www.google.com
+If this fails, Clash isn't running correctly on port 7897.
+
+### 3. Allow Port in Windows Firewall:
+Open Windows Security → Firewall & Network Protection → Advanced Settings.
+Create a new Inbound Rule for port 7897 (TCP) to allow connections from WSL.
+
+### 4. Confirm Windows Host IP:
+Find Windows Host IP from WSL
+Run this in WSL:  # 10.255.255.254 
+cat /etc/resolv.conf | grep nameserver | awk '{print $2}'
+but this IP is specific to WSL’s virtual network and may not work for proxy connections.
+
+Confirm Windows Host IP instead: 192.168.1.14
+```powershell
+ipconfig | findstr IPv4
+```
+
+### 5. set the proxy for remote wsl
+```bash
+echo 'export http_proxy="http://192.168.1.14:7897"' >> ~/.bashrc
+echo 'export https_proxy="http://192.168.1.14:7897"' >> ~/.bashrc
+echo 'export no_proxy="localhost,127.0.0.1,::1"' >> ~/.bashrc
+# Run the Fixed Command (replace YOUR_WINDOWS_IP 192.168.1.14):
+# sed -i 's/10.255.255.254/192.168.1.14/g' ~/.bashrc
+source ~/.bashrc
+# 检查remote wsl代理是否生效
+curl -I --proxy http://192.168.1.14:7897 https://www.google.com
+```
+
+
+## Reference
+- [Using C++ and WSL in VS Code](https://code.visualstudio.com/docs/cpp/config-wsl)
+- https://code.visualstudio.com/docs/remote/wsl
+- https://code.visualstudio.com/api/advanced-topics/remote-extensions
+
+
+## WSL Ubuntu env Installation
+ - install wsl and linux distribution
+ - install vscode
+ - install vscode for local wsl
+
+ To use REMOTE WSL C
+ - install WSL extension
+
+
+
+   
+
+
+### WSL env 
 
 - https://learn.microsoft.com/zh-cn/windows/wsl/setup/environment
 
-### 1 install wsl and linux distribution
+#### install wsl and linux distribution
 ```bash
 # 如果在线安装较慢，可以使用离线安装， 所在仓库为https://github.com/microsoft/WSL，只需要下载其中的msi文件安装即可，文件下载地址：https://github.com/microsoft/WSL/releases 
 wsl --install
@@ -84,7 +178,7 @@ wsl -l -v
 # Set a Default Distribution (Optional)
 wsl --set-default Ubuntu-20.04
 
-# To start a specific distribution, use:
+# To start a specific distribution, use: wsl or
 wsl -d Ubuntu-20.04
 # Codename:       focal
 
@@ -92,12 +186,12 @@ wsl -d Ubuntu-20.04
 lsb_release -a
 ```
 
-### set user name and password
+#### set user name and password
 - open Ubuntu-22.04
-- set User name and password
+- set user_name and password
 - show the distribution: wsl -l -v
 
-### set user name and password manully
+#### set user name and password manully
 
 ```bash
 sudo adduser michael
@@ -111,7 +205,7 @@ sudo usermod -aG sudo michael
 # you can remove the old user
 sudo deluser oldusername
 ```
-### set the default wsl distribution user
+#### set the default wsl distribution user
 
 ```Powershell
 # Launch your WSL instance as root:
@@ -170,31 +264,30 @@ code .
 
 
 
-##  WSL C developing with VS Code
+##  Remote WSL C developing with VS Code
+
+### Open a remote folder or workspace 
 
 ```shell
+# open wsl
+wsl 
+
 # Navigate to your helloworld project folder and launch VS Code from the WSL terminal with code .
+# Windows filesystem mounts like /mnt/c
+
 cd $Home/projects/helloworld/
 code .
 ```
 
-### WSL vscode settings
-- c_cpp_properties.json (compiler path and IntelliSense settings)
-- tasks.json (build instructions)
-- launch.json (debugger settings)
 
 
-- https://code.visualstudio.com/docs/cpp/config-wsl
-- https://code.visualstudio.com/docs/cpp/config-mingw
-- https://gourav.io/blog/setup-vscode-to-run-debug-c-cpp-code
-- https://code.visualstudio.com/docs/cpp/cpp-debug
+
+## C debug in vscode
+
 - https://code.visualstudio.com/docs/cpp/launch-json-reference
-- https://code.visualstudio.com/docs/remote/wsl
 
 
-
-
-### wsl operarion 
+## wsl operarion 
 
 cope/paste :
 - win > ubuntu: ctrl+ c/v > right click
@@ -206,68 +299,10 @@ export HTTP_PROXY=[username]:[password]@[proxy-web-or-IP-address]:[port-number]
 export HTTP_PROXY=127.0.0.1:7890
 
 
-### C debug in vscode
 
-- https://code.visualstudio.com/docs/cpp/launch-json-reference
-- 
 
-launch.json
 
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "g++.exe build and debug active file",
-      "type": "cppdbg",
-      "request": "launch",
-      "program": "${fileDirname}\${fileBasenameNoExtension}.exe",
-      "args": [],
-      "stopAtEntry": false,
-      "cwd": "${workspaceFolder}",
-      "environment": [],
-      "externalConsole": false, //set to true to see output in cmd instead
-      "MIMode": "gdb",
-      "miDebuggerPath": "C:\MinGW64\bin\gdb.exe",
-      "setupCommands": [
-        {
-          "description": "Enable pretty-printing for gdb",
-          "text": "-enable-pretty-printing",
-          "ignoreFailures": true
-        }
-      ],
-      "preLaunchTask": "g++.exe build active file"
-    },
-    {
-      "name": "g++ build & run active file",
-      "type": "cppdbg",
-      "request": "launch",
-      "program": "${fileDirname}\${fileBasenameNoExtension}.exe",
-      "args": [],
-      "stopAtEntry": false,
-      "cwd": "${workspaceFolder}",
-      "environment": [],
-      "externalConsole": false, //set to true to see output in cmd instead
-      "MIMode": "gdb",
-      "miDebuggerPath": "C:\MinGW64\bin\gdb.exe",
-      "setupCommands": [
-        {
-          "description": "Enable pretty-printing for gdb",
-          "text": "-enable-pretty-printing",
-          "ignoreFailures": true
-        }
-      ],
-      "preLaunchTask": "g++ build & run active file"
-    }
-    ]
-}
 
-```
-
-## REMOTE WSL C developing
-
-- https://code.visualstudio.com/docs/remote/wsl
-- https://code.visualstudio.com/api/advanced-topics/remote-extensions
 
 
 # Make
