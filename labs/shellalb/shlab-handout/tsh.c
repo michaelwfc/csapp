@@ -207,8 +207,8 @@ void eval(char *cmdline)
     char *argv[MAXARGS]; /* Argument list execve() */
     char buf[MAXLINE];   /* Holds modified command line */
     int bg;
-    int job_state;
-    int status;
+    // int job_state;
+    // int status;
     int is_buildin_cmd;
     pid_t pid; /* Process id */
     // pid_t child_pid;
@@ -221,10 +221,6 @@ void eval(char *cmdline)
 
     strcpy(buf, cmdline);          // copy the cmdline to buf
     bg = parseline(cmdline, argv); // parse the cmdline to argv and return bg
-    if (bg)
-        job_state = BG;
-    else
-        job_state = FG;
 
     parseline(cmdline, argv);
 
@@ -233,8 +229,25 @@ void eval(char *cmdline)
         return; // if cmdline is empty, return
     }
     is_buildin_cmd = builtin_cmd(argv);
+
     if (!is_buildin_cmd)
     {
+        /*
+        8.5.6 Synchronizing Flows to Avoid Nasty Concurrency Bugs
+        1. If the child terminates before the parent is able to run, then addjob and deletejob will be called in the wrong order.
+
+        Race Condition Explanation:
+            Blocking Signals: The shell blocks SIGCHLD signals before fork() to prevent the signal handler from being called 
+            before the child process is properly set up and added to the job list.
+
+            Forking: After the fork(), the child process immediately unblocks signals and executes the command using execve. 
+            If the execve call is successful, the child process image is replaced, and it no longer executes the shell code.
+
+            Adding Jobs and Unblocking Signals: The parent process adds the child process to the job list. 
+            There's a race condition here because if the parent unblocks signals (sigprocmask(SIG_SETMASK, &prev, NULL)) before adding the job, 
+            a SIGCHLD signal could be delivered and handled before the job is added to the list.
+             This could lead to the job not being properly managed or removed prematurely from the job list.
+        */
         /* Block SIGCHLD before fork*/
         sigprocmask(SIG_BLOCK, &mask, &prev);
 
@@ -242,69 +255,116 @@ void eval(char *cmdline)
         // fork a child process and run the job in the context of the child
         if ((pid = fork()) == 0)
         {
-            /* Unblock signals in case child process will use*/
+            if (verbose)
+                printf("Child PID %d PPID %d: start to execve the command %s\n", getpid(), getppid(), cmdline);
+
+            /* Unblocking signals in the child process right after forking is generally safe and necessary for the child to handle signals independently. 
+            However, it's crucial to ensure that the child process unblocks signals only after it has set its process group and is ready to execute the new program with execve.*/
             sigprocmask(SIG_SETMASK, &prev, NULL);
-            /* puts the child in a new process group whose group ID is identical to the
-            child’s PID. This ensures that there will be only one process, your shell, in the foreground process
-            group. When you type ctrl-c, the shell should catch the resulting SIGINT and then forward it
-            to the appropriate foreground job (or more precisely, the process group that contains the foreground
-            job). */
-            setpgid(pid, pid);
+
+            /* Set Process Group in Child: 
+            Use setpgid(0, 0) in the child process to set its process group to its own PID. 
+            This ensures the child process is in its own process group
+            When you type ctrl-c, the shell should catch the resulting SIGINT and then forward it
+            to the appropriate foreground job (or more precisely, the process group that contains the foregroundjob). 
+            */
+            
+            setpgid(0, 0);
             // execute the command from input by execve function
             /*
-            The execve() function is used to replace the current process image with a new process image. It does not return if the execution is successful.
+            The execve() function is used to replace the current process image with a new process image.
+            It does not return if the execution is successful.
                 If the execve() call is successful, the current process is replaced by the new executable, and the code following the execve() call will never be executed.
                 If execve() fails, it returns -1, and the error message can be printed.
             */
-            if (verbose)
-                printf("PPID %d Child PID %d: start to execve the command %s\n", getppid(), getpid(), cmdline);
-
             if (execve(argv[0], argv, environ) == -1)
             {
-                printf("PPID %d Child PID %d: failed to execve command %s\n", getppid(), getpid(), cmdline);
+                printf("Child PID %d PPID %d: failed to execve command %s\n", getpid(), getppid(), cmdline);
                 exit(-1);
             }
         }
+
+        if (verbose)
+            printf("PID %d add job for cmdline: %s\n", getpid(), cmdline);
+
+        if (!bg)
+        {
+            /*Add Job Before Unblocking Signals: 
+            After the parent creates a new child process, it adds the child to the job list.
+            When the parent reaps a terminated (zombie) child in the SIGCHLD signal handler, it deletes the child from the job list.
+            In the parent process, add the job to the job list before unblocking signals. This ensures that if a SIGCHLD signal is received immediately after unblocking, the job is already in the list.
+            */
+            addjob(jobs, pid, FG, cmdline); 
+        }
         else
         {
-            addjob(jobs, pid, job_state, cmdline);
+            addjob(jobs, pid, BG, cmdline);
+            printf("[%d] (%d) %s", pid2jid(pid), pid, cmdline);
+        }
 
-            sigprocmask(SIG_SETMASK, &prev, NULL); // restore to the previous blocked set without blocking SIG_BLOCK
+        /* Unblock signals after adding the job
+        Unblock the signals only after the job has been added to ensure that the signal handler can properly manage the job.
+        */
+        sigprocmask(SIG_SETMASK, &prev, NULL);
 
-            // if a command is a foreground job, we must wait for the termination of the job in child process to reap and delete the job
-            // if a command is a background job, we not need to wait the job to ternimanted
-
-            if (!bg)
+        /* Wait for foreground job to finish */
+        if (!bg)
+        {
+            struct job_t *job = getjobpid(jobs, pid);
+            if (!job)
+                return;
+            // We can know the foreground process is finished in two ways:
+            // 1. The job no longer exists in the jobs list (deleted by sigchld_handler when process terminates)
+            // 2. The job's state is no longer FG (changed by sigchld_handler when process stops)
+            while (job->state == FG && getjobpid(jobs, pid) != NULL)
             {
-
-                // The reaping of a process means that the parent process must acknowledge that the child has finished executing and clean up its resources,
-                // which is done through functions like wait() or waitpid().
-                // reap the foreground job with the while loop using waitpid
-                // change the option to 0 to suspend the forground job unit it is ternimated and reaped 
-                while (waitpid(pid, &status, 0) > 0)
-                {
-                    // delete the jobs after reaped the foreground job
-                    // Critical Section:: Sigprocmask(SIG_BLOCK, &mask_all, &prev_all); blocks all signals to ensure safe manipulation of the job list,
-                    // specifically to call deletejob(pid) without interruptions.
-                    if (WIFEXITED(status) | WIFSIGNALED(status))
-                    {
-                        sigprocmask(SIG_BLOCK, &mask, &prev);
-                        deletejob(jobs, pid); /* Delete the child from the job list */
-                        sigprocmask(SIG_SETMASK, &prev, NULL);
-                        if (verbose)
-                            printf("eval function use waitpid reap forground pid: %d \n", pid);
-                    }
-                }
-            }
-            else
-            {
-                // the backgrund job
-                struct job_t *job = getjobpid(jobs, pid);
-                printf("[%d] (%d)  %s", job->jid, job->pid, job->cmdline);
-                if (verbose)
-                    printf("Parent PID %d run a background job\n", getpid());
+                // Signal Suspension: The sigsuspend function is used to put the process to sleep until a signal is received.
+                // This is a common technique to wait for changes in job state without busy-waiting.
+                sigsuspend(&prev);
             }
         }
+
+        //     else
+        //     {
+
+        //         addjob(jobs, pid, job_state, cmdline);
+
+        //         sigprocmask(SIG_SETMASK, &prev, NULL); // restore to the previous blocked set without blocking SIG_BLOCK
+
+        //         // if a command is a foreground job, we must wait for the termination of the job in child process to reap and delete the job
+        //         // if a command is a background job, we not need to wait the job to ternimanted
+
+        //         if (!bg)
+        //         {
+
+        //             // The reaping of a process means that the parent process must acknowledge that the child has finished executing and clean up its resources,
+        //             // which is done through functions like wait() or waitpid().
+        //             // reap the foreground job with the while loop using waitpid
+        //             // change the option to 0 to suspend the forground job unit it is ternimated and reaped
+        //             while (waitpid(pid, &status, 0) > 0)
+        //             {
+        //                 // delete the jobs after reaped the foreground job
+        //                 // Critical Section:: Sigprocmask(SIG_BLOCK, &mask_all, &prev_all); blocks all signals to ensure safe manipulation of the job list,
+        //                 // specifically to call deletejob(pid) without interruptions.
+        //                 if (WIFEXITED(status) | WIFSIGNALED(status))
+        //                 {
+        //                     sigprocmask(SIG_BLOCK, &mask, &prev);
+        //                     deletejob(jobs, pid); /* Delete the child from the job list */
+        //                     sigprocmask(SIG_SETMASK, &prev, NULL);
+        //                     if (verbose)
+        //                         printf("eval function use waitpid reap forground pid: %d \n", pid);
+        //                 }
+        //             }
+        //         }
+        //         else
+        //         {
+        //             // the backgrund job
+        //             struct job_t *job = getjobpid(jobs, pid);
+        //             printf("[%d] (%d)  %s", job->jid, job->pid, job->cmdline);
+        //             if (verbose)
+        //                 printf("Parent PID %d run a background job\n", getpid());
+        //         }
+        //     }
     }
 }
 
@@ -427,10 +487,24 @@ void do_bgfg(char **argv)
 
 /*
  * waitfg - Block until process pid is no longer the foreground process
+ *
+ * This function is used to wait for a foreground job to complete or change state.
+ * It takes a process ID (pid) as an argument and checks the job list to find the
+ * corresponding job. If the job is found and is in the foreground (FG) state, the
+ * function enters a loop where it suspends the process using sigsuspend until the
+ * job's state changes. This effectively blocks the shell from executing further
+ * commands until the foreground job is no longer active.
+ *
+ * Parameters:
+ *   pid - The process ID of the job to wait for.
+ *
+ * Returns:
+ *   This function does not return a value. It exits the loop and returns control
+ *   to the caller once the job is no longer in the foreground state.
  */
 void waitfg(pid_t pid)
 {
-    return;
+
 }
 
 /*****************
@@ -439,21 +513,24 @@ void waitfg(pid_t pid)
 
 /*
  * sigchld_handler -
- 1. whenever a child job terminates (becomes a zombie), or stops because it received a SIGSTOP or SIGTSTP signal,  The kernel sends a SIGCHLD to the shell
- 2. trigger the sigchld_handler
- 3. in sigchld_handler,the handler reaps all available terminated(zombie) children
+ 1. Receiving SIGCHLD signals when child processes terminate or stop, trigger the sigchld_handler
+ whenever a child job terminates (becomes a zombie), or stops because it received a SIGSTOP or SIGTSTP signal,  
+ The kernel sends a SIGCHLD to the shell
+ 2. Updating or deleting jobs from the jobs list
+ 3. Changing job states as appropriate
+    in sigchld_handler,the handler reaps all available terminated(zombie) children
  */
 void sigchld_handler(int sig)
 {
-    int _errno = errno;
-
     if (verbose)
         printf("sigchld_handler: entering with signal %d\n", sig);
+    int _errno = errno;
     int status;
     pid_t pid;
 
     sigset_t mask, prev;
     sigemptyset(&mask);
+    sigaddset(&mask, SIGCHLD);
     sigaddset(&mask, SIGINT);
     sigaddset(&mask, SIGTSTP);
 
@@ -470,11 +547,12 @@ void sigchld_handler(int sig)
         if (WIFCONTINUED(status))
         {
             // job->state=;
+            if (verbose)
+                printf("PID %d sigchld_handler waited a restarted child pid %d\n", getpid(), pid);
         }
         else
         {
-            //  if child process terminated，  WIFSTOPPED(status): Returns true if the child that caused the return is currently stopped.
-            // if(WIFSTOPPED(status)){
+            // WIFSTOPPED(status): Returns true if the child that caused the return is currently stopped.
             if (WIFEXITED(status) | WIFSIGNALED(status))
             {
 
@@ -502,7 +580,7 @@ void sigchld_handler(int sig)
 
 /*
  * sigint_handler - The default action for SIGINT is to terminate the process.
-   ctrl+c -> kernel>SIGNT -> sigint_handler -> send SIGNT -> terminate the process -> kernel>SIGCHLD -> sigchld_handler
+   ctrl+c -> kernel>SIGINT -> sigint_handler -> send SIGNT -> terminate the process -> kernel>SIGCHLD -> sigchld_handler
 
    1. whenver the user types ctrl-c at the keyboard, the kernel sends a SIGINT and will trigger sigint_handler
    2. in sigint_handler, using kill function to send SIGINT to the foreground job: kill(pid[i], SIGINT);
@@ -518,7 +596,9 @@ void sigchld_handler(int sig)
             - A process needs to be terminated immediately due to security reasons or severe system instability.
  */
 void sigint_handler(int sig)
-{
+{   
+    if(verbose)
+        printf("sigint_handler: entering with signal %d\n", sig);
 
     pid_t pid = fgpid(jobs); // find the pid of foreground job
     struct job_t *job = getjobpid(jobs, pid);
@@ -533,6 +613,8 @@ void sigint_handler(int sig)
         if (verbose)
             printf("\nsigint_handler: sent %d to terminate the job: [%d] %d %s %s\n", sig, job->jid, job->pid, get_job_state(job->state), job->cmdline);
     }
+    if(verbose)
+        printf("exiting sigint_handler\n");
 
     return;
 }
@@ -540,28 +622,60 @@ void sigint_handler(int sig)
 /*
  * sigtstp_handler - The kernel sends a SIGTSTP to the shell whenever the user types ctrl-z at the keyboard.
  Catch it and suspend the foreground job by sending it a SIGTSTP.
+ ctrl-z ->  kernel send SIGTSTP -> sigtstp_handler -> kill pid -> sigchld_handler -> change the state of pid/job
+
+ The issue you're experiencing is likely due to a race condition between the sigtstp_handler and the sigchld_handler.
+ When you press Ctrl+Z, the sigtstp_handler is called, but it's not properly synchronizing with the sigchld_handler, which is responsible for updating the job state.
+
+ Here's how we can fix this:
+1. In the sigtstp_handler, we should only send the SIGTSTP signal to the foreground process.
+2. We should let the sigchld_handler handle the state change of the job.
+3. We need to ensure proper synchronization between these handlers.
+
+ This implementation ensures that the sigtstp_handler is focused solely on sending the SIGTSTP signal to the foreground job,
+ while leaving the job state management to the sigchld_handler. his separation of concerns helps prevent race conditions and makes the code more maintainable.
+
  */
 void sigtstp_handler(int sig)
-
 {
+    if (verbose)
+        printf("sigchld_handler: entering with signal %d\n", sig);
+
+    // Error Number Preservation: We save and restore errno to prevent any changes to it that might occur within the handler from affecting the main program flow.
+    int _errno = errno;
+
+    // Signal Blocking: We use sigprocmask to block all signals at the beginning of the handler and restore the original signal mask at the end.
+    // This prevents race conditions and ensures atomic access to shared data structures.
+    sigset_t mask_all, prev_all;
+    sigfillset(&mask_all);
+    sigprocmask(SIG_BLOCK, &mask_all, &prev_all);
 
     pid_t pid = fgpid(jobs); // find the pid of foreground job
     struct job_t *job = getjobpid(jobs, pid);
     // if (verbose)
     //     print_job(job);
 
-    if (pid > 0)
+    if (pid != 0)
     {
-        if (kill(pid, SIGTSTP) == -1) // Send SIGTSTP to the foreground job,This signal stops the process but does not terminate it, so the process remains in a "stopped" state.
+        // Foreground Process Group: We use -pid in the kill function to send the signal to the entire foreground process group, not just the process itself.
+        // This is important for handling job control correctly.
+
+        if (kill(-pid, SIGTSTP) == -1) // Send SIGTSTP to the foreground job,This signal stops the process but does not terminate it, so the process remains in a "stopped" state.
         {
             unix_error("stop error");
         }
-
         // job->state = ST; // Update the job's state to Stopped (ST)
-
+        // No State Changes: We don't change the job state directly in this handler. Instead, we let the sigchld_handler handle the state change
+        // when it receives the SIGCHLD signal that will be generated as a result of the process stopping.
         if (verbose)
             printf("sigtstp_handler sent SIGTSTP to job: [%d] %d %s %s\n", job->jid, job->pid, get_job_state(job->state), job->cmdline);
     }
+    sigprocmask(SIG_SETMASK, &prev_all, NULL);
+    errno = _errno;
+
+    if (verbose)
+        printf("sigtstp_handler: exiting\n");
+
     return;
 }
 

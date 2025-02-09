@@ -3,7 +3,7 @@
 # test commands for tsh
 ```bash
 make tch
-tch -v
+./tch -v
 
 # test ctrl+c : add job,  reap child process and delete job
 /bin/head README
@@ -33,7 +33,8 @@ make test05
 ```
 
 # ps command
-
-- ps -aux
+```bash
+ps uf
+```
   To identify if a process is a zombie,look for processes with a Z in the STAT (status) column. and <defunct> in the COMMAND column also indicates a zombie process.
 
