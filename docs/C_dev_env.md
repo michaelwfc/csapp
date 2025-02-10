@@ -134,9 +134,11 @@ echo 'export https_proxy="http://192.168.1.14:7897"' >> ~/.bashrc
 echo 'export no_proxy="localhost,127.0.0.1,::1"' >> ~/.bashrc
 # Run the Fixed Command (replace YOUR_WINDOWS_IP 192.168.1.14):
 # sed -i 's/10.255.255.254/192.168.1.14/g' ~/.bashrc
+# sed -i 's/192.168.1.14/192.168.1.4/g' ~/.bashrc
 source ~/.bashrc
 # 检查remote wsl代理是否生效
 curl -I --proxy http://192.168.1.14:7897 https://www.google.com
+curl -I https://www.google.com
 ```
 
 
