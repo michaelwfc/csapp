@@ -263,15 +263,36 @@ void eval(char *cmdline)
             sigprocmask(SIG_SETMASK, &prev, NULL);
 
             /* Set Process Group in Child: 
-            Use setpgid(0, 0) in the child process to set its process group to its own PID. 
-            This ensures the child process is in its own process group
-            When you type ctrl-c, the shell should catch the resulting SIGINT and then forward it
-            to the appropriate foreground job (or more precisely, the process group that contains the foregroundjob). 
+            1. Process Group Creation: 
+            By calling setpgid(0, 0);, the child process sets its process group ID to its own PID. 
+            This effectively creates a new process group for the child process. This is important because it allows the shell to manage the child process independently of other processes.
+            
+            2.Signal Management: 
+            When you type control signals like Ctrl-C (SIGINT) or Ctrl-Z (SIGTSTP) in the terminal, 
+            these signals are sent to all processes in the foreground process group. By placing each child process in its own process group, 
+            the shell can control which processes receive these signals. Specifically, it can ensure that only the foreground job receives these signals, 
+            while background jobs do not.
+
+            3.Foreground and Background Job Control: 
+            The shell needs to distinguish between foreground and background jobs. B
+            y assigning each job to its own process group, the shell can easily bring a job to the foreground or send it to the background 
+            by manipulating the process group.
+            
+            4.Avoiding Signal Propagation to Parent: 
+            Without setting a new process group, signals like SIGINT could propagate to the shell itself, 
+            disrupting its operation. By isolating the child in its own process group, the shell can forward signals to the child without affecting itself.
+            */
+
+            /* Ctrl+C 
+            - Typing Ctrl+C at the keyboard causes the kernel to send a SIGINT signal to every process in the foreground process group. In the default case, the result is to terminate the foreground job.
+            - the parent process receives SIGINT
+            - the sigint_handler() function is called to handle the SIGINT signal.
+            - in the signal handler, it kills the foreground jobs by process group.
             */
             
             setpgid(0, 0);
-            // execute the command from input by execve function
-            /*
+
+            /*execute the command from input by execve function
             The execve() function is used to replace the current process image with a new process image.
             It does not return if the execution is successful.
                 If the execve() call is successful, the current process is replaced by the new executable, and the code following the execve() call will never be executed.
@@ -580,7 +601,9 @@ void sigchld_handler(int sig)
 
 /*
  * sigint_handler - The default action for SIGINT is to terminate the process.
-   ctrl+c -> kernel>SIGINT -> sigint_handler -> send SIGNT -> terminate the process -> kernel>SIGCHLD -> sigchld_handler
+   ctrl+c by keyboard-> kernel send SIGINT the foreground process group(shell process group, just shell proces itself because when we create child process using setpid(0,0))
+   -> sigint_handler in shell process -> send SIGNT to foreground jobs by kill function-> terminate the foreground jobs
+   -> when child ternimated, kernel send SIGCHLD -> sigchld_handler -> reap all terminated/stopped children
 
    1. whenver the user types ctrl-c at the keyboard, the kernel sends a SIGINT and will trigger sigint_handler
    2. in sigint_handler, using kill function to send SIGINT to the foreground job: kill(pid[i], SIGINT);
@@ -605,8 +628,8 @@ void sigint_handler(int sig)
 
     if (pid > 0)
     {
-
-        if (kill(pid, sig) == -1)
+        // Send SIGINT to the foreground process group
+        if (kill(-pid, sig) == -1)
         {
             unix_error("kill error");
         }

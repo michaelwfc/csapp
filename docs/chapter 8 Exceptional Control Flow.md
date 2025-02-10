@@ -324,6 +324,15 @@ pid_t Fork(void)
 ```
 
 ## 8.4 Process Control 
+| Function | Description |
+|-------------------|----------------------------|
+| getpid/getppid | get process id or parent process id |
+| exit()| terminates the process|
+| fork() | create a new process |
+| waitpid() | A process waits for its children to terminate or stop |
+| wait() | wait for child process to terminate |
+| execve() | execute a new program |
+
 
 ### 8.4.1 Obtaining Process IDs
 
@@ -411,13 +420,26 @@ pid_t fork(void);
 
 ### 8.4.3 Reaping Child Processes(回收子进程)
 
-#### Idea
+#### How to reap child processes
+- Parent waits for child to terminate by calling the waitpid function
+- waitpid suspends execution of the calling process until a child process in its wait
+set terminates.
+- Child terminates and kernel notifies parent
+- Parent periodically checks for terminated children
+- Child terminates and kernel notifies parent via signal
+- waitpid returns the PID of the terminated child and exit status information to Parent
+- At this point, the terminated child has been reaped and the kernel removes all traces of it from the system(deletes zombie child process)
+
+
+Definition of Wait Set
+In the context of waitpid(), the wait set refers to the group of child processes that a parent process can wait for. These child processes are created using fork(), and the parent process can use waitpid() (or wait()) to monitor their termination or state changes.
+
+
+#### Zombie Process
 
 When process terminates, it still consumes system resources
 Examples: Exit status, various OS tables
 Called a “zombie”: Living corpse, half alive and half dead
-
-#### Zombie Process
 
 A terminated process that has not yet been reaped is called a zombie.
 Even though zombies are not running, they still consume system memory resources.
@@ -442,14 +464,23 @@ Here, STAT shows Z, and <defunct> in the COMMAND column also indicates a zombie 
 
 ```
 
-#### Reaping 
-
-Performed by parent on terminated child (using wait or waitpid)
-Parent is given exit status information
-Kernel then deletes zombie child process
-
 #### waitpid & wait
+```C
+#include <sys/types.h>
+#include <sys/wait.h>
 
+pid_t waitpid(pid_t pid, int *statusp, int options);
+// Returns: PID of child if OK, 0 (if WNOHANG), or −1 on error
+// the wait set includes:
+//   All child processes if pid = -1
+//   A specific child process if pid is a valid PID
+//   A specific process group if pid < -1
+//   Only immediate children (not grandchildren)
+
+// Calling wait(&status) is equivalent to calling waitpid(-1, &status, 0).
+pid_t wait(int *statusp);
+// Returns: PID of child if OK or −1 on error
+```
 wait
 
 - Suspends current process until one of its children terminates
@@ -459,39 +490,35 @@ wait
 - Can use macros WIFEXITED and WEXITSTATUS to get information about exit status
 
 waitpid
-pid_t waitpid(pid_t pid, int &status, int options)
+- parent calls waitpid() and Suspends current process until specific process terminates
+- If the child is still running, waitpid() blocks the parent until the child terminates (unless WNOHANG is used).
+- When a child process terminates normally (calls exit() or returns from main()), it becomes a zombie process.
+- The kernel keeps its exit status so that the parent can retrieve it using waitpid()
+- waitpid() immediately returns with its PID.
+- Once the child is reaped, the kernel removes all traces of it, and its PID can be reused.
 
-- Suspends current process until specific process terminates
-- Various options (see textbook)
-
-
-```C
-#include <sys/types.h>
-#include <sys/wait.h>
-
-pid_t waitpid(pid_t pid, int *statusp, int options);
-// Returns: PID of child if OK, 0 (if WNOHANG), or −1 on error
-
-
-// Calling wait(&status) is equivalent to calling waitpid(-1, &status, 0).
-pid_t wait(int *statusp);
-// Returns: PID of child if OK or −1 on error
-```
 
 #### Modifying the Default Behavior when reaping child processes
-
-- WNOHANG
-  Non-blocking wait  
+- WNOHANG :  Non-blocking wait  
   Return immediately (with a return value of 0) if none of the child processes in the wait set has terminated yet. 
   The default behavior suspends the calling process until a child terminates; 
   this option is useful in those cases where you want to continue doing useful work while waiting for a child to terminate.
-- WUNTRACED
-  Wait for stopped children  
-  Suspend execution of the calling process until a process in the wait set becomes either terminated or stopped. 
-  Return the PID of the terminated or stopped child that caused the return. 
-  The default behavior returns only for terminated children; this option is useful when you want to check for both terminated and stopped children.
-- WCONTINUED
-  Wait for continued (resumed) children
+
+
+- WUNTRACED : waitpid() Works When a Child Stops if The WUNTRACED option is set
+    The default behavior returns only for terminated children; this option is useful when you want to check for both terminated and stopped children.
+    If a child process is stopped (e.g., by SIGTSTP when pressing Ctrl+Z), it does not become a zombie but instead enters a stopped state. waitpid() can handle this if The WUNTRACED option is set
+
+Behavior:
+- parent calls waitpid(WUNTRACED)
+- Suspend execution of the calling process until a process in the wait set becomes either terminated or stopped. 
+- The child process receives SIGTSTP and stops or terminated
+- it will return immediately with the child’s PID.
+- The status returned by waitpid() will indicate that the child has terminated/stopped (WIFSTOPPED(status) == true).
+- The child remains stopped until it is continued (e.g., via SIGCONT).
+
+  
+- WCONTINUED :  Wait for continued (resumed) children
   Suspend execution of the calling process until a running process in the wait set is terminated or until a stopped process in the wait set has been resumed by the receipt of a SIGCONT signal. (Signals are explained in Section 8.5.)
 
 #### Checking the Exit Status of a Reaped Child
@@ -761,6 +788,7 @@ In Unix, the alert mechanism is called a signal
 
 https://cs341.cs.illinois.edu/coursebook/Signals
 
+Linux signal, that allows processes and the kernel to interrupt other processes
 In UNIX-like operating systems, signals are a form of asynchronous notification sent to a process. 
 
 A signal is a small message that notifies a process that an event of some type has occurred in the system. 
@@ -938,8 +966,12 @@ int setpgid(pid_t pid, pid_t pgid);
 // - If pid is zero, the PID of the current process is used. 
 // - If pgid is zero, the PID of the process specified by pid is used for the process group ID
 ```
+#### Sending Signals
+- 1. Sending Signals with the /bin/kill Program
+- 2. Sending Signals from the Keyboard
+- 3. Sending Signals with the kill Function
+- 4. Sending Signals with the alarm Function
 
-#### Sending Signals with the /bin/kill Program
 
 The /bin/kill program sends an arbitrary signal to another process.
 
@@ -963,7 +995,7 @@ int kill(pid_t pid, int sig);
 
 ```
 
-#### Sending Signals from the Keyboard
+Sending Signals from the Keyboard
 
 ```shell
 ls|sort
@@ -977,6 +1009,18 @@ ls|sort
   In the default case, the result is to stop (suspend) the foreground job.
 
 
+3. Sending Signals with the kill Function
+```C
+#include <sys/types.h>
+#include <signal.h>
+int kill(pid_t pid, int sig);
+// Returns: 0 if OK, −1 on error
+
+// If pid is greater than zero, then the kill function sends signal number sig to process pid. 
+// If pid is equal to zero, then kill sends signal sig to every process in the process group of the calling process, including the calling process itself. 
+// if pid is less than zero, then kill sends signal sig to every process in process group |pid| (the absolute value of pid).
+
+```
 
 
 ### 8.5.3 Receiving Signals
@@ -984,10 +1028,8 @@ ls|sort
 A destination process receives a signal when it is forced by the kernel to react in some way to the delivery of the signal
 
 - Suppose kernel is returning from an exception handler and is ready to pass control to process p
-- Kernel computes pnb = pending & ~blocked
-The set of pending nonblocked signals for process p 
-- If  (pnb == 0) 
-Pass control to next instruction in the logical flow for p
+- Kernel computes pnb = pending & ~blocked:  The set of pending nonblocked signals for process p 
+- If  (pnb == 0) : Pass control to next instruction in the logical flow for p
 - Else
 Choose least nonzero bit k in pnb and force process p to receive signal k
 The receipt of the signal triggers some action by p
