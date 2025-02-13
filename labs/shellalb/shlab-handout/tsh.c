@@ -1,3 +1,13 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <ctype.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <errno.h>
+
 /*
  * tsh - A tiny shell program with job control
  *
@@ -8,15 +18,7 @@
 // #define __USE_XOPEN_EXTENDED 1
 // #define __USE_XOPEN2K8 1
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <ctype.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <errno.h>
+
 // #include "csapp.h"
 
 /* Misc manifest constants */
@@ -329,6 +331,8 @@ void eval(char *cmdline)
         sigprocmask(SIG_SETMASK, &prev, NULL);
 
         /* Wait for foreground job to finish */
+        // if a command is a foreground job, we must wait for the termination of the job in child process to reap and delete the job
+        // if a command is a background job, we not need to wait the job to ternimanted
         if (!bg)
         {
             struct job_t *job = getjobpid(jobs, pid);
@@ -344,49 +348,10 @@ void eval(char *cmdline)
                 sigsuspend(&prev);
             }
         }
-
-        //     else
-        //     {
-
-        //         addjob(jobs, pid, job_state, cmdline);
-
-        //         sigprocmask(SIG_SETMASK, &prev, NULL); // restore to the previous blocked set without blocking SIG_BLOCK
-
-        //         // if a command is a foreground job, we must wait for the termination of the job in child process to reap and delete the job
-        //         // if a command is a background job, we not need to wait the job to ternimanted
-
-        //         if (!bg)
-        //         {
-
-        //             // The reaping of a process means that the parent process must acknowledge that the child has finished executing and clean up its resources,
-        //             // which is done through functions like wait() or waitpid().
-        //             // reap the foreground job with the while loop using waitpid
-        //             // change the option to 0 to suspend the forground job unit it is ternimated and reaped
-        //             while (waitpid(pid, &status, 0) > 0)
-        //             {
-        //                 // delete the jobs after reaped the foreground job
-        //                 // Critical Section:: Sigprocmask(SIG_BLOCK, &mask_all, &prev_all); blocks all signals to ensure safe manipulation of the job list,
-        //                 // specifically to call deletejob(pid) without interruptions.
-        //                 if (WIFEXITED(status) | WIFSIGNALED(status))
-        //                 {
-        //                     sigprocmask(SIG_BLOCK, &mask, &prev);
-        //                     deletejob(jobs, pid); /* Delete the child from the job list */
-        //                     sigprocmask(SIG_SETMASK, &prev, NULL);
-        //                     if (verbose)
-        //                         printf("eval function use waitpid reap forground pid: %d \n", pid);
-        //                 }
-        //             }
-        //         }
-        //         else
-        //         {
-        //             // the backgrund job
-        //             struct job_t *job = getjobpid(jobs, pid);
-        //             printf("[%d] (%d)  %s", job->jid, job->pid, job->cmdline);
-        //             if (verbose)
-        //                 printf("Parent PID %d run a background job\n", getpid());
-        //         }
-        //     }
+        
+       
     }
+    printf("\n");
 }
 
 /*
@@ -557,10 +522,8 @@ void sigchld_handler(int sig)
 
     sigprocmask(SIG_BLOCK, &mask, &prev);
 
-    // pid = waitpid(-1, &status, WNOHANG| WUNTRACED| WCONTINUED);
-    // if(verbose)printf("sigchld_handler: waitpid for pid: %d,PPID: %d, getpid: %d\n",pid,getppid(),getpid());
     // Use waitpid(-1, ...) in a loop to reap all pending children.
-    while ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED | WCONTINUED)) > 0)
+    while ((pid = waitpid(-1, &status, WUNTRACED | WCONTINUED)) > 0)
     { /* Reap a zombie child */
         if (verbose)
             printf("sigchld_handler waitpid: %d\n", pid);
@@ -602,7 +565,7 @@ void sigchld_handler(int sig)
 /*
  * sigint_handler - The default action for SIGINT is to terminate the process.
    ctrl+c by keyboard-> kernel send SIGINT the foreground process group(shell process group, just shell proces itself because when we create child process using setpid(0,0))
-   -> sigint_handler in shell process -> send SIGNT to foreground jobs by kill function-> terminate the foreground jobs
+   -> sigint_handler in shell process -> find the foreground job by state -> kill() send SIGNT to foreground job -> terminate the foreground job process group
    -> when child ternimated, kernel send SIGCHLD -> sigchld_handler -> reap all terminated/stopped children
 
    1. whenver the user types ctrl-c at the keyboard, the kernel sends a SIGINT and will trigger sigint_handler
@@ -628,7 +591,7 @@ void sigint_handler(int sig)
 
     if (pid > 0)
     {
-        // Send SIGINT to the foreground process group
+        // -pid, Send SIGINT to the foreground process group
         if (kill(-pid, sig) == -1)
         {
             unix_error("kill error");

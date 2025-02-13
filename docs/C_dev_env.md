@@ -88,7 +88,7 @@ Windows uses the Portable Executable (PE) format, while Linux commonly uses the 
 # WSL 
 
 
-## Remote wsl connect to windows proxy(clash)
+## Remote wsl connect to windows proxy(clash) for VS extensions
 ### 1. Configure Clash to Listen on All Interfaces
 Clash for Windows (or similar tools) may be set by default to bind only to 127.0.0.1. To allow WSL to reach Clash via the Windows host IP, you need to change its binding settings.
 Enable “Allow LAN” in Clash
