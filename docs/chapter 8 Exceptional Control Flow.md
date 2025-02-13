@@ -420,6 +420,9 @@ pid_t fork(void);
 
 ### 8.4.3 Reaping Child Processes(回收子进程)
 
+The reaping of a process means that the parent process must acknowledge that the child has finished executing and clean up its resources,
+which is done through functions like wait() or waitpid().
+
 #### How to reap child processes
 - Parent waits for child to terminate by calling the waitpid function
 - waitpid suspends execution of the calling process until a child process in its wait
