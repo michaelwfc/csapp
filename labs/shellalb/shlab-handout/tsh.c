@@ -157,12 +157,11 @@ int main(int argc, char **argv)
     /* Install the signal handlers */
 
     /* These are the ones you will need to implement */
-    Signal(SIGINT, sigint_handler);   /* ctrl-c */
-    Signal(SIGTSTP, sigtstp_handler); /* ctrl-z */
-    Signal(SIGCHLD, sigchld_handler); /* Terminated or stopped child */
+    Signal(SIGINT, sigint_handler);   /* SIGINT (Ctrl+C) is usually sent to interrupt a process. */
+    Signal(SIGTSTP, sigtstp_handler); /* SIGTSTP (Ctrl+Z) is sent to stop a process. */
+    Signal(SIGCHLD, sigchld_handler); /* SIGCHLD is sent to the parent process when a child process terminates or stops. */
 
-    /* This one provides a clean way to kill the shell */
-    Signal(SIGQUIT, sigquit_handler);
+    Signal(SIGQUIT, sigquit_handler);/* SIGQUIT is used to quit a process and produce a core dump.This one provides a clean way to kill the shell */
 
     /* Initialize the job list */
     initjobs(jobs);
@@ -498,7 +497,10 @@ void waitfg(pid_t pid)
  *****************/
 
 /*
- * sigchld_handler -
+ * sigchld_handler
+ which is responsible for  handle the state change of the job,updating the job state,the job state management
+
+ Prcess:
  1. Receiving SIGCHLD signals when child processes terminate or stop, trigger the sigchld_handler
  whenever a child job terminates (becomes a zombie), or stops because it received a SIGSTOP or SIGTSTP signal,  
  The kernel sends a SIGCHLD to the shell
@@ -509,7 +511,7 @@ void waitfg(pid_t pid)
 void sigchld_handler(int sig)
 {
     if (verbose)
-        printf("sigchld_handler: entering with signal %d\n", sig);
+        printf("PID %d sigchld_handler: entering with signal %d\n",getpid(), sig);
     int _errno = errno;
     int status;
     pid_t pid;
@@ -523,7 +525,7 @@ void sigchld_handler(int sig)
     sigprocmask(SIG_BLOCK, &mask, &prev);
 
     // Use waitpid(-1, ...) in a loop to reap all pending children.
-    while ((pid = waitpid(-1, &status, WUNTRACED | WCONTINUED)) > 0)
+    while ((pid = waitpid(-1, &status, WNOHANG|WUNTRACED | WCONTINUED)) > 0)
     { /* Reap a zombie child */
         if (verbose)
             printf("sigchld_handler waitpid: %d\n", pid);
@@ -557,7 +559,7 @@ void sigchld_handler(int sig)
     sigprocmask(SIG_SETMASK, &prev, NULL);
 
     if (verbose)
-        printf("sigchld_handler: exiting\n");
+        printf("PID %d sigchld_handler: exiting\n",getpid());
     errno = _errno;
     return;
 }
@@ -584,7 +586,7 @@ void sigchld_handler(int sig)
 void sigint_handler(int sig)
 {   
     if(verbose)
-        printf("sigint_handler: entering with signal %d\n", sig);
+        printf("PID %d sigint_handler: entering with signal %d\n",getpid(), sig);
 
     pid_t pid = fgpid(jobs); // find the pid of foreground job
     struct job_t *job = getjobpid(jobs, pid);
@@ -600,32 +602,30 @@ void sigint_handler(int sig)
             printf("\nsigint_handler: sent %d to terminate the job: [%d] %d %s %s\n", sig, job->jid, job->pid, get_job_state(job->state), job->cmdline);
     }
     if(verbose)
-        printf("exiting sigint_handler\n");
+        printf("PID %d exiting sigint_handler\n",getpid());
 
     return;
 }
 
 /*
- * sigtstp_handler - The kernel sends a SIGTSTP to the shell whenever the user types ctrl-z at the keyboard.
- Catch it and suspend the foreground job by sending it a SIGTSTP.
- ctrl-z ->  kernel send SIGTSTP -> sigtstp_handler -> kill pid -> sigchld_handler -> change the state of pid/job
+ * sigtstp_handler 
+ When you press Ctrl+Z, the SIGTSTP signal is sent to the foreground process group. 
+ This means that both the parent and child processes in the foreground process group will receive the SIGTSTP signal.
 
- The issue you're experiencing is likely due to a race condition between the sigtstp_handler and the sigchld_handler.
- When you press Ctrl+Z, the sigtstp_handler is called, but it's not properly synchronizing with the sigchld_handler, which is responsible for updating the job state.
+However, whether the signal is handled by the parent or the child depends on how the signal handlers are set up and the process group configuration. 
+Typically, the shell (parent process) will handle the SIGTSTP signal and stop the foreground job (child process).
 
- Here's how we can fix this:
-1. In the sigtstp_handler, we should only send the SIGTSTP signal to the foreground process.
-2. We should let the sigchld_handler handle the state change of the job.
-3. We need to ensure proper synchronization between these handlers.
 
- This implementation ensures that the sigtstp_handler is focused solely on sending the SIGTSTP signal to the foreground job,
- while leaving the job state management to the sigchld_handler. his separation of concerns helps prevent race conditions and makes the code more maintainable.
+ process: 
+ ctrl-z ->  kernel send SIGTSTP -> sigtstp_handler -> get the foreground process pid ->  kill the foreground pid 
+ -> sigchld_handler -> change the state of pid/job
+
 
  */
 void sigtstp_handler(int sig)
 {
     if (verbose)
-        printf("sigchld_handler: entering with signal %d\n", sig);
+        printf("PID %d sigtstp_handler: entering with signal %d\n",getpid(), sig);
 
     // Error Number Preservation: We save and restore errno to prevent any changes to it that might occur within the handler from affecting the main program flow.
     int _errno = errno;
@@ -660,7 +660,7 @@ void sigtstp_handler(int sig)
     errno = _errno;
 
     if (verbose)
-        printf("sigtstp_handler: exiting\n");
+        printf("PID %d sigtstp_handler: exiting\n",getpid());
 
     return;
 }
