@@ -441,9 +441,8 @@ int builtin_cmd(char **argv)
     }
     else if (!strcmp(argv[0], "fg"))
     {
-        printf("fg(build-in command): \n");
-        // int jid = argv[1];
-        // struct job_t *job = getjobjid(jobs,jid);
+        // printf("fg(build-in command): \n");
+        do_bgfg(argv);
         return 1;
     }
     else if (!strcmp(argv[0], "kill"))
@@ -516,7 +515,8 @@ void do_bgfg(char **argv)
             if (kill(-pid, SIGCONT) < 0)
                 unix_error("kill (SIGCONT) error");
             job->state = BG;
-            printf("[%d] (%d) %s", job->jid, job->pid, job->cmdline);
+            if(verbose)
+                printf("[%d] (%d) BG %s", job->jid, job->pid, job->cmdline);
         }
     }
     else if (!strcmp(argv[0], "fg"))
@@ -527,6 +527,8 @@ void do_bgfg(char **argv)
                 unix_error("kill (SIGCONT) error");
         }
         job->state = FG;
+        if(verbose)
+            printf("[%d] (%d) FG %s", job->jid, job->pid, job->cmdline);
         waitfg(job->pid);
     }
 }
@@ -550,7 +552,18 @@ void do_bgfg(char **argv)
  */
 void waitfg(pid_t pid)
 {
+    struct job_t *job = getjobpid(jobs, pid);
+    if (!job)
+        return;
 
+    // Wait for the foreground job to complete or change state
+    while (job->state == FG)
+    {
+        // Suspend the process until a signal is received
+        sigset_t mask;
+        sigemptyset(&mask);
+        sigsuspend(&mask);
+    }
 }
 
 /*****************
@@ -593,20 +606,7 @@ void sigchld_handler(int sig)
         struct job_t *job = getjobpid(jobs, pid);
         if (WIFCONTINUED(status))
         {
-            // job->state=;
-            if(job->state==ST)
-            {
-                job->state=BG;
-                if (verbose)
-                    printf("PID %d sigchld_handler converted a continued pid %d from state ST to BG\n", getpid(), pid);
-            }else if(job->state==BG)
-            {
-                job->state=FG;
-                if (verbose)
-                    printf("PID %d sigchld_handler converted a continued pid %d from state BG to FG\n", getpid(), pid);
-            }
-
-           
+            // we will manange the WCONTINUED in the do_bgfg function
         }
         else
         {
