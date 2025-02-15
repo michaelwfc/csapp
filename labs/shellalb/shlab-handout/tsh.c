@@ -306,8 +306,6 @@ void eval(char *cmdline)
             }
         }
 
-        if (verbose)
-            printf("PID %d add job for cmdline: %s\n", getpid(), cmdline);
 
         if (!bg)
         {
@@ -350,7 +348,7 @@ void eval(char *cmdline)
         
        
     }
-    printf("\n");
+    // printf("\n");
 }
 
 /*
@@ -436,8 +434,8 @@ int builtin_cmd(char **argv)
     }
     else if (!strcmp(argv[0], "bg"))
     {
-        printf("bg(build-in command): bring the job background\n");
-        // do_bgfg(argv);
+        // printf("bg(build-in command): bring the job background\n");
+        do_bgfg(argv);
 
         return 1;
     }
@@ -464,10 +462,73 @@ int builtin_cmd(char **argv)
 
 /*
  * do_bgfg - Execute the builtin bg and fg commands
+
+1.Parse the job ID or process ID: The bg and fg commands can take either a job ID (prefixed with %) or a process ID as an argument.
+2.Find the job: Use the job ID or process ID to find the corresponding job in the job list.
+3.Change the job state: For the bg command, change the job state to BG and resume the job. For the fg command, change the job state to FG and wait for the job to complete.
+
  */
 void do_bgfg(char **argv)
 {
-    return;
+    struct job_t *job = NULL;
+    char *id = argv[1];
+    int jid;
+    pid_t pid;
+
+    if (id == NULL)
+    {
+        printf("%s command requires PID or %%jobid argument\n", argv[0]);
+        return;
+    }
+
+    if (id[0] == '%')
+    {
+        jid = atoi(&id[1]);
+        job = getjobjid(jobs, jid);
+        if (job == NULL)
+        {
+            printf("%s: No such job\n", id);
+            return;
+        }
+    }
+    else if (isdigit(id[0]))
+    {
+        pid = atoi(id);
+        job = getjobpid(jobs, pid);
+        if (job == NULL)
+        {
+            printf("(%d): No such process\n", pid);
+            return;
+        }
+    }
+    else
+    {
+        printf("%s: argument must be a PID or %%jobid\n", argv[0]);
+        return;
+    }
+
+    pid = job->pid;
+
+    if (!strcmp(argv[0], "bg"))
+    {
+        if (job->state == ST)
+        {
+            if (kill(-pid, SIGCONT) < 0)
+                unix_error("kill (SIGCONT) error");
+            job->state = BG;
+            printf("[%d] (%d) %s", job->jid, job->pid, job->cmdline);
+        }
+    }
+    else if (!strcmp(argv[0], "fg"))
+    {
+        if (job->state == ST)
+        {
+            if (kill(-pid, SIGCONT) < 0)
+                unix_error("kill (SIGCONT) error");
+        }
+        job->state = FG;
+        waitfg(job->pid);
+    }
 }
 
 /*
@@ -533,8 +594,19 @@ void sigchld_handler(int sig)
         if (WIFCONTINUED(status))
         {
             // job->state=;
-            if (verbose)
-                printf("PID %d sigchld_handler waited a restarted child pid %d\n", getpid(), pid);
+            if(job->state==ST)
+            {
+                job->state=BG;
+                if (verbose)
+                    printf("PID %d sigchld_handler converted a continued pid %d from state ST to BG\n", getpid(), pid);
+            }else if(job->state==BG)
+            {
+                job->state=FG;
+                if (verbose)
+                    printf("PID %d sigchld_handler converted a continued pid %d from state BG to FG\n", getpid(), pid);
+            }
+
+           
         }
         else
         {
