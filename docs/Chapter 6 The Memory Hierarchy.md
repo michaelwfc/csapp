@@ -15,10 +15,9 @@ In practice, a memory system is a hierarchy of storage devices with different ca
 | cache        | 4 to 75 |
 | memory       |  hundreds|
 
-locality
+## Locality
 Programs with good locality tend to access the same set of data items over and over again, or they tend to access sets of nearby data items.
-Programs with good locality tend to access more data items from the upper levels
-of the memory hierarchy than programs with poor locality, and thus run faster.
+Programs with good locality tend to access more data items from the upper levels of the memory hierarchy than programs with poor locality, and thus run faster.
 
 
 ## 6.1 Storage Technologies 
@@ -88,17 +87,24 @@ Disks are workhorse storage devices that hold enormous amounts of data, on the o
 
 #### Disk Geometry
 
-- Platters
-  Disks are constructed from platters. each with two surfaces.
-- Tracks
-  Each surface consists of concentric rings called tracks.
+
+
 - Sectors
     A sector is the smallest unit of data storage on a hard disk
     Each track consists of sectors separated by gaps.
     Each sector contains an equal number of data bits(typically 512 bytes)
+
+- Tracks
+  Each surface consists of concentric rings called tracks.
+
+- Surface
+  
+- Platters
+  Disks are constructed from platters. each with two surfaces.
+
 - Recording zones
-    where the set of cylinders is partitioned into disjoint subsets known as
-recording zones. Each zone consists of a contiguous collection of cylinders. 
+    where the set of cylinders is partitioned into disjoint subsets known as recording zones. 
+    Each zone consists of a contiguous collection of cylinders. 
     Each track in each cylinder in a zone has the same number of sectors, which is determined by the number of sectors that can be packed into the innermost track of the zone
 
 #### Computing Disk Capacity
@@ -106,7 +112,7 @@ recording zones. Each zone consists of a contiguous collection of cylinders.
 Capacity =  (# bytes/sector) x (avg. # sectors/track) x (# tracks/surface) x (# surfaces/platter) x  (# platters/disk)
 
 
-##### Practice Problem 6.2 (solution page 697)
+Practice Problem 6.2 (solution page 697)
 
 What is the capacity of a disk with 3 platters, 15,000 cylinders, an average of 500
 sectors per track, and 1,024 bytes per sector?
@@ -176,9 +182,19 @@ flash translation layer
 ### 6.1.4 Storage Technology Trends
 
 
-  
+### The CPU-Memory Gap
+The gap widens between DRAM, disk, and CPU speeds. 
+
+
 ## 6.2 Locality
 
+The key to bridging this CPU-Memory gap is a fundamental property of computer programs known as locality
+
+#### Principle of Locality: 
+Programs tend to use data and instructions with addresses near or equal to those they have used recently
+
+
+#### Temporal locality & Spatial locality
 Locality is typically described as having two distinct forms:
 
 - temporal locality
@@ -187,38 +203,9 @@ Locality is typically described as having two distinct forms:
   In a program with good spatial locality, if a memory location is referenced once, then the program is likely to reference a nearby memory location in the near future.
 
 
-- hardware level : cache memories
-At the hardware level, the principle of locality allows computer designers to speed up main memory accesses by introducing small fast memories known as cache memories that hold blocks of the most recently referenced instructions and data items. 
-
-- operating system level :  virtual address space
-At the operating system level, the principle of locality allows the system to use the main memory as a cache of the most recently referenced chunks of the virtual address space
-
-### 6.2.1 Locality of References to Program Data
-
-
-- stride-1 reference pattern(sequential reference patterns)
-  visits each element of a vector sequentially
-- stride-k reference pattern
-
-For programs with stride-k reference patterns, the smaller the stride, the
-better the spatial locality.  
-Programs with stride-1 reference patterns have good spatial locality.  
-Programs that hop around memory with large strides have poor spatial locality.
-
-### 6.2.2 Locality of Instruction Fetches
-
-Loops have good temporal and spatial locality with respect to instruction fetches. The smaller the loop body and the greater the number of loop iterations, the better the locality
-
 ```C
-sum = 0;
-for (i = 0; i < n; i++)
-    sum += a[i];
-return sum;
-
-
-```
+/*
 Data references
-
 - Spatial locality: Reference array elements in succession (stride-1 reference pattern).
 - Temporal locality: Reference variable sum each iteration.
 
@@ -227,11 +214,106 @@ Instruction references
 - Spatial locality : Reference instructions in sequence.
 - Temporal locality: Cycle through loop repeatedly. 
 
-#### Qualitative Estimates of Locality
+for loop are executed in sequential memory order, and thus the loop enjoys good
+spatial locality. Since the loop body is executed multiple times, it also enjoys good
+temporal locality.
+
+*/
+sum = 0;
+for (i = 0; i < n; i++)
+    sum += a[i];
+return sum;
+
+```
+
+
+
+### 6.2.1 Locality of References to Program Data
+
+
+- stride-1 reference pattern(sequential reference patterns)
+  visits each element of a vector sequentially
+- stride-k reference pattern
+
+For programs with stride-k reference patterns, the smaller the stride, the better the spatial locality.  
+Programs with stride-1 reference patterns have good spatial locality.  
+Programs that hop around memory with large strides have poor spatial locality.
+
+
+### 6.2.2 Locality of Instruction Fetches
+
+Loops have good temporal and spatial locality with respect to instruction fetches. 
+The smaller the loop body and the greater the number of loop iterations, the better the locality
+
+
+#### Qualitative Example Estimates of Locality
+
+```C
+/* $begin sumarrayrows */
+int sumarrayrows(int a[M][N]) 
+{  	
+    int i, j, sum = 0;
+
+    for (i = 0; i < M; i++) 
+	for (j = 0; j < N; j++)
+	    sum += a[i][j];
+    return sum;	
+}
+/* $end sumarrayrows */
+
+
+/* $begin sumarraycols 
+/ The sumarraycols function suffers from poor spatial locality because it scans
+the array column-wise instead of row-wise. Since C arrays are laid out in memory
+row-wise, the result is a stride-N reference pattern,
+
+*/
+int sumarraycols(int a[M][N]) 
+{  	
+    int i, j, sum = 0;
+
+    for (j = 0; j < N; j++)
+	for (i = 0; i < M; i++) 
+	    sum += a[i][j];
+    return sum;	
+}
+/* $end sumarraycols */
+
+
+```
+
+### 6.2.3 Summary of Locality
+
+- Programs that repeatedly reference the same variables enjoy good temporal
+locality.
+- For programs with stride-k reference patterns, the smaller the stride, the
+better the spatial locality. Programs with stride-1 reference patterns have good
+spatial locality. Programs that hop around memory with large strides have
+poor spatial locality.
+- Loops have good temporal and spatial locality with respect to instruction
+fetches. The smaller the loop body and the greater the number of loop iterations,
+the better the locality.
+
+
+### Ideas about locality
+
+#### Hardware level : cache memories
+At the hardware level, the principle of locality allows computer designers to speed up main memory accesses by introducing small fast memories known as cache memories that hold blocks of the most recently referenced instructions and data items. 
+
+#### Operating system level :  virtual address space
+At the operating system level, the principle of locality allows the system to use the main memory as a cache of the most recently referenced chunks of the virtual address space
+the operating system uses main memory to cache the most recently used disk blocks in the disk file system.
+
+#### Appication levle:
+Web browsers exploit temporal locality by caching recently referenced documents on a local disk. 
+High-volumeWeb servers hold recently requested documents in front-end disk caches that satisfy requests for these documents without requiring any intervention from the server.
+
+
+
 
 ## 6.3 The Memory Hierarchy
 
-Fundamental idea of a memory hierarchy:
+#### Fundamental idea of a memory hierarchy:
 For each k, the faster, smaller device at level k serves as a cache for the larger, slower device at level k+1.
 
 #### Why do memory hierarchies work?
@@ -243,16 +325,81 @@ Big Idea:
 The memory hierarchy creates a large pool of storage that costs as much as the cheap storage near the bottom, but that serves data to programs at the rate of the fast storage near the top.
 
 
+![image](../images/Chapter%206%20The%20Memory%20Hierarchy/Figure%206.21%20The%20memory%20hierarchy.png)
+
 
 ### 6.3.1 Caching in the Memory Hierarchy
 
-In general, a cache (pronounced “cash”) is a small, fast storage device that acts as
-a staging area for the data objects stored in a larger, slower device. 
-The process of using a cache is known as caching (pronounced “cashing”).
+
+#### Cache 
+ a small, fast storage device that acts as a staging area for the data objects stored in a larger, slower device.
+
+![image](../images/Chapter%206%20The%20Memory%20Hierarchy/Figure%206.22%20The%20basic%20principle%20of%20caching%20in%20a%20memory%20hierarchy.png)
+
+#### Blocks: 
+The storage at level k + 1 is partitioned into contiguous chunks of data objects called blocks. 
+Each block has a unique address or name that distinguishes it from other blocks.
+
+#### Transfer Units
+Data are always copied back and forth between level k and level k + 1 in
+block-size transfer units
 
 #### Cache Hits
 
+When a program needs a particular data object d from level k + 1, it first looks
+for d in one of the blocks currently stored at level k. If d happens to be cached
+at level k, then we have what is called a cache hit. 
+
+The program reads d directly from level k, which by the nature of the memory hierarchy is faster than reading d from level k + 1
+
 #### Cache Misses
+
+#### Evicting the block
+This process of overwriting an existing block is known as replacing or evicting
+the block. 
+The block that is evicted is sometimes referred to as a victim block.
+The decision about which block to replace is governed by the cache’s replacement
+policy
+
+#### Cache’s replacement policy
+  - A cache with a random replacement policy would choose a random victim block.
+  - A cache with a least recently used (LRU)replacement policy
+  would choose the block that was last accessed the furthest in the past.
+
+#### Kinds of Cache Misses
+
+- Cold (compulsory) miss
+Cold misses occur because the cache is empty.
+
+- Conflict miss
+Most caches limit blocks at level k+1 to a small subset (sometimes a singleton)of the block positions at level k.
+  - E.g. Block i at level k+1 must be placed in block (i mod 4) at level k.
+  Conflict misses occur when the level k cache is large enough, but multiple data objects all map to the same level k block.
+  - E.g. Referencing blocks 0, 8, 0, 8, 0, 8, ... would miss every time.
+
+- Capacity miss
+Occurs when the set of active cache blocks (working set) is larger than the cache.
+
+
+#### Cache Management
+
+the essence of the memory hierarchy is that the storage device at each level is a cache for the next lower level.
+
+- How to partition the cache storage into blocks
+- transfer blocks between different levels, 
+- when there are hits and misses how to deal with them.
+
+
+### 6.3.2 Summary of Memory Hierarchy Concepts
+
+memory hierarchies based on caching work because slower storage is cheaper than faster storage and because programs tend to exhibit locality:
+- Exploiting temporal locality. 
+  Because of temporal locality, the same data objects are likely to be reused multiple times. 
+  Once a data object has been copied into the cache on the first miss, we can expect a number of subsequent hits on that object. Since the cache is faster than the storage at the next lower level, these subsequent hits can be served much faster than the original miss.
+- Exploiting spatial locality. 
+  Blocks usually contain multiple data objects. Because of spatial locality, we can expect that the cost of copying a block after a miss will be amortized by subsequent references to other objects within that block.
+
+![image](../images/Chapter%206%20The%20Memory%20Hierarchy/Figure%206.23%20The%20ubiquity%20of%20caching%20in%20modern%20computer%20systems.png)
 
 
 
@@ -262,7 +409,12 @@ L1 cache： 4 clock cycles
 L2 cache： 10 clock cycles
 L3 cache： 50 clock cycles
 
+![image](../images/Chapter%206%20The%20Memory%20Hierarchy/Figure%206.24%20Typical%20bus%20structure%20for%20cache%20memories..png)
+
 ### 6.4.1 Generic Cache Memory Organization
+
+
+![image](../images/Chapter%206%20The%20Memory%20Hierarchy/Figure%206.25%20General%20organization%20of%20cache%20(S,%20E,%20B,m).png)
 
 #### cache’s organization
 
@@ -368,18 +520,18 @@ A fully associative cache consists of a single set (i.e., E = C/B) that contains
 
 When **storing data** (a **data store** operation) in a system with **cache memory**, the cache plays a crucial role in speeding up memory operations. Here’s a step-by-step explanation of how the cache interacts with the CPU and main memory during a data store operation:
 
-##### 1. **CPU Initiates Data Store**
+1. **CPU Initiates Data Store**
 
 - The CPU issues a **store** instruction, meaning it wants to write some data to a specific memory address.
 - The memory address is generated by the CPU and passed to the cache controller.
 
-##### 2. **Cache Lookup**
+2. **Cache Lookup**
 
 - The cache controller checks whether the memory address that the CPU wants to write to is currently in the cache. This process is called a **cache lookup**.
 - **Cache hit**: If the data for the memory address is already in the cache, it is a **cache hit**.
 - **Cache miss**: If the data is not in the cache, it is a **cache miss**, and the system will need to interact with main memory.
 
-##### 3. **Handling Cache Hits**
+3. **Handling Cache Hits**
 
 - **Write-through Cache** (a common method):
  - The data is written both to the cache **and** to the main memory **immediately**. The cache controller forwards the store request to main memory after updating the cache.
@@ -387,7 +539,7 @@ When **storing data** (a **data store** operation) in a system with **cache memo
  - The data is **only written to the cache** initially. The main memory is **updated later** when the cache block is evicted (this reduces the number of write operations to main memory, improving performance).
 - In either case, the data is **cached**, so future accesses to the same memory location (reading or writing) can be served more quickly.
 
-##### 4. **Handling Cache Misses**
+4. **Handling Cache Misses**
 
 - If the memory location is **not in the cache** (cache miss), the cache controller follows these steps:
  - **Fetch the block** of data from main memory that contains the address.
@@ -395,24 +547,24 @@ When **storing data** (a **data store** operation) in a system with **cache memo
  - **Update the cache** with the new data from the store operation.
 - Depending on the cache policy (write-through or write-back), the main memory may also be updated immediately.
 
-##### 5. **Eviction (Cache Full Scenario)**
+5. **Eviction (Cache Full Scenario)**
 
 - If the cache is full (i.e., there is no room for new data), the cache controller will select a block to be evicted, based on the **cache replacement policy** (e.g., Least Recently Used, First-In-First-Out).
 - In a **write-back** cache, if the evicted block was modified (marked as "dirty"), it is **written back to main memory** before it is removed.
 
-##### 6. **Coherence and Consistency (for Multicore Systems)**
+6. **Coherence and Consistency (for Multicore Systems)**
 
 - In systems with multiple cores, there are often multiple caches. These caches need to stay **coherent** with each other. This is managed by **cache coherence protocols** (e.g., MESI protocol), ensuring that changes in one cache are reflected across others to maintain data consistency.
 
 #### Cache Write Policies
 
-##### 1. **Write-Through**
+1. **Write-Through**
 
 - When data is written to the cache, the same data is **immediately written to the main memory**.
 - Pros: Simpler, and the memory is always up-to-date.
 - Cons: Can be slower due to the constant updating of main memory.
    
-##### 2. **Write-Back**
+2. **Write-Back**
 
 - Data is **only written to the cache** initially, and main memory is updated **later** (when the cache block is evicted or marked dirty).
 - Pros: Faster, as it reduces the number of writes to main memory.
@@ -420,7 +572,7 @@ When **storing data** (a **data store** operation) in a system with **cache memo
 
 ---
 
-##### Example of a Cache Write Operation (Write-back)
+#### Example of a Cache Write Operation (Write-back)
 
 1. **CPU issues a store**: The CPU wants to store `data` at memory address `0x1000`.
 2. **Cache lookup**:
@@ -588,6 +740,5 @@ The general idea of blocking is to organize the data structures in a program int
 
 ## 6.7 Summary 684
 
-## Bibliographic Notes 684
-## Homework Problems 685
+kv## Homework Problems 685
 ## Solutions to Practice Problems 696
