@@ -1338,4 +1338,30 @@ Cache tag (CT) 0x            0 1010 001 = 0x51
 Cache hit? (Y/N)
 Cache byte returned 0x
 
+
+
+Practice Problem 10.2 (solution page 951)
+Suppose the disk file foobar.txt consists of the six ASCII characters foobar.
+Then what is the output of the following program?
+1 #include "csapp.h"
+2
+3 int main()
+4 {
+5 int fd1, fd2;
+6 char c;
+7
+8 fd1 = Open("foobar.txt", O_RDONLY, 0);
+9 fd2 = Open("foobar.txt", O_RDONLY, 0);
+10 Read(fd1, &c, 1);
+11 Read(fd2, &c, 1);
+12 printf("c = %c\n", c);
+13 exit(0);
+14 }
+
+
+Result
+Since both fd1 and fd2 are separate file descriptors, each Read call starts reading from the beginning of the file. Therefore, both Read calls read the first character of the file foobar.txt, which is f.
+
+The output of the program will be:
+c = f
 */
