@@ -416,27 +416,33 @@ L3 cache： 50 clock cycles
 
 ![image](../images/Chapter%206%20The%20Memory%20Hierarchy/Figure%206.25%20General%20organization%20of%20cache%20(S,%20E,%20B,m).png)
 
-#### cache’s organization
+memrory address: m bit -> M=2^m unique address
 
 cache’s organization can be characterized by the tuple (S, E, B, m). 
 
 - cache sets S
-a cache for such a  machine is organized as an array of $S = 2^s$ cache sets.
+s set index bits in A:  form an index into the array of S sets, interpreted as an unsigned integer,
+an array of $S = 2^s$ cache sets
+the set index bits tell us which set the word must be stored in
 
 - cache lines E
 Each set consists of E cache lines.
+t tag bits in A tell us which line (if any) in the set contains the word.
+A line in the set contains the word if and only if the valid bit is set and the tag bits in the line
+match the tag bits in the address A.
 
 - cache line
   - data block ：  Each line consists of a data block of B = 2^b bytes 
   - a valid bit： indicates whether or not the line contains meaningful information
   - tag bits： t = m − (b + s) tag bits (a subset of the bits from the current block’s memory address) that uniquely identify the block stored in the cache line.
+
   
-The size (or capacity) of a cache: 
+The size (or capacity) of a cache =C = S × E × B
 is stated in terms of the aggregate size of all the blocks. The tag bits and valid bit are not included.
 
-C = S × E × B
 
-#### how does the cache know whether it contains a copy of the word at address A?
+
+#### How does the cache know whether it contains a copy of the word at address A?
 
 memory address has m bits that form $M = 2^m$ unique addresses
 The parameters S and B induce a partitioning of the m address bits into the three fields shown in Figure 6.25(b).
@@ -466,16 +472,46 @@ Figure 6.26 Summary of cache parameters
 |t = m − (s + b)  | Number of tag bits|
 |C = B × E × S    | Cache size (bytes), not including overhead such as the valid and tag bits|
 
+
+#### The Word at address A
+In the context of computer memory and caches, a "word" typically refers to the standard unit of data used by a particular processor architecture. It is not necessarily just a single byte; the size of a word can vary depending on the architecture. 
+- In a 32-bit architecture, a word is usually 4 bytes (32 bits)
+- in a 64-bit architecture, a word is usually 8 bytes (64 bits)
+
+The memory address points to the starting byte of the word
+the system reads or writes the entire word (multiple bytes) based on the architecture's word size.
+
+
 ### 6.4.2 Direct-Mapped Caches
+
+Caches are grouped into different classes based on E, the number of cache lines  per set. A cache with exactly one line per set (E = 1) is known as a direct-mapped cache (see Figure 6.27).
+![image](../images/Chapter%206%20The%20Memory%20Hierarchy/Figure%206.27%20Direct-mapped%20cache(E=1).png)
 
 The process that a cache goes through of determining whether a request is a
 hit or a miss and then extracting the requested word consists of three steps: 
 (1) set selection
-(2) line matching
-(3) word extraction 
+s set index from address w -> unsigned integer -> set index
+![image](../images/Chapter%206%20The%20Memory%20Hierarchy/Figure%206.28%20Set%20selection%20in%20a%20%20directmapped%20cache.png)
 
+(2) line matching
+if the valid bit set and the tags  bits in the cache line match the tag bits in the address, we know that a copy of the word we want is indeed stored in the line.
+if either the valid bit were not set or the tags did not match, then we would have had a cache miss.
+
+
+(3) word extraction 
+Once we have a hit, we know that w is somewhere in the block. 
+This last step determines where the desired word starts in the block. 
+the block offset bits provide us with the offset of the first byte in the desired word.
+Similar to our view of a cache as an array of lines, we can think of a block as an array of bytes, and the byte offset as an index into that array.
+
+(4) Line Replacement on Misses in Direct-Mapped Caches
+If the cache misses, then it needs to retrieve the requested block from the next level in the memory hierarchy and store the new block in one of the cache lines of the set indicated by the set index bits. 
+In general, if the set is full of valid cache lines, then one of the existing lines must be evicted. 
+For a direct-mapped cache, where each set contains exactly one line, the replacement policy is trivial: the current line is replaced by the newly fetched line.
 
 ####  Conflict Misses in Direct-Mapped Caches
+
+Conflict misses in direct-mapped caches occur when multiple memory addresses map to the same cache line, causing the cache to repeatedly evict and replace the data in that line. This happens because a direct-mapped cache has only one line per set, so different addresses that map to the same set will conflict with each other.
 
 ```C
 float dotprod(float x[8], float y[8])
@@ -493,26 +529,39 @@ s= 1
 b= 4
 
 
-address 0  ->  set 0
-address 32 ->  10 0000 set > 0 
-address 48 ->  11 0000 set > 1 
+address 0  ->  00 0000 -> set 0
+address 4  ->  00 0100 -> set 0
+address 8  ->  00 1000 -> set 0
+address 12  -> 00 1100 -> set 0
+address 16  -> 01 0000 -> set 1
+address 20  -> 01 0100 -> set 1
+address 24  -> 01 1000 -> set 1
+address 28  -> 01 11000 -> set 1
+
+address 32 ->  10 0000 -> set > 0 
+address 36 ->  10 0100 -> set > 0 
+
 
 ### 6.4.3 Set Associative Caches
 
 A set associative cache relaxes this constraint so that each set holds more than one cache line.
 a cache with $1<E <C/B$ is often called an E-way set associative cache.
 
-#### Line Replacement on Misses in Set Associative Caches
-
-- choose the line to replace at random
-- least frequently used (LFU) policy
-  will replace the line that has been referenced the fewest times over some past time window. 
-- A least recently used (LRU) policy
-  will replace the line that was last accessed the furthest in the past. 
+1. Set Selection in Set Associative Caches
+2. Line Matching and Word Selection in Set Associative Caches
+3. Word extract if Hit
+4. Line Replacement on Misses in Set Associative Caches
+   - choose the line to replace at random
+   - least frequently used (LFU) policy
+     will replace the line that has been referenced the fewest times over some past time window. 
+   - A least recently used (LRU) policy
+     will replace the line that was last accessed the furthest in the past. 
 
 ### 6.4.4 Fully Associative Caches
 
 A fully associative cache consists of a single set (i.e., E = C/B) that contains all of the cache lines
+
+
 
 ### 6.4.5 Issues with Writes(Data store)
 
