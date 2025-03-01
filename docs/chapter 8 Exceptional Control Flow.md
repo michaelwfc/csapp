@@ -195,7 +195,7 @@ Throughout this text, we will refer to system calls and their associated wrapper
 
 ### Process: 
 
-The classic definition of a process is an instance of a program in execution.
+The classic definition of a process is ***an instance of a program in execution***.
 
 - One of the most profound ideas in computer science
 - Not the same as “program” or “processor”
@@ -205,13 +205,21 @@ Process provides each program with two key abstractions:
 
 - Logical control flow
 Each program seems to have exclusive use of the CPU
-Provided by kernel mechanism called context switching
+Provided by kernel mechanism called ***context switching***：
 - Private address space
 Each program seems to have exclusive use of main memory. 
-Provided by kernel mechanism called virtual memory
+Provided by kernel mechanism called ***virtual memory***
 
 
 
+
+### 8.2.1 Logical Control Flow
+
+This sequence of PC(program counter) values is known as a logical control flow, or simply logical flow.
+
+ 
+
+### 8.2.2 Concurrent Flows
 
 
 #### Multiprocessing: The (Traditional) Reality
@@ -237,9 +245,32 @@ Multiple CPUs on single chip
 #### Concurrent Processes
 
 - Each process is a logical control flow. 
-- Two processes run concurrently (are concurrent) if their flows overlap in time
-- Otherwise, they are sequential
+- Two processes run concurrently (are concurrent) if their flows overlap in time Otherwise, they are sequential
+- A logical flow whose execution overlaps in time with another flow is called ***a concurrent flow***, and the two flows are said to ***run concurrently***
+- The general phenomenon of multiple flows executing concurrently is known as ***concurrency***.
+- If two flows are running concurrently on different processor cores or computers, then we say that they are ***parallel flows***, that they are running in parallel, and have parallel execution.
 
+
+### 8.2.3 Private Address Space
+
+![image](../images/Chapter%208%20Exceptional%20Control%20Flow/Figure%208.13%20Process%20address%20space.png)
+
+A process provides each program with its own private address space. 
+private：a byte of memory associated with a particular address in the space cannot in general be
+read or written by any other process.
+
+- The bottom portion of the address space is reserved for the user program 
+  - the usual code： The code segment always begins at address 0x400000.
+  - data
+  - heap
+  - stack segments 
+
+- The top portion of the address space is reserved for the kernel (the memory-resident part of the operating system). 
+  - the code, data, and stack that the kernel uses when it executes instructions on behalf of the process (e.g., when the application program executes a system call).
+
+
+
+### 8.2.4 User and Kernel Modes
 
 #### Kernel
 
@@ -247,14 +278,29 @@ Processes are managed by a shared chunk of memory-resident OS code called the ke
 Important: the kernel is not a separate process, but rather runs as part of some existing process.
 Each program in the system runs in the context of some process. 
 
-#### Context Switching:
+#### kernel mode
+A process running in kernel mode can execute any instruction
+in the instruction set and access any memory location in the system.
 
+#### user mode
+
+- User programs must instead access kernel code and data indirectly via the system call interface.
+- A process running application code is initially in user mode. 
+- The only way for the process to change from user mode to kernel mode is via an exception such as an interrupt, a fault, or a trapping system call.
+
+
+```bash
+# /proc filesystem, that allows user mode processes to access the contents of kernel data structures
+# /proc filesystem exports the contents of many kernel data structures as a hierarchy of text
+cd /proc
+
+cat cpuinfo
+
+
+```
+
+### 8.2.5 Context Switches
 Control flow passes from one process to another via a context switch
-
-
-
-
-
 
 The context consists of the state that the program needs to run correctly. 
 
@@ -270,16 +316,7 @@ This state includes
 - various kernel data structures
 - environment variables
 - the set of open file descriptors.
-  
 
-```bash
-# 内核相关的数据结构
-cd /proc
-
-cat cpuinfo
-
-
-```
 
 ## 8.3 System Call Error Handling 
 

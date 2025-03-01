@@ -13,8 +13,8 @@ inefficiencies in the code.
 - Machine Code: The byte-level programs that a processor executes
 
 ### Assembly/Machine Code View
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/001-CPU-MEMEORY-Structure.png)
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/001-CPU-MEMEORY-Structure.png)
 
 #### Programmer-Visible State
 

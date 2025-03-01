@@ -14,5 +14,3 @@
 | `pointer`     | 4                     | 8                     | Platform dependent                                   | Platform dependent                 | Platform dependent                                   | Platform dependent                 |
 
 This table now clearly separates the signed and unsigned ranges for each data type on both 32-bit and 64-bit systems.
-
-## U

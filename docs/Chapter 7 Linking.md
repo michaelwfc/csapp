@@ -7,12 +7,10 @@ Linking is the process of collecting and combining various pieces of code and da
 - even at run time, by application programs.
 
 
--  build large programs. Programmers who
--  avoid dangerous programming errors.
+-  build large programs. Programmers who avoid dangerous programming errors.
 The decisions that Linux linkers make when they resolve symbol references can silently affect the correctness of your programs. Programs that incorrectly define multiple global variables can pass through the linker without any warnings in the default case. The resulting programs can exhibit baffling run-time behavior and are extremely difficult to debug.
 - understand how language scoping rules are implemented.
-  For example, what is the difference between global and local
-variables? 
+  For example, what is the difference between global and local variables? 
   What does it really mean when you define a variable or function with the static attribute?
 - understand other important systems concepts.
 The executable object files produced by linkers play key roles in important systems functions such as loading and running programs, virtual memory, paging, and memory mapping.

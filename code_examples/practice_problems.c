@@ -1364,4 +1364,21 @@ Since both fd1 and fd2 are separate file descriptors, each Read call starts read
 
 The output of the program will be:
 c = f
+
+
+
+
+Practice Problem 9.6 (solution page 919)
+Determine the block sizes and header values that would result from the following
+sequence of malloc requests. Assumptions: 
+(1) The allocator maintains double-word alignment and uses an implicit free list with the block format from
+Figure 9.35. 
+(2) Block sizes are rounded up to the nearest multiple of 8 bytes. 
+Request              Block size (decimal bytes)                                     Block header (hex)
+malloc(2)           payload 2 bytes+ header(1 word/4 bytes) -> 6 bytes->  8 bytes        8 =1000  =  0x8 | 0x1 =0x9             
+malloc(9)           payload 9 bytes +header(1 word/4 bytes) -> 13 bytes-> 16 bytes       16=10000 = 0x10 | 0x1 =0x11
+malloc(15)          payload 15 bytes +header(1 word/4 bytes) ->19 bytes-> 24 bytes       24=11000 = 0x18 | 0x1= 0x19     
+malloc(20)          payload 20 bytes +header(1 word/4 bytes) ->24 bytes-> 24 bytes       24=11000 = 0x18 | 0x1= 0x19
+
+
 */
