@@ -101,7 +101,7 @@ After changing the setting, restart Clash so that it binds on all interfaces. Th
 Verify the Binding on Windows
 You can check which interfaces Clash is listening on by opening a Command Prompt (run as administrator) and executing:
 
-```bash
+```Powershell
 netstat -ano | findstr :7897
 # You should see an entry like:
 TCP    0.0.0.0:7897    0.0.0.0:0    LISTENING    <PID>
@@ -119,13 +119,18 @@ Create a new Inbound Rule for port 7897 (TCP) to allow connections from WSL.
 ### 4. Confirm Windows Host IP:
 Find Windows Host IP from WSL
 Run this in WSL:  # 10.255.255.254 
+```shell
 cat /etc/resolv.conf | grep nameserver | awk '{print $2}'
-but this IP is specific to WSL’s virtual network and may not work for proxy connections.
+```
+but this IP is specific to WSL’s virtual network and ***may not work for proxy connections***.
 
 Confirm Windows Host IP instead: 192.168.1.14
-```powershell
+
+```Powershell
 ipconfig | findstr IPv4
 ```
+
+
 
 ### 5. set the proxy for remote wsl
 ```bash
@@ -133,9 +138,11 @@ echo 'export http_proxy="http://192.168.1.14:7897"' >> ~/.bashrc
 echo 'export https_proxy="http://192.168.1.14:7897"' >> ~/.bashrc
 echo 'export no_proxy="localhost,127.0.0.1,::1"' >> ~/.bashrc
 # Run the Fixed Command (replace YOUR_WINDOWS_IP 192.168.1.14):
-# sed -i 's/10.255.255.254/192.168.1.14/g' ~/.bashrc
+# sed -i 's/10.255.255.254/192.168.1.17/g' ~/.bashrc
 # sed -i 's/192.168.1.14/192.168.1.4/g' ~/.bashrc
+# sed -i 's/192.168.1.17/10.255.255.254/g' ~/.bashrc
 source ~/.bashrc
+
 # 检查remote wsl代理是否生效
 curl -I --proxy http://192.168.1.14:7897 https://www.google.com
 curl -I https://www.google.com
@@ -154,7 +161,7 @@ curl -I https://www.google.com
  - install vscode for local wsl
 
  To use REMOTE WSL C
- - install WSL extension
+ - install WSL extension:
 
 
 

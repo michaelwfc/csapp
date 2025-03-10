@@ -78,7 +78,7 @@ linux> gcc -Og -c mstore.c
   Some libraries are dynamically linked
   Linking occurs when program begins execution
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/002-Turning%20C%20into%20Object%20Code.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs//002-Turning%20C%20into%20Object%20Code.png)
 
 source code(*.c) -> [C compiler] -> assembly code(*.s) -> [assembler] -> object program(*.o) -> [linker]-> Executable program(p or*.exe)
 
@@ -98,10 +98,10 @@ linux> objdump -d mstore.o
 # To inspect the contents of machine-code files
 ```
 
-  Useful tool for examining object code
-  Analyzes bit pattern of series of instructions
-  Produces approximate rendition of assembly code
-  Can be run on either a.out (complete executable) or .o file
+-  Useful tool for examining object code
+-  Analyzes bit pattern of series of instructions
+-  Produces approximate rendition of assembly code
+-  Can be run on either a.out (complete executable) or .o file
 
 ### gdb debugger
 
@@ -121,8 +121,8 @@ linux> gdb mstore
 ### Machine-Level Code
 
 1. ISA（instruction set architecture）：  
-   the format and behavior of a machine-level program is defined by the instruction set architecture, or ISA, defining the processor state, the format of the instructions, and the effect each of these instructions will have on the state.
-   Most ISAs, including x86-64, describe the behavior of a program as if each instruction is executed in sequence, with one instruction completing before the next one begins.
+   - the format and behavior of a machine-level program is defined by the instruction set architecture, or ISA, defining the processor state, the format of the instructions, and the effect each of these instructions will have on the state.
+   - Most ISAs, including x86-64, describe the behavior of a program as if each instruction is executed in sequence, with one instruction completing before the next one begins.
 The processor hardware is far more elaborate, executing many instructions concurrently, but it employs safeguards to ensure that the overall behavior matches the sequential operation dictated by the ISA.
 
 2. virtual addresses：  
@@ -132,28 +132,28 @@ the memory addresses used by a machine-level program , providing a memory model 
 
 Parts of the processor state are visible that normally are hidden from the C programmer:
 
-- Program Counter - %rip
+- ***Program Counter - %rip***
   indicates the address in memory of the next instruction to be executed
-- integer register file
+- ***integer register file***  
   contains 16 named locations storing 64-bit values. These registers can hold addresses (corresponding to C pointers) or integer data.
 
-- condition code registers
+- ***condition code registers***  
   hold status information about the most recently executed arithmetic or logical instruction. These are used to implement conditional changes in the control or data flow, such as is required to implement if and while statements.
 
-- A set of vector registers
+- ***A set of vector registers***  
   can each hold one or more integer or floating-point values.
 
 ## 3.3 Data formates
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.1%20C_data_types_assenbly-code-suffix.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs//Figure%203.1%20C_data_types_assenbly-code-suffix.png)
 
 ### Assembly Characteristics
 
 #### Assembly Data Types
 
-- “Integer” data of 1, 2, 4, or 8 bytes
-  Data values
-  Addresses (untyped pointers)
+- “Integer” data of 1, 2, 4, or 8 bytes  
+  - Data values
+  - Addresses (untyped pointers)
 
 - Floating point data of 4, 8, or 10 bytes
 - Code: Byte sequences encoding series of instructions
@@ -163,11 +163,11 @@ Parts of the processor state are visible that normally are hidden from the C pro
 
 - Perform arithmetic function on register or memory data
 - Transfer data between memory and register
-  Load data from memory into register
-  Store register data into memory:      Ex: movq %rax, (%rbx)
+  - Load data from memory into register
+  - Store register data into memory:      Ex: movq %rax, (%rbx)
 - Transfer control
-  Unconditional jumps to/from procedures
-  Conditional branches
+  - Unconditional jumps to/from procedures
+  - Conditional branches
 
 ## 3.4 Accessing Information
 
@@ -179,16 +179,14 @@ An x86-64 central processing unit (CPU) contains a set of 16 general-purpose reg
 |-------------|---------|-----------|
 |Register Nums|8         |16        |
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.2%20integer-registers.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.2%20integer-registers.png)
 
-%rax: Return value
-
-%rdi : 1st argument
-%rsi: 2nd argument
-%rdx: 3rd argument
-%rcx: 4th argument
-
-%rsp: stack pointer
+- %rax: Return value
+- %rdi : 1st argument
+- %rsi: 2nd argument
+- %rdx: 3rd argument
+- %rcx: 4th argument
+- %rsp: stack pointer
 
 ### Instruction
 
@@ -197,7 +195,7 @@ An x86-64 central processing unit (CPU) contains a set of 16 general-purpose reg
   
 ### 3.4.1 Operand Specifiers
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.3%20Operand%20forms.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.3%20Operand%20forms.png)
 
 #### Operand Types
 
@@ -227,10 +225,10 @@ the registers for operands having 64, 32, 16, or 8 bits, respectively
 
 $D(Rb,Ri,S) Mem[Reg[Rb]+S*Reg[Ri]+ D]
 
-  D:  Constant “displacement” 1, 2, or 4 bytes
-  Rb: Base register: Any of 16 integer registers
-  Ri: Index register: Any, except for %rsp
-  S:  Scale: 1, 2, 4, or 8 (why these numbers? char array: 1, short int array: 2, int array:4, long int array:8)
+- D:  Constant “displacement” 1, 2, or 4 bytes
+- Rb: Base register: Any of 16 integer registers
+- Ri: Index register: Any, except for %rsp
+- S:  Scale: 1, 2, 4, or 8 (why these numbers? char array: 1, short int array: 2, int array:4, long int array:8)
 
 Special Cases
     (Rb,Ri) Mem[Reg[Rb]+Reg[Ri]]
@@ -263,7 +261,7 @@ The only exception is that when movl has a register as the destination, it will 
 
 Note : x86-64 imposes the restriction that a move instruction cannot have both operands refer to memory locations.
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.4%20Simple%20data%20movement%20instructions.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.4%20Simple%20data%20movement%20instructions.png)
 
 - movb
 - movw
@@ -279,11 +277,11 @@ two classes of data movement instructions for use when copying a smaller source 
 - the movs class fill them out by sign extension, replicating copies of the most significant bit of the
 source operand.
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.5%20Zero-extending%20data%20movement%20instructions.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.5%20Zero-extending%20data%20movement%20instructions.png)
 
 #### MOVS class
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.6%20Sign-extending%20data%20movement%20instructions.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.6%20Sign-extending%20data%20movement%20instructions.png)
 
 ### Pushing and Popping Stack Data
 
@@ -291,7 +289,7 @@ source operand.
 
 C compiler will figure out different instruction combinations to carry out computation
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.10%20Integer%20arithmetic%20operations.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.10%20Integer%20arithmetic%20operations.png)
 
 ### Address Computation Instruction
 
@@ -411,7 +409,7 @@ testq Src2, Src1  testq b,a like computing a&b without setting destination
 Sets condition codes based on value of Src1 & Src2
 Useful to have one of the operands be a mask
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.13%20Comparison%20and%20test%20instructions.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.13%20Comparison%20and%20test%20instructions.png)
 
 ### Accessing the Condition Codes
 
@@ -428,7 +426,7 @@ For the first case, the instructions described in Figure 3.14 set a single byte 
 - Set low-order byte of destination to 0 or 1 based on combinations of condition codes
 - Does not alter remaining 7 bytes
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.14%20The%20set%20instructions.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.14%20The%20set%20instructions.png)
 
 Example:
 
@@ -453,7 +451,7 @@ These jump destinations are generally indicated in assembly code by a label.
 In assembly code, jump targets are written using symbolic labels.
 The assembler, and later the linker, generate the proper encodings of the jump targets.
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.15%20The%20jump%20instructions.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.15%20The%20jump%20instructions.png)
 
 ### 3.6.4 Jump Instruction Encodings
 
@@ -789,71 +787,94 @@ Jump tables are used when there are a number of cases (e.g., four or more) and t
 
 For discussion purposes, suppose procedure P calls procedure Q, and Q then executes and returns back to P. These actions involve one or more of the following mechanisms:
 
-- Passing control.
+- Passing control  
   To beginning of procedure code: The program counter must be set to the starting address of the code for Q upon entry
   Back to return point: set to the instruction in P following the call to Q upon return.
-- Passing data.
-  Procedure arguments
-  Return value
-  P must be able to provide one or more parameters to Q, and Q must be able to return a value back to P.
+- Passing data.  
+  - Procedure arguments
+  - Return value
+  - P must be able to provide one or more parameters to Q, and Q must be able to return a value back to P.
 
-- Memory management
-  Allocate during procedure execution : Q may need to allocate space for local variables when it begins and then free that storage before it returns.
-  Deallocate upon return
+- Memory management  
+  - Allocate during procedure execution : Q may need to allocate space for local variables when it begins and then free that storage before it returns.
+  - Deallocate upon return
 
 Mechanisms all implemented with machine instructions
 x86-64 implementation of a procedure uses only those mechanisms required
 
 ### 3.7.1 The Run-Time Stack
 
-#### x86-64 Stack
+
+A key feature of the procedure-calling mechanism of C, and of most other languages, is that it can make use of the last-in, first-out memory management discipline provided by a stack data structure.
+
+Procedure-calling mechanism of C -> Stack data structure
+
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.25%20General%20stack%20frame%20structure.png)
+
+#### The Stack Pointer %rsp (Register)
+  contains lowest stack address : address of “top” element
+  points to the top element of the stack
+
 
 - Region of memory managed with stack discipline
 - Grows toward lower addresses
-- Register %rsp contains lowest  stack address : address of “top” element
 
-##### pushq Src
+#### pushq & popq instructions
+- Data can be stored on and retrieved from the stack using the pushq and popq instructions
+- pushq Src
+  - Fetch operand at Src
+  - Decrement %rsp by 8
+  - Write operand at address given by %rsp
+- popq Dest
+  - Read value at address given by %rsp
+  - Increment %rsp by 8
+  - Store value at Dest (must be register)
 
-- Fetch operand at Src
-- Decrement %rsp by 8
-- Write operand at address given by %rsp
+#### Stack Frame
+- When an x86-64 procedure requires storage beyond what it can hold in registers, it allocates space on the stack.
+- The stack frames for most procedures are of fixed size, allocated at the beginning of the procedure. Some procedures, however, require variable-size frames
+- Procedure P can pass up to six integral values (i.e.,pointers and integers) on the stack, but if Q requires more arguments, these can be stored by P within its stack frame prior to the call.
+- Return Address
+  - When procedure P calls procedure Q, it will push the return address onto the stack, indicating where within P the program should resume execution once Q returns
+  - We consider the return address to be part of P’s stack frame, since it holds state relevant to P.
 
-##### popq Dest
-
-- Read value at address given by %rsp
-- Increment %rsp by 8
-- Store value at Dest (must be register)
-
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.25%20General%20stack%20frame%20structure.png)
 
 ### 3.7.2 Control Transfer
 
-#### Procedure Control Flow
+Passing control from function P to function Q involves simply setting the program counter (PC) to the starting address of the code for Q.
 
 Use stack to support procedure call and return
 
-- Procedure call: call label
-  Push return address on stack : Address of the next instruction right after call
-  Jump to label : sets the PC to the beginning of Q
+- call label
+  - Procedure call
+  - The call instruction has a target indicating the address of the instruction where the called procedure starts.
+  - This instruction pushes an address A onto the stack and sets the PC to the beginning of Q.
+  - Push return address on stack : Address of the next instruction right after call
+  - Jump to label : sets the PC to the beginning of Q
 
-- Procedure return: ret
-  Pop address from stack
-  Jump to address
+- ret
+  - Procedure return: 
+  - The counterpart instruction ret pops an address A off the stack and sets the PC to A.
+  - Pop address from stack
+  - Jump to address
 
-|Instruction   | Description|
-|--------------|------------|
-|call Label    | Procedure call|
-|call *Operand |Procedure call |
-|ret           | Return from call|
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.26%20Illustration%20of%20call%20and%20ret%20functions.png)
 
-（These instructions are referred to as callq and retq in the disassembly outputs
-generated by the program objdump. The added suffix ‘q’ simply emphasizes that
-these are x86-64 versions of call and return instructions, not IA32. In x86-64
-assembly code, both versions can be used interchangeably.
+|Instruction   | Description| Note|
+|--------------|------------|------|
+|call Label    | Procedure call| the target of a direct call is given as a label in assembly code|
+|call *Operand | Procedure call |  the target of an indirect call is given by ‘*’ followed by an operand specifier|
+|ret           | Return from call|   |
+
+- These instructions are referred to as callq and retq in the disassembly outputs generated by the program objdump. 
+- The added suffix ‘q’ simply emphasizes that these are x86-64 versions of call and return instructions, not IA32
+- In x86-64 assembly code, both versions can be used interchangeably.
+
+
 
 ### 3.7.3 Data Transfer
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.28%20Registers%20for%20passing%20function%20arguments.png)
+
 
 #### Registers for first 6 arguments
 
@@ -868,8 +889,10 @@ assembly code, both versions can be used interchangeably.
 
 - %rax
 
-#### Stack
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.28%20Registers%20for%20passing%20function%20arguments.png)
 
+#### Stack
+When a function has more than six integral arguments, the other ones are passed on the stack.
 - Argu n
 - Argu n-1
 - ....
@@ -878,7 +901,7 @@ assembly code, both versions can be used interchangeably.
 
 #### Function has more than 6 integral arguments
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.29%20Example%20of%20function%20with%20multiple%20arguments%20of%20different%20types.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.29%20Example%20of%20function%20with%20multiple%20arguments%20of%20different%20types.png)
 
 ### Stack-Based Languages
 
@@ -919,7 +942,7 @@ state for single procedure instantiation
 
 #### x86-64/Linux Stack Frame
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/003-x86-64%20Linux%20Stack%20Frame.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/003-x86-64%20Linux%20Stack%20Frame.png)
 
 ##### 1. Current Stack Frame (“Top” to Bottom)
 
@@ -938,14 +961,28 @@ state for single procedure instantiation
 
 At times, however, local data must be stored in memory. Common cases of this include these:
 
-- There are not enough registers to hold all of the local data.
-- The address operator ‘&’ is applied to a local variable, and hence we must be able to generate an address for it.
-- Some of the local variables are arrays or structures and hence must be accessed by array or structure references. We will discuss this possibility when we describe how arrays and structures are allocated.
+- There are not enough ***registers*** to hold all of the local data.
+- The ***address operator ‘&’*** is applied to a local variable, and hence we must be able to generate an address for it.
+- Some of the local variables are ***arrays or structures*** and hence must be accessed by array or structure references.
+  
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.31%20Example%20of%20procedure%20definition%20and%20call.png)
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.31%20Example%20of%20procedure%20definition%20and%20call.png)
 
-- Local vairiable: arg1, arg2
-because The address operator  ‘&’(create a poiter) is applied to them, they will have address, so they will store the value in address %rsp and 8(%rsp) which is in the stack frame of callee as local variable
+- Allocates Local storage space on the stack frame 
+  The code for caller starts by decrementing the stack pointer by 16; this effectively allocates 16 bytes on the stack.
+- The address operator  ‘&’:   
+  arg1, arg2 because The address operator  ‘&’(create a poiter) is applied to them, they will have address, so they will store the value in address %rsp and 8(%rsp) which is in the stack frame of callee as local variable
+- retrieval from the stack  Local vairiable
+  When the call to swap_add completes, the code for caller then retrieves the two values from the stack (lines 8–9)
+- deallocates
+  Finally, the function deallocates its stack frame by incrementing the stack pointer by 16 (line 11.)
+
+#### Example of call_proc
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.32%20Example%20of%20code%20to%20call%20function%20proc,.png)
+
+- setting up the stack frame for the local variables and function
+parameters
+- loading function arguments into registers
 
 ### Local Storage in Registers
 
@@ -1000,7 +1037,7 @@ When B returns, the value of %rbx in A is still 10, as expected, because B prese
 
 ##### Example02 from text book
   
-![images](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.34%20Code%20demonstrating%20use%20of%20callee-saved%20registers.png)
+![images](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.34%20Code%20demonstrating%20use%20of%20callee-saved%20registers.png)
 
 ##### What Are Callee-Saved Registers?
 
@@ -1046,7 +1083,7 @@ preserving the state of a program across function calls, ensuring that the calle
 
 ### Recursive Procedures
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.35%20Code%20for%20recursive%20factorial%20program.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.35%20Code%20for%20recursive%20factorial%20program.png)
 
 #### Handled Without Special Consideration
 
@@ -1071,7 +1108,7 @@ T  A[L];
 - **Contiguously** allocated region of L * sizeof(T) bytes in memory
 - Identifier A can be used as a pointer to array element 0: Type T*
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.8%20Array%20Allocation.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.8%20Array%20Allocation.png)
 
 ```C
 // declare a integer array
@@ -1081,7 +1118,7 @@ x= val[i]
 
 ```
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.8%20Array%20Allocation-example01.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.8%20Array%20Allocation-example01.png)
 
 |Reference  |Type    |Value   |  
 |-----------|--------|--------|
@@ -1146,7 +1183,7 @@ void zincr(zip_dig z) {
 
 ### Pointer Arithmetic
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Pointer%20Arithmetic%20examples.png)  
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Pointer%20Arithmetic%20examples.png)  
 
 ### Nested Arrays
 
@@ -1176,7 +1213,7 @@ zip_dig pgh[PCOUNT] =
 
 ```
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.8%20Nested%20Array%20Example%2001.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.8%20Nested%20Array%20Example%2001.png)
 
 
 #### Nested Array Row Access 
@@ -1686,14 +1723,15 @@ Dump of assembler code for function call_echo:
 End of assembler dump.
 
 ```
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.10.3%20Buffer%20Overflow%20Stack%20Example%20#2.png)
+
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.10.3%20Buffer%20Overflow%20Stack%20Example%20#2.png)
 
 
 
 
 ### Code Injection Attacks
 
-![image](../images/Machine-Level%20Representation%20of%20Programs/Figure%203.10.3%20Code%20Injection%20Attacks.png)
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.10.3%20Code%20Injection%20Attacks.png)
 
 Input string contains byte representation of executable code
 Overwrite return address A with address of buffer B

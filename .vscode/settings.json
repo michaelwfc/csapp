@@ -15,9 +15,14 @@
   // },
   // "markdown.styles": [".github-markdown-body"],
   // "markdown-preview-github-styles.colorTheme":"Single theme: Light",
+  // "http.proxy": "http://10.255.255.254 :7897",
+  // "https.proxy": "http://10.255.255.254 :7897",
+  // "no.proxy":"localhost,127.0.0.1,::1",
+  // "http.proxyStrictSSL": false,
 
-  "http_proxy": "http://192.168.1.14:7897",
-  "https_proxy": "http://192.168.1.14:7897",
+  "http.proxy": "http://192.168.1.17:7897",
+  "https.proxy": "http://192.168.1.17:7897",
+  "no.proxy":"localhost,127.0.0.1,::1",
   "http.proxyStrictSSL": false,
 
 

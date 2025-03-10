@@ -61,8 +61,6 @@ Here is a table listing the most common `gcc` flags along with their description
 | `-E`                     | Preprocesses the source code only, does not compile or assemble.               |
 | `-l<library>`            | Links with the specified library (e.g., `-lm` for the math library).           |
 | `-L<path>`               | Adds a directory to the library search path.                                   |
-program.                       |
-
 | `-Ofast`                 | Enables aggressive optimizations that may violate strict standard compliance.  |
 | `-std=<standard>`        | Specifies the C language standard to use (`c99`, `c11`, `gnu99`, etc.).       |
 | `-ansi`                  | Enforces strict ANSI C compliance (prevents using GNU extensions).            |
