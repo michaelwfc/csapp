@@ -77,7 +77,19 @@ constant BUFFER_SIZE, as well the allocation strategy used by GCC. You will need
 disassembled code to determine its position.
 
 solution:
-
 - Use objdump -d to get this dissembled file
-- position a byte representation of the starting address for touch1 so that the ret
-instruction at the end of the code for getbuf will transfer control to touch1.
+  ```shell
+  objdump -d ctarget > ctarget.d
+  ```
+- position a byte representation of the starting address for touch1 so that the ret instruction at the end of the code for getbuf will transfer control to touch1.
+  ```assembly
+  00000000004005e0 <getbuf>:
+  ...
+  ret
+
+
+  ```
+
+  ```stack
+  
+  ```
