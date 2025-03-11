@@ -2,7 +2,7 @@
 
 - why should we spend our time learning machine code?
   the optimization capabilities of the compiler and analyze the underlying
-inefficiencies in the code.
+  inefficiencies in the code.
 
 ## Assembly,Machine code and C
 
@@ -13,8 +13,8 @@ inefficiencies in the code.
 - Machine Code: The byte-level programs that a processor executes
 
 ### Assembly/Machine Code View
-![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/001-CPU-MEMEORY-Structure.png)
 
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/001-CPU-MEMEORY-Structure.png)
 
 #### Programmer-Visible State
 
@@ -59,34 +59,34 @@ linux> gcc -Og -S mstore.c
 # generating an assembly file mstore.s, and go no further
 
 linux> gcc -Og -c mstore.c
-# -c  Compile and assemble, but do not link 
+# -c  Compile and assemble, but do not link
 # generating object file mstore.o
 ```
 
 #### Assembler
 
-  Translates .s into .o
-  Binary encoding of each instruction
-  Nearly-complete image of executable code
-  Missing linkages between code in different files
-  
+Translates .s into .o
+Binary encoding of each instruction
+Nearly-complete image of executable code
+Missing linkages between code in different files
+
 #### Linker
 
-  Resolves references between files
-  Combines with static run-time libraries
-  E.g., code for malloc, printf
-  Some libraries are dynamically linked
-  Linking occurs when program begins execution
+Resolves references between files
+Combines with static run-time libraries
+E.g., code for malloc, printf
+Some libraries are dynamically linked
+Linking occurs when program begins execution
 
 ![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs//002-Turning%20C%20into%20Object%20Code.png)
 
-source code(*.c) -> [C compiler] -> assembly code(*.s) -> [assembler] -> object program(*.o) -> [linker]-> Executable program(p or*.exe)
+source code(_.c) -> [C compiler] -> assembly code(_.s) -> [assembler] -> object program(_.o) -> [linker]-> Executable program(p or_.exe)
 
 1. preprocess:
    the C preprocessor expands the source code to include any files specified with #include commands and to expand any macros, specified with #define declarations.
-2. the compiler generates assembly code *.s
-3. generate binary object-code files *.o
-   the assembler converts the assembly code into binary object-code files*.o
+2. the compiler generates assembly code \*.s
+3. generate binary object-code files _.o
+   the assembler converts the assembly code into binary object-code files_.o
    Object code is one form of machine code—it contains binary representations of all of the instructions, but the addresses of global values are not yet filled in.
 4. generate final executable code
    the linker merges these two object-code files along with code implementing library functions (e.g., printf) and generates the final executable code file
@@ -98,15 +98,15 @@ linux> objdump -d mstore.o
 # To inspect the contents of machine-code files
 ```
 
--  Useful tool for examining object code
--  Analyzes bit pattern of series of instructions
--  Produces approximate rendition of assembly code
--  Can be run on either a.out (complete executable) or .o file
+- Useful tool for examining object code
+- Analyzes bit pattern of series of instructions
+- Produces approximate rendition of assembly code
+- Can be run on either a.out (complete executable) or .o file
 
 ### gdb debugger
 
 ```shell
-# gdb to display the byte representation of a program 
+# gdb to display the byte representation of a program
 linux> gdb mstore
 
 # Disassemble procedure
@@ -120,27 +120,28 @@ linux> gdb mstore
 
 ### Machine-Level Code
 
-1. ISA（instruction set architecture）：  
+1. ISA（instruction set architecture）：
+
    - the format and behavior of a machine-level program is defined by the instruction set architecture, or ISA, defining the processor state, the format of the instructions, and the effect each of these instructions will have on the state.
    - Most ISAs, including x86-64, describe the behavior of a program as if each instruction is executed in sequence, with one instruction completing before the next one begins.
-The processor hardware is far more elaborate, executing many instructions concurrently, but it employs safeguards to ensure that the overall behavior matches the sequential operation dictated by the ISA.
+     The processor hardware is far more elaborate, executing many instructions concurrently, but it employs safeguards to ensure that the overall behavior matches the sequential operation dictated by the ISA.
 
 2. virtual addresses：  
-the memory addresses used by a machine-level program , providing a memory model that appears to be a very large byte array.
+   the memory addresses used by a machine-level program , providing a memory model that appears to be a very large byte array.
 
 ### Hidden Processor state
 
 Parts of the processor state are visible that normally are hidden from the C programmer:
 
-- ***Program Counter - %rip***
+- **_Program Counter - %rip_**
   indicates the address in memory of the next instruction to be executed
-- ***integer register file***  
+- **_integer register file_**  
   contains 16 named locations storing 64-bit values. These registers can hold addresses (corresponding to C pointers) or integer data.
 
-- ***condition code registers***  
+- **_condition code registers_**  
   hold status information about the most recently executed arithmetic or logical instruction. These are used to implement conditional changes in the control or data flow, such as is required to implement if and while statements.
 
-- ***A set of vector registers***  
+- **_A set of vector registers_**  
   can each hold one or more integer or floating-point values.
 
 ## 3.3 Data formates
@@ -151,7 +152,8 @@ Parts of the processor state are visible that normally are hidden from the C pro
 
 #### Assembly Data Types
 
-- “Integer” data of 1, 2, 4, or 8 bytes  
+- “Integer” data of 1, 2, 4, or 8 bytes
+
   - Data values
   - Addresses (untyped pointers)
 
@@ -164,7 +166,7 @@ Parts of the processor state are visible that normally are hidden from the C pro
 - Perform arithmetic function on register or memory data
 - Transfer data between memory and register
   - Load data from memory into register
-  - Store register data into memory:      Ex: movq %rax, (%rbx)
+  - Store register data into memory: Ex: movq %rax, (%rbx)
 - Transfer control
   - Unconditional jumps to/from procedures
   - Conditional branches
@@ -175,9 +177,9 @@ Parts of the processor state are visible that normally are hidden from the C pro
 
 An x86-64 central processing unit (CPU) contains a set of 16 general-purpose registers storing 64-bit values. These registers are used to store integer data as well as pointers.
 
-|             |IA32     | x86-64    |
-|-------------|---------|-----------|
-|Register Nums|8         |16        |
+|               | IA32 | x86-64 |
+| ------------- | ---- | ------ |
+| Register Nums | 8    | 16     |
 
 ![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.2%20integer-registers.png)
 
@@ -191,8 +193,8 @@ An x86-64 central processing unit (CPU) contains a set of 16 general-purpose reg
 ### Instruction
 
 - Operation code 操作码
-- Operands  操作数 : specifying the source values to use in performing an operation and the destination location into which to place the result
-  
+- Operands 操作数 : specifying the source values to use in performing an operation and the destination location into which to place the result
+
 ### 3.4.1 Operand Specifiers
 
 ![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.3%20Operand%20forms.png)
@@ -200,40 +202,39 @@ An x86-64 central processing unit (CPU) contains a set of 16 general-purpose reg
 #### Operand Types
 
 - Immediate: Constant integer data
-  Ex:   $\$0x400$
+  Ex: $\$0x400$
   Like C constant, but prefixed with ‘$’
   Encoded with 1, 2, or 4 bytes
-  
 - Register: One of 16 integer registers
-  Ex:  $r_a$
+  Ex: $r_a$
   denotes the contents of a register, one of the sixteen 8-, 4-, 2-, or 1-byte low-order portions of
-the registers for operands having 64, 32, 16, or 8 bits, respectively
+  the registers for operands having 64, 32, 16, or 8 bits, respectively
 
-- Memory Reference 内存引用  8 consecutive bytes of memory at address given by register
+- Memory Reference 内存引用 8 consecutive bytes of memory at address given by register
   Ex: (%rax) -> $M_b[Addr]$
   in which we access some memory location according to a computed address, often called the effective address.
-  $ Imm(r_b, r_i, s) = Imm + R[r_b] + R[r_i] *s $
+  $ Imm(r_b, r_i, s) = Imm + R[r_b] + R[r_i] \*s $
 
 #### Simple Memory Addressing Modes
 
-|            | Form  | Operand value  |  C                                | Assembly Code      |  Description                               |
-|------------|-------|----------------|-----------------------------------|------------------|--------------------------------------------|
-|Normal      | (R)   | Mem[Reg[R]]    | x=*p (Pointer dereferencing in C) | movq (%rcx),%rax | Register R specifies memory address        |
-|Displacement| D(R)  | Mem[Reg[R] + D]| x= int arr[2]                     | movq 8(%rbp),%rdx| Register R specifies start of memory region,Constant displacement D specifies offset, very useful for different data structure|
+|              | Form | Operand value   | C                                  | Assembly Code     | Description                                                                                                                    |
+| ------------ | ---- | --------------- | ---------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Normal       | (R)  | Mem[Reg[R]]     | x=\*p (Pointer dereferencing in C) | movq (%rcx),%rax  | Register R specifies memory address                                                                                            |
+| Displacement | D(R) | Mem[Reg[R] + D] | x= int arr[2]                      | movq 8(%rbp),%rdx | Register R specifies start of memory region,Constant displacement D specifies offset, very useful for different data structure |
 
 #### Most General Form
 
-$D(Rb,Ri,S) Mem[Reg[Rb]+S*Reg[Ri]+ D]
+$D(Rb,Ri,S) Mem[Reg[Rb]+S\*Reg[Ri]+ D]
 
-- D:  Constant “displacement” 1, 2, or 4 bytes
+- D: Constant “displacement” 1, 2, or 4 bytes
 - Rb: Base register: Any of 16 integer registers
 - Ri: Index register: Any, except for %rsp
-- S:  Scale: 1, 2, 4, or 8 (why these numbers? char array: 1, short int array: 2, int array:4, long int array:8)
+- S: Scale: 1, 2, 4, or 8 (why these numbers? char array: 1, short int array: 2, int array:4, long int array:8)
 
 Special Cases
-    (Rb,Ri) Mem[Reg[Rb]+Reg[Ri]]
-    D(Rb,Ri) Mem[Reg[Rb]+Reg[Ri]+D]
-    (Rb,Ri,S) Mem[Reg[Rb]+S*Reg[Ri]]
+(Rb,Ri) Mem[Reg[Rb]+Reg[Ri]]
+D(Rb,Ri) Mem[Reg[Rb]+Reg[Ri]+D]
+(Rb,Ri,S) Mem[Reg[Rb]+S\*Reg[Ri]]
 
 Natural for array indexing
 
@@ -243,21 +244,21 @@ Natural for array indexing
 
 copy data from a source location to a destination location, without any transformation
 
-For most cases, the mov instructions will only update the specific register bytes or memory locations indicated by ***the destination operand***.
+For most cases, the mov instructions will only update the specific register bytes or memory locations indicated by **_the destination operand_**.
 The only exception is that when movl has a register as the destination, it will also set the high-order 4 bytes of the register to 0.
 
 - The source operand:
   designates a value that is immediate, stored in a register, or stored in memory.
 - The destination operand
-  designates a location that is either a register or a memory address.  
+  designates a location that is either a register or a memory address.
 
-| instruction | source| destination | Assembly code             | C Analog              |
-|-------------|-------|-------------|---------------------------|-----------------------|
-| movq        | Imm   | Reg         | movq $0x4, %rax           | temp= 0x4;            |
-|             |       | Memory      | movq $0x4, (%rax)         | *p = 0x4;             |
-|             | Reg   | Reg         | movq %rax, %rdx           | temp2= temp1;         |
-|             |       | Memory      | movq %rax, (%rdx)         | *p = temp;            |
-|             | Memory| Reg         | movq (%rax),%rdx          | temp = *p;            |
+| instruction | source | destination | Assembly code     | C Analog      |
+| ----------- | ------ | ----------- | ----------------- | ------------- |
+| movq        | Imm    | Reg         | movq $0x4, %rax   | temp= 0x4;    |
+|             |        | Memory      | movq $0x4, (%rax) | \*p = 0x4;    |
+|             | Reg    | Reg         | movq %rax, %rdx   | temp2= temp1; |
+|             |        | Memory      | movq %rax, (%rdx) | \*p = temp;   |
+|             | Memory | Reg         | movq (%rax),%rdx  | temp = \*p;   |
 
 Note : x86-64 imposes the restriction that a move instruction cannot have both operands refer to memory locations.
 
@@ -267,7 +268,7 @@ Note : x86-64 imposes the restriction that a move instruction cannot have both o
 - movw
 - movl ： it will also set the high-order 4 bytes of the register to 0.
 - movq
-- movabsq : can have an ***arbitrary 64-bit immediate value*** as its source operand and can only have a ***register*** as a destination.
+- movabsq : can have an **_arbitrary 64-bit immediate value_** as its source operand and can only have a **_register_** as a destination.
 
 #### MOVZ class
 
@@ -275,7 +276,7 @@ two classes of data movement instructions for use when copying a smaller source 
 
 - the movz class fill out the remaining bytes of the destination with zeros
 - the movs class fill them out by sign extension, replicating copies of the most significant bit of the
-source operand.
+  source operand.
 
 ![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.5%20Zero-extending%20data%20movement%20instructions.png)
 
@@ -307,15 +308,15 @@ Set Dst to address denoted by expression, The destination operand must be a regi
 
 Uses
 
-  1. Computing addresses without a memory reference
-      Examples:
-       p = &x[i];
-       x=  &(arr[2])   leaq 8(%rsp), %rsi
+1. Computing addresses without a memory reference
+   Examples:
+   p = &x[i];
+   x= &(arr[2]) leaq 8(%rsp), %rsi
 
-  2. Computing arithmetic expressions of the form x + k*y ,   k = 1, 2, 4, or 8
-      Examples:
-      x*12       leaq (%rdi,%rdi,2), %rax # t <- x+x*2
-                 salq $2, %rax            # return t<<2
+2. Computing arithmetic expressions of the form x + k*y , k = 1, 2, 4, or 8
+   Examples:
+   x*12 leaq (%rdi,%rdi,2), %rax # t <- x+x\*2
+   salq $2, %rax # return t<<2
 
 ### Unary Operations
 
@@ -372,11 +373,11 @@ the CPU maintains a set of single-bit condition code registers describing attrib
 
 Implicitly set (think of it as side effect) by arithmetic operations
 Example: addq Src,Dest ↔ t = a+b
-  CF set if carry out from most significant bit (unsigned overflow)
-  ZF set if t == 0
-  SF set if t < 0 (as signed)
-  OF set if two’s-complement (signed) overflow
-     (a>0 && b>0 && t<0) || (a<0 && b<0 && t>=0)
+CF set if carry out from most significant bit (unsigned overflow)
+ZF set if t == 0
+SF set if t < 0 (as signed)
+OF set if two’s-complement (signed) overflow
+(a>0 && b>0 && t<0) || (a<0 && b<0 && t>=0)
 
 Not set by leaq instruction
 
@@ -387,13 +388,13 @@ Not set by leaq instruction
 The cmp instructions set the condition codes according to the differences of their two operands. They behave in the same way as the sub instructions, except that they set the condition codes without updating their destinations
 
 Explicit Setting by Compare Instruction
-cmpq Src2, Src1       cmpq b,a like computing a-b without setting destination
+cmpq Src2, Src1 cmpq b,a like computing a-b without setting destination
 
-  CF set if carry out from most significant bit (used for unsigned comparisons)
-  ZF set if a == b
-  SF set if (a-b) < 0 (as signed)
-  OF set if two’s-complement (signed) overflow
-      (a>0 && b<0 && (a-b)<0) || (a<0 && b>0 && (a-b)>0)
+CF set if carry out from most significant bit (used for unsigned comparisons)
+ZF set if a == b
+SF set if (a-b) < 0 (as signed)
+OF set if two’s-complement (signed) overflow
+(a>0 && b<0 && (a-b)<0) || (a<0 && b>0 && (a-b)>0)
 
 #### The TEST instructions
 
@@ -401,10 +402,10 @@ The test instructions behave in the same manner as the and instructions, except 
 set the condition codes without altering their destinations.
 
 Explicit Setting by Test instruction
-testq Src2, Src1  testq b,a like computing a&b without setting destination
+testq Src2, Src1 testq b,a like computing a&b without setting destination
 
-  ZF set when a&b == 0
-  SF set when a&b < 0
+ZF set when a&b == 0
+SF set when a&b < 0
 
 Sets condition codes based on value of Src1 & Src2
 Useful to have one of the operands be a mask
@@ -512,7 +513,7 @@ absdiff:
 absdiff:
    movq    %rdi, %rax       # x
    subq    %rsi, %rax       # result = x-y
-   movq    %rsi, %rdx     
+   movq    %rsi, %rdx
    subq    %rdi, %rdx       # eval = y-x
    cmpq    %rsi, %rdi       # x:y
    cmovle  %rdx, %rax       # if <=, result = eval
@@ -573,17 +574,16 @@ Why?
   val = Test(x) ? Hard1(x) : Hard2(x);
   Both values get computed
   Only makes sense when computations are very simple
-  
 - Risky Computations
-  val = p ? *p : 0;
+  val = p ? \*p : 0;
   Both values get computed
   May have undesirable effects
 
 - Computations with side effects
-  val = x > 0 ? x*=7 : x+=3;
+  val = x > 0 ? x\*=7 : x+=3;
   Both values get computed
   Must be side-effect free
-  
+
 ### Loop
 
 #### DO-While Loop
@@ -603,7 +603,7 @@ loop:
 
 
 
-// Example 
+// Example
 long pcount_do(unsigned long x) {
   long result = 0;
   do {
@@ -626,7 +626,7 @@ long pcount_goto(unsigned long x) {
 // Compilation
    movl    $0, %eax    #  result = 0
 .L2:                 # loop:
-   movq    %rdi, %rdx 
+   movq    %rdi, %rdx
    andl    $1, %edx    #  t = x & 0x1
    addq    %rdx, %rax   #  result += t
    shrq    %rdi        #  x >>= 1
@@ -651,7 +651,7 @@ test:
     goto loop;
 done:
 
-// Example trasnlated with Jump to Middle 
+// Example trasnlated with Jump to Middle
 long pcount_goto_jtm(unsigned long x) {
     long result = 0;
     goto test;
@@ -685,7 +685,7 @@ long switch_eg(long x, long y, long z)
     case 6:
         w -= z;
         break;
-    default:      //.L8                   
+    default:      //.L8
         w = 2;
     }
     return w;
@@ -698,12 +698,12 @@ long switch_eg(long x, long y, long z)
 
   .section .rodata          // within the segment of the object-code file called .rodata (for “read-only data”)
   .align 8                   // Align address to multiple of 8
-.L4:     
+.L4:
   .quad .L8                  # x = 0          // the label for the default case (loc_def)
-  .quad .L3                  # x = 1     
-  .quad .L5                  # x = 2     
-  .quad .L9                  # x = 3     
-  .quad .L8                  # x = 4          // the default case for entry 4 
+  .quad .L3                  # x = 1
+  .quad .L5                  # x = 2
+  .quad .L9                  # x = 3
+  .quad .L8                  # x = 4          // the default case for entry 4
   .quad .L7                  # x = 5
   .quad .L7                  # x = 6
 
@@ -717,22 +717,22 @@ switch_eg:
 .L3:                          # Case 1
    movq    %rsi, %rax         # y
    imulq   %rdx, %rax         # y*z
-   ret        
-        
+   ret
+
 .L5:                          # Case 2
-   movq    %rsi, %rax        
-   cqto        
+   movq    %rsi, %rax
+   cqto
    idivq   %rcx               #  y/z
    jmp     .L6                #  goto merge
 .L9:                          # Case 3
    movl    $1, %eax           #  w = 1
 .L6:                          # merge:
    addq    %rcx, %rax         #  w += z
-   ret        
+   ret
 .L7:                          # Case 5,6
   movl  $1, %eax              #  w = 1
   subq  %rdx, %rax            #  w -= z
-  ret           
+  ret
 .L8:                          # Default:
   movl  $2, %eax              #  2
   ret
@@ -747,7 +747,7 @@ switch_eg:
 - A jump table is an array
 - Each target requires 8 bytes
 - Base address at .L4 (in example)
-  
+
 ##### Jumping
 
 - Direct: jmp .L8
@@ -756,7 +756,7 @@ switch_eg:
 - Indirect: jmp *.L4(,%rdi,8)
   Start of jump table: .L4
   Must scale by factor of 8 (addresses are 8 bytes)
-  Fetch target from effective Address .L4 + x*8 (Only for  0 ≤ x ≤ 6)
+  Fetch target from effective Address .L4 + x*8 (Only for 0 ≤ x ≤ 6)
 
 The advantage of using a jump table
 
@@ -790,12 +790,13 @@ For discussion purposes, suppose procedure P calls procedure Q, and Q then execu
 - Passing control  
   To beginning of procedure code: The program counter must be set to the starting address of the code for Q upon entry
   Back to return point: set to the instruction in P following the call to Q upon return.
-- Passing data.  
+- Passing data.
+
   - Procedure arguments
   - Return value
   - P must be able to provide one or more parameters to Q, and Q must be able to return a value back to P.
 
-- Memory management  
+- Memory management
   - Allocate during procedure execution : Q may need to allocate space for local variables when it begins and then free that storage before it returns.
   - Deallocate upon return
 
@@ -804,7 +805,6 @@ x86-64 implementation of a procedure uses only those mechanisms required
 
 ### 3.7.1 The Run-Time Stack
 
-
 A key feature of the procedure-calling mechanism of C, and of most other languages, is that it can make use of the last-in, first-out memory management discipline provided by a stack data structure.
 
 Procedure-calling mechanism of C -> Stack data structure
@@ -812,14 +812,15 @@ Procedure-calling mechanism of C -> Stack data structure
 ![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.25%20General%20stack%20frame%20structure.png)
 
 #### The Stack Pointer %rsp (Register)
-  contains lowest stack address : address of “top” element
-  points to the top element of the stack
 
+contains lowest stack address : address of “top” element
+points to the top element of the stack
 
 - Region of memory managed with stack discipline
 - Grows toward lower addresses
 
 #### pushq & popq instructions
+
 - Data can be stored on and retrieved from the stack using the pushq and popq instructions
 - pushq Src
   - Fetch operand at Src
@@ -831,13 +832,13 @@ Procedure-calling mechanism of C -> Stack data structure
   - Store value at Dest (must be register)
 
 #### Stack Frame
+
 - When an x86-64 procedure requires storage beyond what it can hold in registers, it allocates space on the stack.
 - The stack frames for most procedures are of fixed size, allocated at the beginning of the procedure. Some procedures, however, require variable-size frames
 - Procedure P can pass up to six integral values (i.e.,pointers and integers) on the stack, but if Q requires more arguments, these can be stored by P within its stack frame prior to the call.
 - Return Address
   - When procedure P calls procedure Q, it will push the return address onto the stack, indicating where within P the program should resume execution once Q returns
   - We consider the return address to be part of P’s stack frame, since it holds state relevant to P.
-
 
 ### 3.7.2 Control Transfer
 
@@ -846,6 +847,7 @@ Passing control from function P to function Q involves simply setting the progra
 Use stack to support procedure call and return
 
 - call label
+
   - Procedure call
   - The call instruction has a target indicating the address of the instruction where the called procedure starts.
   - This instruction pushes an address A onto the stack and sets the PC to the beginning of Q.
@@ -853,28 +855,24 @@ Use stack to support procedure call and return
   - Jump to label : sets the PC to the beginning of Q
 
 - ret
-  - Procedure return: 
+  - Procedure return:
   - The counterpart instruction ret pops an address A off the stack and sets the PC to A.
   - Pop address from stack
   - Jump to address
 
 ![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.26%20Illustration%20of%20call%20and%20ret%20functions.png)
 
-|Instruction   | Description| Note|
-|--------------|------------|------|
-|call Label    | Procedure call| the target of a direct call is given as a label in assembly code|
-|call *Operand | Procedure call |  the target of an indirect call is given by ‘*’ followed by an operand specifier|
-|ret           | Return from call|   |
+| Instruction    | Description      | Note                                                                             |
+| -------------- | ---------------- | -------------------------------------------------------------------------------- |
+| call Label     | Procedure call   | the target of a direct call is given as a label in assembly code                 |
+| call \*Operand | Procedure call   | the target of an indirect call is given by ‘\*’ followed by an operand specifier |
+| ret            | Return from call |                                                                                  |
 
-- These instructions are referred to as callq and retq in the disassembly outputs generated by the program objdump. 
+- These instructions are referred to as callq and retq in the disassembly outputs generated by the program objdump.
 - The added suffix ‘q’ simply emphasizes that these are x86-64 versions of call and return instructions, not IA32
 - In x86-64 assembly code, both versions can be used interchangeably.
 
-
-
 ### 3.7.3 Data Transfer
-
-
 
 #### Registers for first 6 arguments
 
@@ -892,7 +890,9 @@ Use stack to support procedure call and return
 ![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.28%20Registers%20for%20passing%20function%20arguments.png)
 
 #### Stack
+
 When a function has more than six integral arguments, the other ones are passed on the stack.
+
 - Argu n
 - Argu n-1
 - ....
@@ -913,7 +913,7 @@ When a function has more than six integral arguments, the other ones are passed 
   - Arguments
   - Local variables
   - Return pointer
-  
+
 #### Stack discipline
 
 Stack is the right data structure for procedure call / return
@@ -923,7 +923,7 @@ Stack is the right data structure for procedure call / return
 - Callee returns before caller does
 
 - Stack allocated in Frames
-state for single procedure instantiation
+  state for single procedure instantiation
 
 #### Stack Frames Contents
 
@@ -961,27 +961,27 @@ state for single procedure instantiation
 
 At times, however, local data must be stored in memory. Common cases of this include these:
 
-- There are not enough ***registers*** to hold all of the local data.
-- The ***address operator ‘&’*** is applied to a local variable, and hence we must be able to generate an address for it.
-- Some of the local variables are ***arrays or structures*** and hence must be accessed by array or structure references.
-  
+- There are not enough **_registers_** to hold all of the local data.
+- The **_address operator ‘&’_** is applied to a local variable, and hence we must be able to generate an address for it.
+- Some of the local variables are **_arrays or structures_** and hence must be accessed by array or structure references.
+
 ![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.31%20Example%20of%20procedure%20definition%20and%20call.png)
 
-
-- Allocates Local storage space on the stack frame 
+- Allocates Local storage space on the stack frame
   The code for caller starts by decrementing the stack pointer by 16; this effectively allocates 16 bytes on the stack.
-- The address operator  ‘&’:   
-  arg1, arg2 because The address operator  ‘&’(create a poiter) is applied to them, they will have address, so they will store the value in address %rsp and 8(%rsp) which is in the stack frame of callee as local variable
-- retrieval from the stack  Local vairiable
+- The address operator ‘&’:  
+  arg1, arg2 because The address operator ‘&’(create a poiter) is applied to them, they will have address, so they will store the value in address %rsp and 8(%rsp) which is in the stack frame of callee as local variable
+- retrieval from the stack Local vairiable
   When the call to swap_add completes, the code for caller then retrieves the two values from the stack (lines 8–9)
 - deallocates
   Finally, the function deallocates its stack frame by incrementing the stack pointer by 16 (line 11.)
 
 #### Example of call_proc
+
 ![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.32%20Example%20of%20code%20to%20call%20function%20proc,.png)
 
 - setting up the stack frame for the local variables and function
-parameters
+  parameters
 - loading function arguments into registers
 
 ### Local Storage in Registers
@@ -991,7 +991,7 @@ Although only one procedure can be active at a given time, we must make
 sure that when one procedure (the caller) calls another (the callee), the callee does
 not overwrite some register value that the caller planned to use later
 
-#### Callee saved registers:  %rbx, %rbp, and %r12–%r15
+#### Callee saved registers: %rbx, %rbp, and %r12–%r15
 
 - Callee saves temporary values in its frame before using
 - Callee restores them before returning to caller
@@ -1000,14 +1000,14 @@ not overwrite some register value that the caller planned to use later
 ##### Steps to Use Callee-Saved Registers
 
 1. Save the Register’s Value (Prologue):
-At the beginning of the callee function, save the value of any callee-saved register that the function will use. This is usually done by pushing the register onto the stack.
+   At the beginning of the callee function, save the value of any callee-saved register that the function will use. This is usually done by pushing the register onto the stack.
 
 2. Use the Register:
-Perform the required operations using the callee-saved register. Since you've saved the original value, you can now use the register freely.
+   Perform the required operations using the callee-saved register. Since you've saved the original value, you can now use the register freely.
 
 3. Restore the Register’s Value (Epilogue):
-Before returning from the function, restore the original value of the register from the stack. This ensures that the caller's state is preserved.
-  
+   Before returning from the function, restore the original value of the register from the stack. This ensures that the caller's state is preserved.
+
 ##### Example01
 
 ```assembly
@@ -1036,7 +1036,7 @@ In Function B:
 When B returns, the value of %rbx in A is still 10, as expected, because B preserved the value.
 
 ##### Example02 from text book
-  
+
 ![images](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.34%20Code%20demonstrating%20use%20of%20callee-saved%20registers.png)
 
 ##### What Are Callee-Saved Registers?
@@ -1046,7 +1046,7 @@ Callee-saved registers are a set of CPU registers that a function (the callee) m
 ##### The reason for using callee-saved registers
 
 preserving the state of a program across function calls, ensuring that the caller function's state is maintained when the callee function is executed.
-  
+
 #### Caller Saved: other registers
 
 - Caller saves temporary values in its frame before the call
@@ -1076,7 +1076,6 @@ preserving the state of a program across function calls, ensuring that the calle
   Callee must save & restore
   May be used as frame pointer
   Can mix & match
-  
 - %rsp
   Special form of callee save
   Restored to original value upon exit from procedure
@@ -1102,11 +1101,11 @@ preserving the state of a program across function calls, ensuring that the calle
 
 ### Basic Principles
 
-T  A[L];
+T A[L];
 
 - Array of data type T and length L
-- **Contiguously** allocated region of L * sizeof(T) bytes in memory
-- Identifier A can be used as a pointer to array element 0: Type T*
+- **Contiguously** allocated region of L \* sizeof(T) bytes in memory
+- Identifier A can be used as a pointer to array element 0: Type T\*
 
 ![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.8%20Array%20Allocation.png)
 
@@ -1120,15 +1119,15 @@ x= val[i]
 
 ![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.8%20Array%20Allocation-example01.png)
 
-|Reference  |Type    |Value   |  
-|-----------|--------|--------|
-|val[4]     |int    | 3      |  
-|val       |int *  | x      |
-|val+1     |int *  | x + 4  |  
-|&val[2]   |int *  | x + 8  |
-|val[5]     |int    |    ??  |
-|*(val+1)   |int 5  |        |
-|val + i   |int *  | x + 4 i|
+| Reference | Type   | Value   |
+| --------- | ------ | ------- |
+| val[4]    | int    | 3       |
+| val       | int \* | x       |
+| val+1     | int \* | x + 4   |
+| &val[2]   | int \* | x + 8   |
+| val[5]    | int    | ??      |
+| \*(val+1) | int 5  |         |
+| val + i   | int \* | x + 4 i |
 
 #### Array Accessing Example
 
@@ -1152,12 +1151,12 @@ int get_digit(zip_dig z, int digit)
 
 
 // The memory referencing instructions
-// %rdx: Register %rdi contains starting address of array 
+// %rdx: Register %rdi contains starting address of array
 // %rcx: Register %rcx contains array index
-// Desired vakue at %rdi + 4*%rsi 
+// Desired vakue at %rdi + 4*%rsi
 // Use memory reference (%rdi,%rsi,4), The memory referencing instructions of x86-64 are designed to simplify array access.
 // Then the instruction will perform the address computation x_E + 4i, read that memory location, and copy the result to register %eax. The allowed scaling factors of 1, 2, 4, and 8 cover the sizes of the common primitive data types.
-movl (%rdx,%rcx,4),%eax       // fetch the value in the address: x_val + 4i 
+movl (%rdx,%rcx,4),%eax       // fetch the value in the address: x_val + 4i
 
 
 void zincr(zip_dig z) {
@@ -1180,27 +1179,26 @@ void zincr(zip_dig z) {
 
 ```
 
-
 ### Pointer Arithmetic
 
-![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Pointer%20Arithmetic%20examples.png)  
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Pointer%20Arithmetic%20examples.png)
 
 ### Nested Arrays
 
 #### Multidimensional (Nested) Arrays
 
-Declaration : 
-- T  A[R][C];  2D array of data type T
+Declaration :
+
+- T A[R][C]; 2D array of data type T
 - R rows, C columns
 - Type T element requires K bytes
-- Array Size: R * C * K bytes
+- Array Size: R _ C _ K bytes
 - Arrangement : Row-Major Ordering
-
 
 ```C
 #define PCOUNT 4
 
-zip_dig pgh[PCOUNT] = 
+zip_dig pgh[PCOUNT] =
   {{1, 5, 2, 0, 6},
    {1, 5, 2, 1, 3 },
    {1, 5, 2, 1, 7 },
@@ -1215,13 +1213,13 @@ zip_dig pgh[PCOUNT] =
 
 ![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.8%20Nested%20Array%20Example%2001.png)
 
-
-#### Nested Array Row Access 
+#### Nested Array Row Access
 
 Row Vectors
+
 - A[i] is array of C elements
 - Each element of type T requires K bytes
-- Starting address A +  i * (C * K)
+- Starting address A + i _ (C _ K)
 
 ```C
 int *get_pgh_zip(int index)
@@ -1242,11 +1240,11 @@ leaq pgh(,%rax,4), %rax	   # pgh + (20 * index)
 
 #### Nested Array Element Access
 
-Array Elements 
+Array Elements
 
 - A[i][j] is element of type T, which requires K bytes
-- Address  A + i * (C * K) +  j * K = A + (i * C +  j)* K
-  
+- Address A + i _ (C _ K) + j _ K = A + (i _ C + j)\* K
+
 ```C
 int get_pgh_digit(int index, int dig)
 {
@@ -1269,7 +1267,7 @@ zip_dig ucb = { 9, 4, 7, 2, 0 };
 
 // Variable univ denotes array of 3 elements
 // Each element is a pointer  8 bytes
-// Each pointer points to array of int’s 
+// Each pointer points to array of int’s
 
 #define UCOUNT 3
 int *univ[UCOUNT] = {mit, cmu, ucb};
@@ -1294,7 +1292,7 @@ ret
 
 ```
 
-### N X N Matrix 
+### 3.8.4 Fixed-Size Arrays : N X N Matrix
 
 #### Fixed dimensions
 
@@ -1316,6 +1314,7 @@ movl    (%rdi,%rdx,4), %eax  # M[a + 64*i + 4*j]
 ret
 
 ```
+### 3.8.5 Variable-Size Arrays
 
 #### Variable dimensions，explicit indexing
 
@@ -1334,7 +1333,7 @@ int vec_ele(size_t n, int *a, size_t i, size_t j)
 #### Variable dimensions, implicit indexing
 
 Now supported by gcc
-  
+
 ```C
 
 // /* Get element a[i][j] */
@@ -1350,7 +1349,6 @@ movl    (%rax,%rcx,4), %eax  # a + 4*n*i + 4*j
 ret
 
 ```
-
 
 ## 3.9 Heterogeneous Data Structures
 
@@ -1368,7 +1366,7 @@ int *get_ap(struct rec *r, size_t idx)
   return &r->a[idx];
 }
 
-# r in %rdi, idx in %rsi  
+# r in %rdi, idx in %rsi
 leaq  (%rdi,%rsi,4), %rax
 ret
 
@@ -1385,7 +1383,7 @@ void set_val(struct rec *r, int val)
 
 
 .L11:                         # loop:
-  movslq  16(%rdi), %rax      #   i = M[r+16]	  
+  movslq  16(%rdi), %rax      #   i = M[r+16]
   movl    %esi, (%rdi,%rax,4) #   M[r+4*i] = val
   movq    24(%rdi), %rdi      #   r = M[r+24]
   testq   %rdi, %rdi          #   Test r
@@ -1399,8 +1397,6 @@ void set_val(struct rec *r, int val)
 
 Allocate according to largest element
 Can only use one field at a time
-
-
 
 ### 3.9.3 Data Alignment
 
@@ -1417,7 +1413,6 @@ Motivation for Aligning Data
 - Memory accessed by (aligned) chunks of 4 or 8 bytes (system dependent)
 - Inefficient to load or store datum that spans quad word boundaries
 - Virtual memory trickier when datum spans 2 pages
-
 
 The x86-64 hardware will work correctly regardless of the alignment of data.
 However, Intel recommends that data be aligned to improve memory system performance. Their alignment rule is based on the principle that any primitive
@@ -1441,7 +1436,6 @@ Overall structure placement
 - Overall structure length multiple of K
 - Satisfy alignment requirement for every element
 
-
 ### Summary of Compound Types in C
 
 Arrays
@@ -1455,30 +1449,84 @@ Structures
 
 - Allocate bytes in order declared
 - Pad in middle and at end to satisfy alignment
-  
+
 Unions
 
 - Overlay declarations
 - Way to circumvent type system
 
-
 ## 3.10 Combining Control and Data in Machine-Level Programs
 
 ### 3.10.1 Understanding Pointers
 
-- Every pointer has an associated type.
-- Every pointer has a value:
+- Every pointer has **_an associated type_**
+  Pointer types are not part of machine code; they are an abstraction provided by C to help programmers avoid addressing errors.
+  ```C
+  int *ip;    // variable ip is a pointer to an object of type int,
+  char **cpp; // cpp is a pointer to an object that itself is a pointer to an object of type char.
+  void *p    //represents a generic pointer.
+  ```
+- Every pointer has **_a value_**
   This value is an address of some object of the designated type.
-  The special NULL (0) value indicates that the pointer does not point anywhere.
-- Pointers are created with the ‘&’ operator.
-- Pointers are dereferenced with the ‘*’ operator
+  ```C
+   NULL // The special NULL (0) value indicates that the pointer does not point anywhere.
+  ```
+- Pointers are created with the **_‘&’ operator_**
+  - This operator can be applied to any C expression that is categorized as an lvalue, meaning an expression that can appear on the left side of an assignment.
+  - Examples include variables and the elements of structures, unions, and arrays.
+  - leaq instruction to compute the expression value, since this instruction is designed to compute the address of a memory reference.
+  ```assembly
+  leaq
+  ```
+- Pointers are dereferenced with the ‘\*’ operator
+
+  - The result is a value having the type associated with the pointer.
+  - Dereferencing is implemented by a memory reference, either storing to or retrieving from the specified address.
+
 - Arrays and pointers are closely related
-- Casting from one type of pointer to another changes its type but not its value
+
+  - The name of an array can be referenced (but not updated) as if it were a pointer variable
+  - Array referencing (e.g., a[3]) has the exact same effect as pointer arithmetic and dereferencing (e.g., \*(a+3)).
+  - Both array referencing and pointer arithmetic require scaling the offsets by the object size.
+    When we write an expression p+i for pointer p with value p, the resulting address is computed as p + L\*i, where L is the size of the data type associated with p.
+
+- ## Casting from one type of pointer to another changes its type but not its value
 - Pointers can also point to functions
 
+  ```C
+  int fun(int x, int *p);
 
+  int (*fp)(int, int *); //declare and assign a pointer fp to this function by the following code sequence:
+  fp = fun;
 
-## Advanced Topics
+  ```
+
+### 3.10.2 Life in the Real World: Using the gdb Debugger
+
+```shell
+linux>gdb prog   // start gdb for exceute program prog
+
+linux>objdump -d prog // disassemble prog
+```
+
+The GNU debugger gdb provides a number of useful features to support the
+
+- run-time evaluation and
+- analysis of machine-level programs
+- ddd: Rather than using the command-line interface to gdb, many programmers prefer using ddd, an extension to gdb that provides a graphical user interface.
+
+#### The general scheme
+
+- start gdb for exceute program
+- set breakpoints near points of interest in the program.
+  - These can be set to just after the entry of a function or at a program address.
+  - When one of the breakpoints is hit during program execution, the program will halt and return control to the user.
+  - From a breakpoint, we can examine different registers and memory locations in various formats
+- single-step the program
+  - running just a few instructions at a time
+  - or we can proceed to the next breakpoint.
+
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.39%20Example%20gdb%20commands.png)
 
 ### x86-64 Linux Memory Layout
 
@@ -1486,82 +1534,89 @@ The x86-64 Linux Memory Layout defines how memory is structured for a running pr
 
 Here’s an overview of the typical x86-64 Linux memory layout from high to low addresses:
 
-+--------------------------+  High Memory Addresses
-|      Kernel Space         |
++--------------------------+ High Memory Addresses
+| Kernel Space |
 +--------------------------+
-|        Stack (grows ↓)    |
+| Stack (grows ↓) |
 +--------------------------+
-|    Memory Mapped Segment  |
+| Memory Mapped Segment |
 +--------------------------+
-|           Heap            |
+| Heap |
 +--------------------------+
-|      BSS (Uninitialized)  |
+| BSS (Uninitialized) |
 +--------------------------+
-|      Data (Initialized)   |
+| Data (Initialized) |
 +--------------------------+
-|         Text (Code)       |
-+--------------------------+  Low Memory Addresses
+| Text (Code) |
++--------------------------+ Low Memory Addresses
 
-- Kernel Space (Not directly accessible to user programs)
-  Location: Highest address range (typically starting from 0xffff_8000_0000_0000 on x86-64 systems).
-  Purpose: Reserved for the kernel's memory space and system calls. User processes cannot access this space directly.
-  Access: Only the operating system (kernel) can access this part of memory.
-  Example: Kernel code, process control structures, device drivers.
+#### Kernel Space
 
-- Stack:  Runtime stack (8MB limit)
-  Location: Top of the virtual memory (grows downwards).
-  Purpose: Holds local variables, function parameters, return addresses, and control flow information.
-  Access: Read and write.
-  Size: Changes dynamically as the program runs (shrinks and grows as functions are called and returned from).
-  Growth Direction: Grows downward (from high to low addresses).
-  Example: Local variables and function call frames are stored here.
+- Location: Highest address range (typically starting from 0xffff_8000_0000_0000 on x86-64 systems).
+- - Not directly accessible to user programs
+- Purpose: Reserved for the kernel's memory space and system calls. User processes cannot access this space directly.
+- Access: Only the operating system (kernel) can access this part of memory.
+- Example: Kernel code, process control structures, device drivers.
 
-- Memory Mapped Segment/Shared Libraries
-  Location: Between the heap and stack.
-  Purpose: Used for memory-mapped files, shared libraries, and other memory mappings (e.g., mmap).
-  Includes:
-  Shared libraries (.so files).
-  Memory-mapped I/O regions.
-  Dynamically loaded libraries and data.
-  Access: Depends on the mapped object (could be read-only, writeable, or executable).
-  Example: Loaded shared libraries, dynamically mapped files
+#### Stack: Runtime stack (8MB limit)
 
-- Heap
-  Location: Grows upwards, starting above the BSS segment.
-  Purpose: Dynamically allocated memory (e.g., for malloc and new in C/C++) as needed
-  Managed by: The operating system and dynamic memory management routines (like malloc).
-  Size: Changes dynamically as the program runs.
-  Access: Read and write.
-  Example: Memory allocated with malloc in C or calloc(),new in C++.
+- Location: Top of the virtual memory (grows downwards).
+- Purpose: Holds local variables, function parameters, return addresses, and control flow information.
+- Access: Read and write.
+- Size: Changes dynamically as the program runs (shrinks and grows as functions are called and returned from).
+- Growth Direction: Grows downward (from high to low addresses).
+- Example: Local variables and function call frames are stored here.
 
-- Uninitialized Data Segment (BSS Segment)
-  Location: After the initialized data segment.
-  Purpose: Stores global and static variables that are uninitialized or initialized to zero.
-  Access: Read and write.
-  Example: int a; (a static global variable, automatically initialized to zero).
+#### Memory Mapped Segment/Shared Libraries
 
-- Initialized Data Segment (Data Segment)
-  Location: Just above the text segment.
-  Purpose: Stores global and static variables that are initialized before the program runs.
-  Subdivisions:
-    .data: Contains initialized global and static variables.
-    .rodata: Contains read-only initialized variables (e.g., constants).
-  Access: Read and write (except .rodata, which is read-only).
-  Example: int a = 10; (a statically initialized global variable).
-  E.g., global vars, static vars, string constants
+- Location: Between the heap and stack.
+- Purpose: Used for memory-mapped files, shared libraries, and other memory mappings (e.g., mmap).
+- Includes:
+- Shared libraries (.so files).
+- Memory-mapped I/O regions.
+- Dynamically loaded libraries and data.
+- Access: Depends on the mapped object (could be read-only, writeable, or executable).
+- Example: Loaded shared libraries, dynamically mapped files
 
-- Text Segment (Code Segment)
-  Location: Lower part of the memory.
-  Purpose: Contains the Executable machine instructions
-  
-  Access: Usually read-only to prevent accidental modification of the code.
-  Shared: This segment can be shared between processes if the same program is running.
-  Example: Compiled instructions of the program.
+#### Heap
+
+- Location: Grows upwards, starting above the BSS segment.
+- Purpose: Dynamically allocated memory (e.g., for malloc and new in C/C++) as needed
+- Managed by: The operating system and dynamic memory management routines (like malloc).
+- Size: Changes dynamically as the program runs.
+- Access: Read and write.
+- Example: Memory allocated with malloc in C or calloc(),new in C++.
+
+#### Uninitialized Data Segment (BSS Segment)
+
+- Location: After the initialized data segment.
+- Purpose: Stores global and static variables that are uninitialized or initialized to zero.
+- Access: Read and write.
+- Example: int a; (a static global variable, automatically initialized to zero).
+
+#### Initialized Data Segment (Data Segment)
+
+- Location: Just above the text segment.
+- Purpose: Stores global and static variables that are initialized before the program runs.
+- Subdivisions:
+- .data: Contains initialized global and static variables.
+- .rodata: Contains read-only initialized variables (e.g., constants).
+- Access: Read and write (except .rodata, which is read-only).
+- Example: int a = 10; (a statically initialized global variable).
+- E.g., global vars, static vars, string constants
+
+#### Text Segment (Code Segment)
+
+- Location: Lower part of the memory.
+- Purpose: Contains the Executable machine instructions
+- Access: Usually read-only to prevent accidental modification of the code.
+- Shared: This segment can be shared between processes if the same program is running.
+- Example: Compiled instructions of the program.
 
 ```C
-/* 
+/*
 If you declare the array outside any function (i.e., as a global variable) or as a static local variable inside a function:
- Memory Location: 
+ Memory Location:
  The array will be stored in the BSS segment (if uninitialized) or the Data segment (if initialized) of the program’s memory layout.
  Reason:
   Global and static variables have a lifetime that spans the entire execution of the program, so they are stored in a segment that persists throughout the program's execution.
@@ -1615,6 +1670,61 @@ when exceeding the memory size allocated for an array
 
 Typically, some character array is allocated on the stack to hold a string, but the size of the string exceeds the space allocated for the array
 
+#### Why Buffer Overflow?
+![code](../code_examples/09-machine-advanced/bufdemo.c)
+
+```C
+/* Implementation of library function gets() */
+char *gets(char *dest)
+{
+  int c = getchar();
+  char *p = dest;
+  while (c != EOF && c != '\n') {
+    *p++ = c;
+    c = getchar();
+  }
+  *p = '\0';
+  return dest;
+}
+
+/* Read input line and write it back */
+void echo()
+{
+    char buf[4];  /* Way too small! */
+    gets(buf);
+    puts(buf);
+}
+
+```
+
+- It reads a line from the standard input
+  stopping when either a terminating newline character or some error condition is encountered. It copies this string to the location designated by argument dest and terminates the string with a null character.
+- A longer string, however, will cause gets to overwrite some of the information
+stored on the stack.
+
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.40%20Stack%20organization%20for%20echo%20function.png)
+
+| Characters typed | Additional corrupted state |
+|------------------|----------------------------|
+| 0–7              | None                       |
+| 9–23             | Unused stack space         |
+| 24–31            | Return address             |
+| 32+              | Saved state in caller      |
+
+- corrupt saved state
+  No serious consequence occurs for strings of up to 23 characters, but beyond that, the value of the return pointer, and possibly additional saved state, will be corrupted.
+- jump to a totally unexpected location:
+  If the stored value of the return address is corrupted, then the ret instruction (line 8) will cause the program to jump to a totally unexpected location.
+
+#### Exploit code
+- the program is fed with a string that contains the byte encoding of some executable code, called the exploit code,
+- plus some extra bytes that overwrite the return address with a pointer to the exploit code. 
+- The effect of executing the ret instruction is then to jump to the exploit code.
+
+#### Example 
+
+
+
 ```C
 typedef struct {
   int a[2];
@@ -1656,15 +1766,14 @@ Similar problems with other library functions
 - strcpy, strcat: Copy strings of arbitrary length
 - scanf, fscanf, sscanf, when given %s conversion specification
 
-
 ```bash
 // Implementation of Unix function gets()
 // Get string from stdin: No way to specify limit on number of characters to read
 
 
 // The problem with gets is that it has no way to determine whether sufficient  space has been allocated to hold the entire string.
-char *gets(char *dest){    
-    int c = getchar();  
+char *gets(char *dest){
+    int c = getchar();
     char *p = dest;
     while (c != EOF && c != '\n') {
         *p++ = c;
@@ -1676,9 +1785,9 @@ char *gets(char *dest){
 
 
 void echo()
-{   
+{
      // Way too small! Character array buf is just part of the saved state. An out-ofbounds write to buf can corrupt the program state.
-    char buf[4]; 
+    char buf[4];
     gets(buf);
     puts(buf);
 }
@@ -1700,17 +1809,17 @@ int main()
 }
 
 
- 
+
  (gdb) disas
 Dump of assembler code for function echo:
-=> 0x00000000004006cf <+0>:     sub    $0x18,%rsp           // move 24 bytes down, allocate 24 bytes on the stack region 
+=> 0x00000000004006cf <+0>:     sub    $0x18,%rsp           // move 24 bytes down, allocate 24 bytes on the stack region
    0x00000000004006d3 <+4>:     mov    %rsp,%rdi           // Character buf is positioned at the top of the stack
    0x00000000004006d6 <+7>:     call   0x400680 <gets>     // Type a string: 0123456789012345678901234(25 characters), Overflowed buffer(24 bytes) and corrupted return pointer(by 25 characters + string end Null pointer "0x00")
-   
+
    0x00000000004006db <+12>:    mov    %rsp,%rdi
    0x00000000004006de <+15>:    call   0x400520 <puts@plt>
    0x00000000004006e3 <+20>:    add    $0x18,%rsp
-   0x00000000004006e7 <+24>:    ret    
+   0x00000000004006e7 <+24>:    ret
 End of assembler dump.
 
 (gdb) disas
@@ -1719,15 +1828,12 @@ Dump of assembler code for function call_echo:
    0x00000000004006ec <+4>:     mov    $0x0,%eax
    0x00000000004006f1 <+9>:     call   0x4006cf <echo>
    0x00000000004006f6 <+14>:    add    $0x8,%rsp            //return address(8 bytes) : 0x4006f6
-   0x00000000004006fa <+18>:    ret    
+   0x00000000004006fa <+18>:    ret
 End of assembler dump.
 
 ```
 
 ![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.10.3%20Buffer%20Overflow%20Stack%20Example%20#2.png)
-
-
-
 
 ### Code Injection Attacks
 
@@ -1737,21 +1843,19 @@ Input string contains byte representation of executable code
 Overwrite return address A with address of buffer B
 When Q executes ret, will jump to exploit code
 
-
 ### What to do about buffer overflow attacks
 
 #### Avoid overflow vulnerabilities
 
 For example, use library routines that limit string lengths
-  fgets instead of gets
-  strncpy instead of strcpy
-  Don’t use scanf with %s conversion specification,  Use fgets to read the string   Or use %ns  where n is a suitable integer
-
+fgets instead of gets
+strncpy instead of strcpy
+Don’t use scanf with %s conversion specification, Use fgets to read the string Or use %ns where n is a suitable integer
 
 ```bash
-void echo(){    
-  char buf[4];  /* Way too small! */   
-  fgets(buf, 4, stdin);    
+void echo(){
+  char buf[4];  /* Way too small! */
+  fgets(buf, 4, stdin);
   puts(buf);
 }
 
@@ -1800,20 +1904,18 @@ int main ()
 ##### Nonexecutable code segments
 
 In traditional x86, can mark region of memory as either “read-only” or “writeable”: Can execute anything readable
-X86-64 added  explicit “execute” permission
+X86-64 added explicit “execute” permission
 Stack marked as non-executable
-
-
 
 #### Have compiler use “stack canaries”
 
-Idea: 
-  Place special value (“canary”) on stack just beyond buffer
-  Check for corruption before exiting function
+Idea:
+Place special value (“canary”) on stack just beyond buffer
+Check for corruption before exiting function
 
 GCC Implementation
-  -fstack-protector
-  Now the default (disabled earlier)
+-fstack-protector
+Now the default (disabled earlier)
 
 ```Assembly
 void echo()
@@ -1830,7 +1932,7 @@ void echo()
 11 xorq %fs:40, %rax          Compare to stored value
 12 je .L9                     If =, goto ok
 13 call __stack_chk_fail      Stack corrupted!
-14 .L9:                       ok:     
+14 .L9:                       ok:
 15 addq $24, %rsp             Deallocate stack space
 16 ret
 
