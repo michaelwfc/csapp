@@ -98,7 +98,7 @@ gdb bomb
 (gdb) b 74
 Breakpoint 1 at 0x400e37: file bomb.c, line 74.
 
-# Set a breakpoint at a specific function:
+# Set a breakpoint at a specific function entry:
 (gdb) break main
 (gdb) b main
 

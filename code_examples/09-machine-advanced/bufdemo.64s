@@ -47,13 +47,13 @@ gets:
 	.type	echo, @function
 echo:
 .LFB35:
-	.cfi_startproc
-	subq	$24, %rsp
+	.cfi_startproc 
+	subq	$24, %rsp    # The program allocates 24 bytes for Character buf on the stack by subtracting 24 from the stack pointer
 	.cfi_def_cfa_offset 32
 	movq	%fs:40, %rax
 	movq	%rax, 8(%rsp)
 	xorl	%eax, %eax
-	movq	%rsp, %rdi
+	movq	%rsp, %rdi   # Character buf is positioned at the top of the stack, as can be seen by the fact that %rsp is copied to %rdi to be used as the argument to the calls to both gets and puts.
 	call	gets
 	movq	%rsp, %rdi
 	call	puts

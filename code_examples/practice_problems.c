@@ -1074,8 +1074,38 @@ show the byte offsets and total size for the rearranged structure.
 
 */
 
+
+// Practice Problem 3.46 (solution page 382)
+
+/* This is very low-quality code.
+It is intended to illustrate bad programming practices.
+See Practice Problem 3.46. */
+char *get_line()
+{
+char buf[4];
+char *result;
+gets(buf);
+result = malloc(strlen(buf));
+strcpy(result, buf);
+return result;
+}
+// (b) Disassembly up through call to gets
+char *get_line()
+1 0000000000400720 <get_line>:
+2 400720: 53 push %rbx
+3 400721: 48 83 ec 10 sub $0x10,%rsp
+// Diagram stack at this point
+4 400725: 48 89 e7 mov %rsp,%rdi
+5 400728: e8 73 ff ff ff callq 4006a0 <gets>
+// Modify diagram to show stack contents at this point
+// Figure 3.41 C and disassembled code for Practice Problem 3.46.
+
+// The sub $0x10,%rsp instruction allocates 16 bytes on the stack by decrementing %rsp by 16. This creates space for local variables and ensures alignment.
+// After this point, the mov %rsp,%rdi instruction sets up %rdi (the first argument for gets) to point to the start of the allocated space (where buf resides)
+
+
 /*
-Practice Problem 3.46 (solution page 382)
+
 Figure 3.41 shows a (low-quality) implementation of a function that reads a line
 from standard input, copies the string to newly allocated storage, and returns a
 pointer to the result.
@@ -1094,18 +1124,119 @@ hexadecimal values (if known) within the box. Each box represents 8 bytes.
 Indicate the position of %rsp. Recall that the ASCII codes for characters 0–9
 are 0x30–0x39.
 
+在x86-64架构中，字节序采用小端模式（Little-Endian）。这意味着多字节数据的低位字节存储在内存的低地址处，高位字节存储在高地址处。
+
+ASCII '12345678' 的小端编码:
+ASCII编码的十六进制表示为： 31 32 33 34 35 36 37 38
+在小端模式下：
+内存中的字节排列为：38 37 36 35 34 33 32 31
+对应的返回地址值为：0x3132333435363738
+
+
+
 00 00 00 00 00 40 00 76  | Return address
 
+栈状态图（小端表示）
+高地址 → 低地址
++-----------------------------+  <-- 调用前的栈顶（%rsp = 0x7fffffffe820）
+|         返回地址             | 0x7fffffffe818: 76 07 40 00 00 00 00 00 (0x400776)
++-----------------------------+  <-- 执行 `callq` 后的栈顶
+| 保存的 %rbx                | 0x7fffffffe810: EF CD AB 89 67 45 23 01 (0x0123456789ABCDEF)
++-----------------------------+  <-- 执行 `push %rbx` 后的栈顶
+| 分配的 16 字节空间 (buf)     | 0x7fffffffe808: ?? ?? ?? ?? ?? ?? ?? ?? 
++-----------------------------+  <-- %rsp + 8
+|                             | 0x7fffffffe800: ?? ?? ?? ?? ?? ?? ?? ?? 
++-----------------------------+  <-- 当前栈顶（%rsp 执行 `sub $0x10` 后）
 
+栈帧布局分析
+假设栈从高地址向低地址增长，调用 get_line 时的栈结构如下（按执行顺序）：
+1. 保存返回地址：
+    callq 指令将返回地址 0x400776 压入栈顶，占 8 字节，值为 0x400776（小端字节序存储为 76 07 40 00 00 00 00 00）。
+2. 保存的 %rbx：
+    push %rbx 将寄存器 %rbx 的值 0x0123456789ABCDEF 压入栈，占 8 字节。栈顶继续向低地址移动。
+3. 分配局部变量空间: 
+    sub $0x10, %rsp 分配 16 字节给 buf，栈顶再降低 16 字节。此时 buf 起始于 %rsp 处，占 4 字节，剩余空间此时未初始化（用 ?? 表示）。
+
+可视化图示：
+
++-----------------------------+  <-- 高地址（栈底方向）
+| 返回地址：0x400776           | 
+| (8 bytes)                   | 
++-----------------------------+
+| 保存的 %rbx：0x0123...CDEF  | 
+| (8 bytes)                   | 
++-----------------------------+
+| buf[0-7] (未初始化)          | 
+| (8 bytes)                   | 
++-----------------------------+
+| buf[8-15] (未初始化)         | 
+| (8 bytes)                   | 
++-----------------------------+  <-- 当前栈顶（%rsp 指向 buf 起始地址）
+
+注解：
+%rsp 位置：执行完 sub $0x10,%rsp 后，%rsp 指向 buf 的起始地址（0x7fffffffe800）。
+内存布局：栈向下增长，因此高地址在顶部，低地址在底部。
+未初始化内容：buf 的 16 字节尚未被 gets 写入，值为随机数据（标记为 ??）。
+此布局为调用 gets 前的状态，后续 gets(buf) 会覆盖 buf 及更高地址的内容（如返回地址和保存的寄存器），导致缓冲区溢出漏洞。
 
 
 B. Modify your diagram to show the effect of the call to gets (line 5).
+
+输入覆盖过程
+输入长度：24 字节 = 3×8 字节。
+覆盖路径：buf → 未使用空间 → 保存的 %rbx → 返回地址。 
+
+输入 25 字节 0123456789012345678901234 时，gets 会按以下顺序覆盖栈：
+
+1. 覆盖 buf[4]：
+前 4 字节 0-3 填满 buf，对应 ASCII '0'-'3'（十六进制 0x30-0x33）。
+
+2. 覆盖未使用的分配空间：
+接下来的 12 字节 4-15 覆盖 subq $0x10 分配的剩余 12 字节（buf 后到 %rsp+16）。
+
+3. 覆盖保存的 %rbx：
+字节 16-23 覆盖 pushq %rbx 保存的 %rbx 值（原值 0x0123456789ABCDEF），新值变为 0x3435363738393031（ASCII '4'-'1'）。
+
+4. 覆盖返回地址：
+字节 24  覆盖返回地址，新值变为 0x3233343536373839（ASCII '2'-'9'），导致 ret 时跳转到非法地址。
+
+
+
+高地址 → 低地址
++-----------------------------+  <-- 0x7fffffffe818 (原始返回地址位置)
+| 覆盖后的返回地址 (0x33323130) | 0x7fffffffe818: 34 00 40 00 00 00 00 00 ('4\0' ASCII)
++-----------------------------+  <-- 溢出覆盖到返回地址
+| 覆盖后的 %rbx (0xEFCDAB89...) | 0x7fffffffe810: 36 37 38 39 30 31 32 33 ('67890123' ASCII)
++-----------------------------+  <-- 溢出覆盖到保存的 %rbx
+| 输入的字符串 (buf[16字节])   |  0x7fffffffe808: 38 39 30 31 32 33 34 35  ('89012345')
+                              | 0x7fffffffe800: 30 31 32 33 34 35 36 37  ('01234567') 
++-----------------------------+  <-- 当前栈顶 %rsp (被 gets 覆盖后)
+
+
+
 C. To what address does the program attempt to return?
+34 00 40 00 00 00 00 00
+
+The low-order 2 bytes were overwritten by the code for character ‘4’ and the terminating null character.
+
 D. What register(s) have corrupted value(s) when get_line returns?
+
+%rbx
+
+
 E. Besides the potential for buffer overflow, what two other things are wrong
 with the code for get_line?
 
+1. **内存分配不足**  
+   `malloc(strlen(buf))`未为字符串终止符`\0`分配空间。正确的做法是使用`malloc(strlen(buf) + 1)`以确保存储完整的字符串（包含`\0`），否则`strcpy`会导致堆溢出。
+
+2. **未处理`malloc`失败和空输入**  
+   - 未检查`malloc`返回值是否为`NULL`，可能导致解引用空指针。
+   - 输入为空时，`malloc(0)`的行为未定义（可能返回不可写内存），且无法正确存储空字符串。
+
 */
+
+
 
 /*
 Practice Problem 5.4 (solution page 610)

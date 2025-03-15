@@ -854,11 +854,27 @@ Use stack to support procedure call and return
   - Push return address on stack : Address of the next instruction right after call
   - Jump to label : sets the PC to the beginning of Q
 
+
 - ret
   - Procedure return:
   - The counterpart instruction ret pops an address A off the stack and sets the PC to A.
   - Pop address from stack
   - Jump to address
+
+
+
+```assembly
+callq test:
+# 相当于
+pushq %rip # save rip register to stack top
+jmp test   # jump to function execute
+
+
+retq:
+# 相当于
+popq %rip # fetch rip register from stack top
+```
+
 
 ![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.26%20Illustration%20of%20call%20and%20ret%20functions.png)
 
@@ -984,7 +1000,7 @@ At times, however, local data must be stored in memory. Common cases of this inc
   parameters
 - loading function arguments into registers
 
-### Local Storage in Registers
+### 3.7.5 Local Storage in Registers
 
 The set of program registers acts as a single resource shared by all of the procedures.
 Although only one procedure can be active at a given time, we must make
