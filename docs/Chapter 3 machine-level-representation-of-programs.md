@@ -846,22 +846,20 @@ Passing control from function P to function Q involves simply setting the progra
 
 Use stack to support procedure call and return
 
-- call label
+#### callq label : Procedure call
+The call instruction has a target indicating the address of the instruction where the called procedure starts.
 
-  - Procedure call
-  - The call instruction has a target indicating the address of the instruction where the called procedure starts.
-  - This instruction pushes an address A onto the stack and sets the PC to the beginning of Q.
-  - Push return address on stack : Address of the next instruction right after call
-  - Jump to label : sets the PC to the beginning of Q
+1. save return address to stack
+将下一条指令的地址（即 callq 指令之后的指令地址）压入堆栈（stack）。这个地址被称为返回地址（return address），用于在函数执行完毕后返回到调用点。
 
+2. 跳转到目标地址：
+- sets the PC to the beginning of Q, 将程序计数器（%rip）设置为目标函数的地址
+- jump to label(the target address)
 
-- ret
-  - Procedure return:
-  - The counterpart instruction ret pops an address A off the stack and sets the PC to A.
-  - Pop address from stack
-  - Jump to address
-
-
+#### ret : Procedure return
+1. pops an address A off the stack and 
+2. sets the PC to A.
+3. Jump to address
 
 ```assembly
 callq test:

