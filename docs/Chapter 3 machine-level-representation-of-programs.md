@@ -201,19 +201,62 @@ An x86-64 central processing unit (CPU) contains a set of 16 general-purpose reg
 
 #### Operand Types
 
-- Immediate: Constant integer data
-  Ex: $\$0x400$
-  Like C constant, but prefixed with ‘$’
-  Encoded with 1, 2, or 4 bytes
-- Register: One of 16 integer registers
-  Ex: $r_a$
-  denotes the contents of a register, one of the sixteen 8-, 4-, 2-, or 1-byte low-order portions of
-  the registers for operands having 64, 32, 16, or 8 bits, respectively
+##### Immediate Operand:
+Immediate Operand Definition:
+- An immediate operand is a constant value（Constant integer data） embedded directly in the instruction.  
+- It doesn't refer to a memory location or a register; it's a literal value.
+- Ex: $0x1F,$-577
 
+Formats:
+- Decimal: You can write an immediate as a decimal number (e.g., 42).
+- Hexadecimal: You can write an immediate in hexadecimal format (e.g., 0x2A).
+- Octal (less common): Some assemblers also support octal notation.
+- The numerical value remains the same; it's just a different representation.The assembler converts these values into the correct binary representation in the machine code.
+- Encoded with 1, 2, or 4 bytes
+
+Syntax Differences:
+- In AT&T syntax (used by GNU assembler), immediate values are prefixed with $
+
+```assembly
+movq $42, %rax    # 使用十进制整数来表示立即数, 将十进制数 42 移动到寄存器 %rax, 你可以使用十进制整数来表示立即数
+movq $0x2a, %rax  # 使用十进制整数来表示立即数, 将十六进制数 0x2a (即十进制的 42) 移动到寄存器 %rax
+movq $-42, %rax       # 将 -42 移动到 %rax
+movq $0xffffffd6, %rax # 将 0xffffffd6 (-42) 移动到 %rax
+```
+
+- In Intel syntax, immediate values are written without a special prefix
+```assembly
+mov eax, 42         ; Decimal immediate
+mov eax, 0x2A       ; Hexadecimal immediate
+```
+
+##### Register
+  - One of 16 integer registers
+  - Ex: $r_a$
+  - denotes the contents of a register, one of the sixteen 8-, 4-, 2-, or 1-byte low-order portions of the registers for operands having 64, 32, 16, or 8 bits, respectively
+
+##### Memory Reference
 - Memory Reference 内存引用 8 consecutive bytes of memory at address given by register
-  Ex: (%rax) -> $M_b[Addr]$
-  in which we access some memory location according to a computed address, often called the effective address.
-  $ Imm(r_b, r_i, s) = Imm + R[r_b] + R[r_i] \*s $
+  - Ex: (%rax) -> $M_b[Addr]$
+  - in which we access some memory location according to a computed address, often called the effective address.
+
+ - Most General Form 
+  - $ Imm(r_b, r_i, s) = Imm + R[r_b] + R[r_i] \*s $
+  - $D(Rb,Ri,S) Mem[Reg[Rb]+S\*Reg[Ri]+ D]
+  - This general form is often seen when referencing elements of arrays. 
+  four components: 
+  - Imm: an immediate offset , Constant “displacement” 1, 2, or 4 bytes
+  - rb:  Base register , 64-bit register. Any of 16 integer registers
+  - r_i: Index register ri  ,64-bit register.Any, except for %rsp
+  - s:   a scale factor, where s must be 1, 2, 4, or 8 (why these numbers? char array: 1, short int array: 2, int array:4, long int array:8)
+
+- Special Cases
+(Rb,Ri) Mem[Reg[Rb]+Reg[Ri]]
+D(Rb,Ri) Mem[Reg[Rb]+Reg[Ri]+D]
+(Rb,Ri,S) Mem[Reg[Rb]+S\*Reg[Ri]]
+
+Natural for array indexing
+
 
 #### Simple Memory Addressing Modes
 
@@ -222,21 +265,6 @@ An x86-64 central processing unit (CPU) contains a set of 16 general-purpose reg
 | Normal       | (R)  | Mem[Reg[R]]     | x=\*p (Pointer dereferencing in C) | movq (%rcx),%rax  | Register R specifies memory address                                                                                            |
 | Displacement | D(R) | Mem[Reg[R] + D] | x= int arr[2]                      | movq 8(%rbp),%rdx | Register R specifies start of memory region,Constant displacement D specifies offset, very useful for different data structure |
 
-#### Most General Form
-
-$D(Rb,Ri,S) Mem[Reg[Rb]+S\*Reg[Ri]+ D]
-
-- D: Constant “displacement” 1, 2, or 4 bytes
-- Rb: Base register: Any of 16 integer registers
-- Ri: Index register: Any, except for %rsp
-- S: Scale: 1, 2, 4, or 8 (why these numbers? char array: 1, short int array: 2, int array:4, long int array:8)
-
-Special Cases
-(Rb,Ri) Mem[Reg[Rb]+Reg[Ri]]
-D(Rb,Ri) Mem[Reg[Rb]+Reg[Ri]+D]
-(Rb,Ri,S) Mem[Reg[Rb]+S\*Reg[Ri]]
-
-Natural for array indexing
 
 ### 3.4.2 Data Movement Instructions
 
@@ -264,12 +292,25 @@ Note : x86-64 imposes the restriction that a move instruction cannot have both o
 
 ![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.4%20Simple%20data%20movement%20instructions.png)
 
-- movb
-- movw
-- movl ： it will also set the high-order 4 bytes of the register to 0.
-- movq
-- movabsq : can have an **_arbitrary 64-bit immediate value_** as its source operand and can only have a **_register_** as a destination.
+- movb : move byte , 1 byte
+- movw : move word , 2 bytes
+- movl ： move double word,4 bytes, it will also set the high-order 4 bytes of the register to 0.
+- movq : 
+  - movq is a general-purpose 64-bit move instruction.
+  - When you use movq with an immediate operand, the immediate value is typically limited to a 32-bit constant that is sign-extended to 64 bits. In other words, you cannot directly encode an arbitrary 64-bit constant using movq as an immediate.
+  - Can be used for moving data between registers, from memory to register, or from register to memory.
 
+- movabsq : 
+  - can have an **_arbitrary 64-bit immediate value_** as its source operand and can only have a **_register_** as a destination  (not memory)..
+  - This instruction is specifically designed to handle an arbitrary 64-bit immediate value. It allows you to move a full 64-bit constant into a register without the 32-bit limitation.
+  -  When moving an immediate value, it can only have a register as its destination. You cannot use movabsq to move an immediate directly into a memory location.
+
+```assembly
+movq $0x12345678, %rax  # This will load the 32-bit immediate value 0x12345678 sign-extended to 64 bits into %rax.
+movabsq $0x123456789ABCDEF0, %rax  ; This loads the full 64-bit constant into %rax.
+
+
+```
 #### MOVZ class
 
 two classes of data movement instructions for use when copying a smaller source value to a larger destination.

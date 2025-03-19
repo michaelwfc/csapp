@@ -87,7 +87,7 @@ gdb bomb
 (gdb) run arg1 arg2
 
 # run with arguments from answers.txt
-(gdb) r answers.txt
+(gdb) r < answers.txt
 ```
 
 ## 4. Set Breakpoints
@@ -217,14 +217,59 @@ The x command in gdb is used to examine memory. Examine memory (x): View memory 
 # This examines 4 words of memory starting at the address of x, showing them in hexadecimal.
 (gdb) x/4x &x
 
+
+
 - x/d <address>: View the memory as a signed integer.
 - x/u <address>: View the memory as an unsigned integer.
 - x/f <address>: View the memory as a floating-point number.
 - x/s <address>: View the memory as a null-terminated string.
 - x/<count>d <address>: View an array of integers.
 - x/<count>f <address>: View an array of floats.
-
 ```
+
+
+```shell
+(gdb) x/8xb $rsp 
+0x5561dc78:     0xc7    0x44    0x24    0x08    0x39    0x37    0x66    0x61
+# This examines 8 bytes of memory starting at the address of $rsp, showing them in hexadecimal.
+```
+The output shows the contents of memory at address `0x5561dc78` as eight consecutive bytes:
+```
+0xc7  0x44  0x24  0x08  0x39  0x37  0x66  0x61
+```
+
+On an x86-64 system (which is little-endian), memory is stored in little-endian order. This means that:
+
+- The **first byte** (at the lowest address, `0x5561dc78`) is the **least significant byte (LSB)**.
+- The **last byte** (at the highest address, `0x5561dc7F`) is the **most significant byte (MSB)**.
+
+### How to Interpret the Order
+
+- **In Memory Order (Little-endian):**
+  - Address `0x5561dc78`: 0xc7 (LSB)
+  - Address `0x5561dc79`: 0x44
+  - Address `0x5561dc7A`: 0x24
+  - Address `0x5561dc7B`: 0x08
+  - Address `0x5561dc7C`: 0x39
+  - Address `0x5561dc7D`: 0x37
+  - Address `0x5561dc7E`: 0x66
+  - Address `0x5561dc7F`: 0x61 (MSB)
+
+- **As a 64-bit value (big-endian representation):**  
+  If you were to interpret these 8 bytes as a single 64-bit integer, because the system is little-endian, the actual numerical value (when viewed in the usual big-endian notation) would be:
+  \[
+  0x61663739082444c7
+  \]
+  This is because the bytes are reversed in significance: the byte 0xc7 is the LSB and 0x61 is the MSB.
+
+### Summary
+
+- The bytes are stored in memory in **little-endian order**.
+- The order from the lowest to the highest memory address is:  
+  **0xc7, 0x44, 0x24, 0x08, 0x39, 0x37, 0x66, 0x61.**
+- If you combine them as a 64-bit number, the value is **0x61663739082444c7** (in big-endian representation).
+
+This ordering is standard on x86-64 systems, where the least significant byte is stored at the lowest address.
 
 ## 7. View the Call Stack
 
