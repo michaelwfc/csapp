@@ -861,16 +861,17 @@ points to the top element of the stack
 - Grows toward lower addresses
 
 #### pushq & popq instructions
-
 - Data can be stored on and retrieved from the stack using the pushq and popq instructions
-- pushq Src
+
+##### pushq Src
   - Fetch operand at Src
   - Decrement %rsp by 8
   - Write operand at address given by %rsp
-- popq Dest
+#### popq Dest register
+  - In x86-64 assembly the popq instruction is designed to remove a value from the stack and load it into a register
   - Read value at address given by %rsp
-  - Increment %rsp by 8
   - Store value at Dest (must be register)
+  - Increment %rsp by 8
 
 #### Stack Frame
 
@@ -890,17 +891,17 @@ Use stack to support procedure call and return
 #### callq label : Procedure call
 The call instruction has a target indicating the address of the instruction where the called procedure starts.
 
-1. save return address to stack
+1. push return address to stack
 将下一条指令的地址（即 callq 指令之后的指令地址）压入堆栈（stack）。这个地址被称为返回地址（return address），用于在函数执行完毕后返回到调用点。
 
 2. 跳转到目标地址：
 - sets the PC to the beginning of Q, 将程序计数器（%rip）设置为目标函数的地址
 - jump to label(the target address)
 
-#### ret : Procedure return
-1. pops an address A off the stack and 
-2. sets the PC to A.
-3. Jump to address
+#### ret instruction: Procedure return
+1. pops the top value A off the stack; ,this value is treated as the return address.
+2. sets the PC to A(loads that return address into the instruction pointer RIP)
+3. Jump to address,which causes the CPU to continue execution from that address.
 
 ```assembly
 callq test:
@@ -1891,21 +1892,22 @@ End of assembler dump.
 ![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.10.3%20Buffer%20Overflow%20Stack%20Example%20#2.png)
 
 ### Code Injection Attacks
-
+1. Input string contains byte representation of executable code
+2. Overwrite return address A with address of buffer B
+3. When Q executes ret, will jump to exploit code
+  
 ![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.10.3%20Code%20Injection%20Attacks.png)
 
-Input string contains byte representation of executable code
-Overwrite return address A with address of buffer B
-When Q executes ret, will jump to exploit code
+
 
 ### What to do about buffer overflow attacks
 
 #### Avoid overflow vulnerabilities
 
-For example, use library routines that limit string lengths
-fgets instead of gets
-strncpy instead of strcpy
-Don’t use scanf with %s conversion specification, Use fgets to read the string Or use %ns where n is a suitable integer
+For example, use library routines that limit string lengths 
+- fgets instead of gets
+- strncpy instead of strcpy
+- Don’t use scanf with %s conversion specification, Use fgets to read the string Or use %ns where n is a suitable integer
 
 ```bash
 void echo(){
@@ -1921,9 +1923,7 @@ void echo(){
 
 ##### Stack Randomization
 
-The idea of stack randomization is to make the position of the stack vary from
-one run of a program to another.Thus, even if many machines are running identical
-code, they would all be using different stack addresses
+The idea of stack randomization is to make the position of the stack vary from one run of a program to another.Thus, even if many machines are running identical code, they would all be using different stack addresses
 
 ```bash
 // stack.c
@@ -1962,7 +1962,8 @@ In traditional x86, can mark region of memory as either “read-only” or “wr
 X86-64 added explicit “execute” permission
 Stack marked as non-executable
 
-#### Have compiler use “stack canaries”
+#### Stack Corruption Detection: Have compiler use “stack canaries”
+![image](../images/Chapter%203%20Machine-Level%20Representation%20of%20Programs/Figure%203.42%20Stack%20organization%20for%20echo%20function%20with%20stack%20protector%20enabled.png)
 
 Idea:
 Place special value (“canary”) on stack just beyond buffer
