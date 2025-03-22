@@ -500,13 +500,13 @@ Return a pointer to start of mapped area (may not be start)
 Programmers use **_dynamic memory allocators_** (such as malloc) to acquire VM at run time.
 
 - For data structures whose size is only known at runtime.
-- dynamic memory allocator maintains an area of a process’s virtual memory known as the heap (Figure 9.33).
+- dynamic memory allocator maintains an area of a process’s virtual memory known as the **_heap_** (Figure 9.33).
 
 ![image](../images/Chapter%209%20Virtual%20Memory/Figure%209.33.png)
 
-- brk
+- brk  
   For each process, the kernel maintains a variable brk (pronounced “break”) that points to the top of the heap.
-- blocks
+- blocks  
   An allocator maintains the heap as a collection of various-size blocks.
   Each block is a contiguous chunk of virtual memory that is either allocated or free.
   - allocated block
@@ -517,10 +517,12 @@ Programmers use **_dynamic memory allocators_** (such as malloc) to acquire VM a
   - Explicit allocators: application allocates and frees space
     - malloc and free : C programs allocate a block and free a block
     - new and delete: C++
-  - Implicit allocators: ***garbage collectors***
+  - Implicit allocators: **_garbage collectors_**
     - the process of automatically freeing unused allocated blocks is known as garbage collection
 
 ### 9.9.1 The malloc and free Functions
+
+![image](../images/Chapter%209%20Virtual%20Memory/Figure%209.34.png)
 
 ```C
 #include <stdlib.h>
@@ -528,10 +530,14 @@ void *malloc(size_t size);
 Returns: pointer to allocated block if OK, NULL on error
 - Successful:
   - Returns a pointer to a memory block of at least size byte aligned to an 8-byte (x86) or  16-byte (x86-64) boundary
+  (In 32-bit mode, malloc returns a block whose address is always a multiple of 8. In 64-bit mode, the address
+is always a multiple of 16.)
   - If size == 0, returns NULL
 - Unsuccessful: returns NULL (0) and sets errno
 
 
+calloc: Version of malloc that initializes allocated block to zero.
+realloc: Changes the size of a previously allocated block.
 
 
 #include <stdlib.h>
@@ -541,14 +547,54 @@ Returns: nothing
 // The ptr argument must point to the beginning of an allocated block that was obtained from malloc, calloc, or realloc. If not, then the behavior of free  is undefined.
 
 
-calloc: Version of malloc that initializes allocated block to zero.
-realloc: Changes the size of a previously allocated block.
-sbrk: Used internally by allocators to grow or shrink the heap
+// sbrk: Used internally by allocators to grows or shrinks the heap by adding incr to the kernel’s brk pointer.
+// Returns: old brk pointer on success, −1 on error and sets errno to ENOMEM.
+#include <unistd.h>
+void *sbrk(intptr_t incr);
 
 
 ```
 
 ### 9.9.2 Why Dynamic Memory Allocation?
+
+```C
+#include "csapp.h"
+#define MAXN 15213
+
+int array[MAXN];
+
+int main()
+{
+int i, n;
+
+ scanf("%d", &n);
+ if (n > MAXN)
+  app_error("Input file too big");
+ for (i = 0; i < n; i++)
+  scanf("%d", &array[i]);
+  exit(0);
+ }
+
+
+/*
+a better approach is to allocate the array dynamically, at run time, after the
+value of n becomes known. With this approach, the maximum size of the array is
+limited only by the amount of available virtual memory.
+
+*/
+int main()
+{
+int *array, i, n;
+
+scanf("%d", &n);
+array = (int *)Malloc(n * sizeof(int));
+for (i = 0; i < n; i++)
+ scanf("%d", &array[i]);
+ free(array);
+ exit(0);
+ }
+
+```
 
 ### 9.9.3 Allocator Requirements and Goals
 
@@ -558,6 +604,7 @@ sbrk: Used internally by allocators to grow or shrink the heap
 - Def: Current heap size Hk
   Assume Hk is monotonically nondecreasing
   i.e., heap only grows when allocator uses sbrk
+
 - Def: Peak memory utilization after k+1 requests
   Uk = ( maxi<=k Pi ) / Hk
 
@@ -575,7 +622,7 @@ Caused by
 
 - Overhead of maintaining heap data structures
 - Padding for alignment purposes
-- Explicit policy decisions e.g., to return a big block to satisfy a small request)
+- Explicit policy decisions e.g., to return a big block to satisfy a small request
 
 Depends only on the pattern of previous requests
 Thus, easy to measure
@@ -589,12 +636,23 @@ Thus, difficult to measure
 
 ### 9.9.5 Implementation Issues
 
-- Free block organization: How do we keep track of the free blocks?
-- Placement. How do we choose an appropriate free block in which to place a newly allocated block?
-- Splitting. After we place a newly allocated block in some free block, what do we do with the remainder of the free block?
-- How do we know how much memory to free given just a pointer?
-- What do we do with the extra space when allocating a structure that is smaller than the free block it is placed in?
-- How do we reinsert freed block?
+To allocate size bytes, malloc would save the current value of p on the stack, increment p by size, and return the old value of p to the caller.
+
+Free would simply return to the caller without doing anything.
+
+Apractical allocator that strikes a better balance between throughput and utilization must consider the following issues:
+
+- Free block organization:
+  - How do we keep track of the free blocks?
+- Placement
+  - How do we choose an appropriate free block in which to place a newly allocated block?
+- Splitting
+  - After we place a newly allocated block in some free block, what do we do with the remainder of the free block?
+  - How do we know how much memory to free given just a pointer?
+  - What do we do with the extra space when allocating a structure that is smaller than the free block it is placed in?
+  - How do we reinsert freed block?
+- Coalescing
+  - What do we do with a block that has just been freed?
 
 #### Knowing How Much to Free
 
@@ -615,31 +673,68 @@ Standard method
 ### 9.9.6 Implicit Free Lists
 
 #### Implicit Lists
-Implementation: very simple
-Allocate cost: linear time worst case
-Free cost:  constant time worst case even with coalescing
-Memory usage: 
-- will depend on placement policy
-- First-fit, next-fit or best-fit
 
-Not used in practice for malloc/free because of linear-time allocation
-used in many special purpose applications
+![image](../images/Chapter%209%20Virtual%20Memory/Figure%209.35.png)
+![image](../images/Chapter%209%20Virtual%20Memory/Figure%209.36%20Organizing%20the%20heap%20with%20an%20implicit%20free%20list.png)
 
-However, the concepts of splitting and boundary tag coalescing are general to all allocators
+##### Data structure of Heap Block
+
+Any practical allocator needs some data structure that allows it to distinguish
+block boundaries and to distinguish between allocated and free blocks. Most
+allocators embed this information in the blocks themselves.
 
 #### Implicit Free Lists
+
+One simple approach is shown in Figure 9.35.
+
+- header
+
+  - In this case, a block consists of a one-word header
+  - The header encodes the block size (including the header and any padding)  
+    If we impose a double-word alignment constraint, then the block size is always a multiple of 8 and the 3 low-order bits of the block size are always zero. Thus, we need to store only the 29 high-order bits of the block size, freeing the remaining 3 bits to encode other information.
+  - whether the block is allocated or free  
+    In this case, we are using the least significant of these bits (the allocated bit) to indicate whether the block is allocated or free
+
+- payload
+- padding
 
 We call this organization an implicit free list because the free blocks are linked implicitly by the size fields in the headers.
 
 The allocator can indirectly traverse the entire set of free blocks by traversing all of the blocks in the heap.
 
-![image](../images/Chapter%209%20Virtual%20Memory/Figure%209.35.png)
-![image](../images/Chapter%209%20Virtual%20Memory/Figure%209.36%20Organizing%20the%20heap%20with%20an%20implicit%20free%20list.png)
+##### Pros & Cons
 
-#### Implicit List: Finding a Free Block
+- Implementation: very simple
+- Allocate cost: linear time worst case
+- Free cost: constant time worst case even with coalescing
+- Memory usage:
+- will depend on placement policy
+- First-fit, next-fit or best-fit
 
-- First fit:
-  Search list from beginning, choose first free block that fits:
+Not used in practice for malloc/free because of linear-time allocation used in many special purpose applications
+
+However, the concepts of splitting and boundary tag coalescing are general to all allocators
+
+### 9.9.7 Placing Allocated Blocks: Placement policy
+
+When an application requests a block of k bytes, the allocator searches the free list for a free block that is large enough to hold the requested block.
+
+The manner in which the allocator performs this search is determined by the **_placement policy_**.
+Some common policies are first fit, next fit, and best fit.
+
+#### First fit:
+
+Search list from beginning, choose first free block that fits:
+
+Pros:
+
+- it tends to retain large free blocks at the end of the list
+
+Cons:
+
+- Can take linear time in total number of blocks (allocated and free)
+- In practice it can cause “splinters” at beginning of list,which will increase the search time for larger
+  blocks.
 
 ```C
 p = start;
@@ -648,23 +743,36 @@ while ((p < end) &&     \\ not passed end
        (*p  <= len)))   \\ too small
   p = p + (*p & -2);    \\ goto next block (word addressed)
 
-
 ```
 
-Can take linear time in total number of blocks (allocated and free)
-In practice it can cause “splinters” at beginning of list
+#### Next fit:
 
-- Next fit:
-  Like first fit, but search list starting where previous search finished
-  Should often be faster than first fit: avoids re-scanning unhelpful blocks
-  Some research suggests that fragmentation is worse
+- Like first fit, but search list starting where previous search finished
+- motivated by the idea that if we found a fit in some free block the last time, there is a good chance that we will find a fit the next time in the remainder of the block.
 
-- Best fit:
-  Search the list, choose the best free block: fits, with fewest bytes left over
-  Keeps fragments small—usually improves memory utilization
-  Will typically run slower than first fit
+Pros:
 
-#### Implicit List: Allocating in Free Block
+- Should often be faster than first fit: avoids re-scanning unhelpful blocks
+
+Cons:
+
+- Some research suggests that fragmentation is worse
+
+#### Best fit:
+
+Search the list, choose the best free block: fits, with fewest bytes left over
+
+Pros:
+
+- Keeps fragments small—usually improves memory utilization
+
+Cons:
+
+- Will typically run slower than first fit
+
+### 9.9.8 Splitting Free Blocks(Allocating in Free Block)
+
+Once the allocator has located a free block that fits, it must make another policy decision about how much of the free block to allocate.
 
 Allocating in a free block: splitting
 Since allocated space might be smaller than free space, we might want to split the block
@@ -681,21 +789,38 @@ void addblock(ptr p, int len) {
 
 ```
 
-#### Implicit List: Freeing a Block
+### 9.9.9 Getting Additional Heap Memory
 
-Simplest implementation:
-Need only clear the “allocated” flag
-void free_block(ptr p) { *p = *p & -2 }
+What happens if the allocator is unable to find a fit for the requested block?
 
-But can lead to “false fragmentation”
+One option is to try to create some larger free blocks by merging (coalescing) free blocks that are physically adjacent in memory (next section).  
+However, if this does not yield a sufficiently large block, or if the free blocks are already maximally coalesced, then the allocator
 
-#### Implicit List: Coalescing
+- asks the kernel for additional heap memory by calling the sbrk function.
+- The allocator transforms the additional memory into one large free block,
+- inserts the block into the free list
+- then places the requested block in this new free block.
+
+### 9.9.10 Coalescing Free Blocks
 
 Join (coalesce) with next/previous blocks, if they are free
 Coalescing with next block
 
+#### immediate coalescing
+
+by merging any adjacent blocks each time a block is freed.
+
+- straightforward and
+- can be performed in constant time,
+- but with some request patterns it can introduce a form of thrashing where a block is repeatedly coalesced and then split soon thereafter.
+
+#### deferred coalescing
+
+by waiting to coalesce free blocks at some later time.  
+ For example, the allocator might defer coalescing until some allocation request fails, and then scan the entire heap, coalescing all free blocks.
+
 ```C
-void free_block(ptr p) {    *p = *p & -2;          // clear allocated flag   
+void free_block(ptr p) {    *p = *p & -2;          // clear allocated flag
 next = p + *p;         // find next block
 if ((*next & 1) == 0)
   *p = *p + *next;     // add to this block if
@@ -703,102 +828,388 @@ if ((*next & 1) == 0)
 
 ```
 
+### 9.9.11 Coalescing with Boundary Tags
+
+How does an allocator implement coalescing?
+
+Let us refer to the block we want to free as the current block.
+
+Then coalescing the next free block (in memory) is straightforward and efficient.
+The header of the current block points to the header of the next block, which can be checked to determine if the next block is free.
+If so, its size is simply added to the size of the current header and the blocks are coalesced in constant time.
+
 But how do we coalesce with previous block?
 
-#### Implicit List: Bidirectional Coalescing 
+#### Boundary tags [Knuth73]
 
-Boundary tags [Knuth73]
-Replicate size/allocated word at “bottom” (end) of free blocks
-Allows us to traverse the “list” backwards, but requires extra space
-Important and general technique!
+- Replicate size/allocated word at “bottom” (end) of free blocks
+- Allows us to traverse the “list” backwards, but requires extra space
+- The idea is to add a footer (the boundary tag) at the end of each block, where the footer is a replica of the header.
+- Important and general technique!
 
-#### Constant Time Coalescing
+Pros:
+
+- allows for constant-time coalescing of the previous block.
+
+Cons:
+
+- Requiring each block to contain both a header and a footer can introduce significant memory overhead if an application manipulates many small blocks.
+
+![image](../images/Chapter%209%20Virtual%20Memory/Figure%209.39.png)
+
+#### Bidirectional Coalescing
+
+Consider all the cases that can exist when the allocator frees the current block:
+
+1. The previous and next blocks are both allocated.
+2. The previous block is allocated and the next block is free.
+3. The previous block is free and the next block is allocated.
+4. The previous and next blocks are both free.
+
+![image](../images/Chapter%209%20Virtual%20Memory/Figure%209.40.png)
+
+#### Eliminates the need for a footer in allocated blocks
+
+Recall that when we attempt to coalesce the current block with the previous and next blocks in memory, the size field in the footer of the previous block is only needed if the previous block is free.
+
+- If we were to store the allocated/free bit of the previous block in one of the excess loworder bits of the current block
+- allocated blocks would not need footers, and we could use that extra space for payload.
+- free blocks would still need footers.
+
+#### Freeing a Block
+
+Simplest implementation:
+Need only clear the “allocated” flag
+void free_block(ptr p) { *p = *p & -2 }
+
+But can lead to “false fragmentation”
 
 ### 9.9.12 Putting It Together: Implementing a Simple Allocator
 
-Summary of Key Allocator Policies
+we will work through the implementation of a simple allocator based on an implicit free list with immediate boundary-tag coalescing.
+The maximum block size is 2^32 = 4 GB. The code is 64-bit clean, running without modification in 32-bit (gcc -m32) or 64-bit (gcc -m64) processes.
 
-#### Placement policy:
-First-fit, next-fit, best-fit, etc.
-Trades off lower throughput for less fragmentation	
-Interesting observation: segregated free lists (next lecture) approximate a best fit placement policy without having to search entire free list
+#### General Allocator Design
 
-#### Splitting policy:
+![image](../images/Chapter%209%20Virtual%20Memory/Figure%209.42%20Invariant%20form%20of%20the%20implicit%20free%20list.png)
+
+The invariant form of an implicit free list
+
+- The first word
+  is an unused padding word aligned to a double-word boundary.
+- prologue block
+  - The padding is followed by a special prologue block, which is an 8-byte allocated block consisting of only a header and a footer.
+  - The prologue block is created during initialization and is never freed.
+- regular blocks
+  - Following the prologue block are zero or more regular blocks that are created by calls to malloc or free.
+- epilogue block
+  - The heap always ends with a special epilogue block, which is a zero-size allocated block that consists of only a header.
+  - The prologue and epilogue blocks are tricks that eliminate the edge conditions during coalescing.
+- heap_listp
+  - The allocator uses a single private (static) global variable (heap_listp) that always points to the prologue block.
+    (As a minor optimization, we could make it point to the next block instead of the prologue block.)
+
+#### Basic Constants and Macros for Manipulating the Free List
+
+```C
+// code/vm/malloc/mm.c
+/* Basic constants and macros */
+#define WSIZE 4 /* Word and header/footer size (bytes) */
+#define DSIZE 8 /* Double word size (bytes) */
+#define CHUNKSIZE (1<<12) /* Extend heap by this amount (bytes) */
+
+#define MAX(x, y) ((x) > (y)? (x) : (y))
+
+/* Pack a size and allocated bit into a word
+The PACK macro (line 9) combines a size and an allocate bit and returns a value that can be stored in a header or footer.
+*/
+#define PACK(size, alloc) ((size) | (alloc))
+
+
+
+ /* Read and write a word at address p
+ The GET macro (line 12) reads and returns the word referenced by argument p.
+ The casting here is crucial. The argument p is typically a (void *) pointer, which cannot be dereferenced directly.
+
+ Similarly, the PUT macro (line 13) stores val in the word pointed at by argument p.
+
+ */
+ #define GET(p) (*(unsigned int *)(p))
+ #define PUT(p, val) (*(unsigned int *)(p) = (val))
+
+ /* Read the size and allocated fields from address p
+ The GET_SIZE and GET_ALLOC macros (lines 16–17) return the size and allocated bit, respectively, from a header or footer at address p.
+ */
+ #define GET_SIZE(p) (GET(p) & ~0x7)
+ #define GET_ALLOC(p) (GET(p) & 0x1)
+
+
+ /* Given block ptr bp, compute address of its header and footer
+ The remaining macros operate on block pointers (denoted bp) that point to the first payload byte.
+ Given a block pointer bp, the HDRP and FTRP macros (lines 20–21) return pointers to the block header and footer, respectively. The NEXT_BLKP and PREV_BLKP macros (lines 24–25) return the block pointers of the next and previous blocks, respectively.
+
+ */
+ #define HDRP(bp) ((char *)(bp) - WSIZE)
+ #define FTRP(bp) ((char *)(bp) + GET_SIZE(HDRP(bp)) - DSIZE)
+
+ /* Given block ptr bp, compute address of next and previous blocks */
+ #define NEXT_BLKP(bp) ((char *)(bp) + GET_SIZE(((char *)(bp) - WSIZE)))
+ #define PREV_BLKP(bp) ((char *)(bp) - GET_SIZE(((char *)(bp) - DSIZE)))
+
+```
+
+#### Creating the Initial Free List
+
+Before calling mm_malloc or mm_free, the application must initialize the heap by
+calling the mm_init function (Figure 9.44).
+
+```C
+/* // code/vm/malloc/mm.c
+The mm_init function gets four words from the memory system and initializes them to create the empty free list (lines 4–10).
+It then calls the extend_heap function (Figure 9.45), which extends the heap by CHUNKSIZE bytes and creates the initial free block.At this point, the allocator is initialized and ready to accept allocate and free requests from the application.
+*/
+int mm_init(void)
+{
+/* Create the initial empty heap */
+if ((heap_listp = mem_sbrk(4*WSIZE)) == (void *)-1)
+  return -1;
+PUT(heap_listp, 0); /* Alignment padding */
+PUT(heap_listp + (1*WSIZE), PACK(DSIZE, 1)); /* Prologue header */
+PUT(heap_listp + (2*WSIZE), PACK(DSIZE, 1)); /* Prologue footer */
+PUT(heap_listp + (3*WSIZE), PACK(0, 1)); /* Epilogue header */
+heap_listp += (2*WSIZE);
+
+/* Extend the empty heap with a free block of CHUNKSIZE bytes */
+if (extend_heap(CHUNKSIZE/WSIZE) == NULL)
+  return -1;
+return 0;
+}
+
+
+
+
+/*
+The extend_heap function is invoked in two different circumstances:
+(1) when the heap is initialized and
+(2) when mm_malloc is unable to find a suitable fit.
+To maintain alignment, extend_heap rounds up the requested size to the nearest multiple of 2 words (8 bytes) and then requests the additional heap space from the memory system (lines 7–9).
+
+The remainder of the extend_heap function (lines 12–17) is somewhat subtle.
+The heap begins on a double-word aligned boundary, and every call to extend_heap returns a block whose size is an integral number of double words. Thus, every call to mem_sbrk returns a double-word aligned chunk of memory immediately following the header of the epilogue block. This header becomes the header of the new free block (line 12), and the last word of the chunk becomes the new epilogue block header (line 14).
+Finally, in the likely case that the previous heap was terminated by a free block, we call the coalesce function to merge the two free blocks and return the block pointer of the merged blocks (line 17).
+*/
+static void *extend_heap(size_t words)
+{
+char *bp;
+size_t size;
+
+/* Allocate an even number of words to maintain alignment */
+size = (words % 2) ? (words+1) * WSIZE : words * WSIZE;
+if ((long)(bp = mem_sbrk(size)) == -1)
+return NULL;
+
+/* Initialize free block header/footer and the epilogue header */
+PUT(HDRP(bp), PACK(size, 0)); /* Free block header */
+PUT(FTRP(bp), PACK(size, 0)); /* Free block footer */
+PUT(HDRP(NEXT_BLKP(bp)), PACK(0, 1)); /* New epilogue header */
+/* Coalesce if the previous block was free */
+return coalesce(bp);
+}
+
+```
+
+#### Freeing and Coalescing Blocks
+
+An application frees a previously allocated block by calling the mm_free function (Figure 9.46), which frees the requested block (bp) and then merges adjacent free blocks using the boundary-tags coalescing technique described in Section 9.9.11.
+The code in the coalesce helper function is a straightforward implementation of the four cases outlined in Figure 9.40. There is one somewhat subtle aspect. The free list format we have chosen—with its prologue and epilogue blocks that are always marked as allocated—allows us to ignore the potentially troublesome edge conditions where the requested block bp is at the beginning or end of the heap.
+Without these special blocks, the code would be messier, more error prone, and slower because we would have to check for these rare edge conditions on each and every free request.
+
+```C
+// code/vm/malloc/mm.c
+void mm_free(void *bp)
+{
+  size_t size = GET_SIZE(HDRP(bp));
+
+  PUT(HDRP(bp), PACK(size, 0));
+  PUT(FTRP(bp), PACK(size, 0));
+  coalesce(bp);
+}
+
+static void *coalesce(void *bp)
+{
+  size_t prev_alloc = GET_ALLOC(FTRP(PREV_BLKP(bp)));
+  size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
+  size_t size = GET_SIZE(HDRP(bp));
+  if (prev_alloc && next_alloc) { /* Case 1 */
+    return bp;
+}
+else if (prev_alloc && !next_alloc) { /* Case 2 */
+  size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
+  PUT(HDRP(bp), PACK(size, 0));
+  PUT(FTRP(bp), PACK(size,0));
+}
+else if (!prev_alloc && next_alloc) { /* Case 3 */
+  size += GET_SIZE(HDRP(PREV_BLKP(bp)));
+  PUT(FTRP(bp), PACK(size, 0));
+  PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
+  bp = PREV_BLKP(bp);
+}
+else { /* Case 4 */
+  size += GET_SIZE(HDRP(PREV_BLKP(bp))) +
+  GET_SIZE(FTRP(NEXT_BLKP(bp)));
+  PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
+  PUT(FTRP(NEXT_BLKP(bp)), PACK(size, 0));
+  bp = PREV_BLKP(bp);
+}
+return bp;
+}
+// Figure 9.46 mm_free frees a block and uses boundary-tag coalescing to merge it with any adjacent free blocks in constant time.
+
+```
+
+#### Allocating Blocks
+
+An application requests a block of size bytes of memory by calling the mm_malloc function (Figure 9.47). 
+After checking for spurious requests, the allocator must adjust the requested block size to allow room for the header and the footer, and to satisfy the double-word alignment requirement. 
+
+Lines 12–13 enforce the minimum block size of 16 bytes: 8 bytes to satisfy the alignment requirement and 8 more bytes for the overhead of the header and footer. 
+For requests over 8 bytes (line 15), the general rule is to add in the overhead bytes and then round up to the nearest
+multiple of 8. 
+Once the allocator has adjusted the requested size, it searches the free list for a suitable free block (line 18). If there is a fit, then the allocator places the requested block and optionally splits the excess (line 19) and then returns the address of the
+newly allocated block.
+If the allocator cannot find a fit, it extends the heap with a new free block (lines 24–26), places the requested block in the new free block, optionally splitting the block (line 27), and then returns a pointer to the newly allocated block.
+
+```C
+// code/vm/malloc/mm.c
+// Figure 9.47 mm_malloc allocates a block from the free list.
+void *mm_malloc(size_t size)
+{
+size_t asize; /* Adjusted block size */
+size_t extendsize; /* Amount to extend heap if no fit */
+char *bp;
+
+/* Ignore spurious requests */
+if (size == 0)
+return NULL;
+
+/* Adjust block size to include overhead and alignment reqs. */
+if (size <= DSIZE)
+  asize = 2*DSIZE;
+else
+  asize = DSIZE * ((size + (DSIZE) + (DSIZE-1)) / DSIZE);
+
+/* Search the free list for a fit */
+if ((bp = find_fit(asize)) != NULL) {
+  place(bp, asize);
+return bp;
+}
+/* No fit found. Get more memory and place the block */
+extendsize = MAX(asize,CHUNKSIZE);
+if ((bp = extend_heap(extendsize/WSIZE)) == NULL)
+  return NULL;
+place(bp, asize);
+return bp;
+}
+
+
+```
+
+#### Summary of Key Allocator Policies
+
+- Placement policy:
+
+  - First-fit, next-fit, best-fit, etc.
+  - Trades off lower throughput for less fragmentation
+  - Interesting observation: segregated free lists (next lecture) approximate a best fit placement policy without having to search entire free list
+
+- Splitting policy:
+
 When do we go ahead and split free blocks?
 How much internal fragmentation are we willing to tolerate?
 
-#### Coalescing policy:
-Immediate coalescing: coalesce each time free is called 
+- Coalescing policy:
+
+Immediate coalescing: coalesce each time free is called
 Deferred coalescing: try to improve performance of free by deferring coalescing until needed. Examples:
-- Coalesce as you scan the free list for malloc
-- Coalesce when the amount of external fragmentation reaches some threshold
+
+  - Coalesce as you scan the free list for malloc
+  - Coalesce when the amount of external fragmentation reaches some threshold
 
 
 ### 9.9.13 Explicit Free Lists
+
 - Maintain list(s) of free blocks, not all blocks
 - The “next” free block could be anywhere, So we need to store forward/back pointers, not - just sizes
 - Still need boundary tags for coalescing
 - Luckily we track only free blocks, so we can use - payload area
 
-
 ![image](../images/Chapter%209%20Virtual%20Memory/Figure%209.48%20Format%20of%20heap%20blocks%20that%20use%20doubly%20linked%20free%20lists.png)
-
 
 #### Allocating From Explicit Free Lists
 
 #### Freeing With Explicit Free Lists
+
 Insertion policy: Where in the free list do you put a newly freed block?
+
 - LIFO (last-in-first-out) policy
-Insert freed block at the beginning of the free list
-Pro: simple and constant time
-Con: studies suggest fragmentation is worse than address ordered
+  Insert freed block at the beginning of the free list
+  Pro: simple and constant time
+  Con: studies suggest fragmentation is worse than address ordered
 
 - Address-ordered policy
-Insert freed blocks so that free list blocks are always in address order:
-	         addr(prev) < addr(curr) < addr(next)
- Con: requires search
- Pro: studies suggest fragmentation is lower than LIFO
+  Insert freed blocks so that free list blocks are always in address order:
+  addr(prev) < addr(curr) < addr(next)
+  Con: requires search
+  Pro: studies suggest fragmentation is lower than LIFO
 
 
 
-#### 
 
 ### 9.9.14 Segregated Free Lists
 
 
+
+
+
 ## 9.10 Garbage Collection
 
-- garbage collector: 
-A garbage collector is a dynamic storage allocator that automatically frees allocated blocks that are no longer needed by the program. 
+- garbage collector:
+  A garbage collector is a dynamic storage allocator that automatically frees allocated blocks that are no longer needed by the program.
 - garbage
-Such blocks are known as garbage (hence the term “garbage collector”). 
+  Such blocks are known as garbage (hence the term “garbage collector”).
 - garbage collection
-The process of automatically reclaiming heap storage is known as garbage collection.
+  The process of automatically reclaiming heap storage is known as garbage collection.
 
 ### 9.10.1 Garbage Collector Basics
+
+
+
+
+
+
+
 
 
 ## 9.11 Common Memory-Related Bugs in C Programs
 
 #### C operators
 
-- ->, (), and [] have high precedence, with * and & just below
-- Unary +, -, and * have higher precedence than binary forms
-
+- ->, (), and [] have high precedence, with \* and & just below
+- Unary +, -, and \* have higher precedence than binary forms
 
 ### C Pointer Declarations
 
-|Declaration          |Description|
-|---------------------|-----------|
-|int *p               |p is a point to int |
-|int *p[13]	          |p is an array[13] of pointers to int, each item of array is a pointer to int|
-|int *(p[13])	        |p is an array[13] of pointers to int |
-|int **p	            |p is a pointer to a pointer to an int? |
-|int (*p)[13]		      |p is a pointer to an array[13] of int |
-|int *f()		          |f is a function returning a point to int|
-|int (*f)()		        |f is a pointer to a function returning int|
-|int (*(*f())[13])()	|
-|int (*(*x[3])())[5]  |
+| Declaration         | Description                                                                  |
+| ------------------- | ---------------------------------------------------------------------------- |
+| int \*p             | p is a point to int                                                          |
+| int \*p[13]         | p is an array[13] of pointers to int, each item of array is a pointer to int |
+| int \*(p[13])       | p is an array[13] of pointers to int                                         |
+| int \*\*p           | p is a pointer to a pointer to an int?                                       |
+| int (\*p)[13]       | p is a pointer to an array[13] of int                                        |
+| int \*f()           | f is a function returning a point to int                                     |
+| int (\*f)()         | f is a pointer to a function returning int                                   |
+| int (*(*f())[13])() |
+| int (*(*x[3])())[5] |
 
 ### 9.11.1 Dereferencing Bad Pointers
 
@@ -811,12 +1222,13 @@ scanf(“%d”, val);
 ```
 
 ### 9.11.2 Reading Uninitialized Memory
-While bss memory locations (such as uninitialized global C variables) are always initialized to zeros by the loader, this is not true for heap memory. 
+
+While bss memory locations (such as uninitialized global C variables) are always initialized to zeros by the loader, this is not true for heap memory.
 Assuming that heap data is initialized to zero
- 
+
 ```C
 /* return y = Ax */
-int *matvec(int **A, int *x) { 
+int *matvec(int **A, int *x) {
    int *y = malloc(N*sizeof(int));
    int i, j;
 
@@ -827,12 +1239,12 @@ int *matvec(int **A, int *x) {
 }
 
 ```
+
 A correct implementation would explicitly zero y[i] or use calloc.
 
 ### 9.11.3 Allowing Stack Buffer Overflows
 
 Not checking the max string size
-
 
 ```C
 void bufoverflow()
@@ -841,11 +1253,13 @@ char buf[64];
 gets(buf); /* Here is the stack buffer overflow bug */
 return;
 }
-``` 
+```
+
 ### 9.11.4 Assuming That Pointers and the Objects They Point to Are the Same Size
 
-The intent here is to create an array of n pointers, each of which points to an array of m ints. 
-However, because the programmer has written sizeof(int) instead of sizeof(int *) in line 5,
+The intent here is to create an array of n pointers, each of which points to an array of m ints.
+However, because the programmer has written sizeof(int) instead of sizeof(int \*) in line 5,
+
 ```C
 /* Create an nxm array */
 int **makeArray1(int n, int m)
@@ -862,9 +1276,6 @@ return A;
 
 ### 9.11.5 Making Off-by-One Errors
 
-
-
-
 ### 9.11.6 Referencing a Pointer Instead of the Object It Points To
 
 ```C
@@ -880,7 +1291,6 @@ int *BinheapDelete(int **binheap, int *size) {
 
 ```
 
-
 ### 9.11.7 Misunderstanding Pointer Arithmetic
 
 Pointer arithmetic refers to operations performed on pointers, including:
@@ -890,16 +1300,16 @@ Pointer arithmetic refers to operations performed on pointers, including:
 - Subtracting two pointers (ptr1 - ptr2) to find the number of elements between them.
 
 Pointer arithmetic operates based on the size of the type the pointer points to. When you increment a pointer (ptr++), it moves forward by the size of the type it points to.
-For example, if you have an int *p, then p + 1 actually moves the pointer by sizeof(int) bytes.
+For example, if you have an int \*p, then p + 1 actually moves the pointer by sizeof(int) bytes.
 This allows you to easily iterate over an array without manually multiplying by the size of the element.
 
-
 For example, the intent of the following function is to scan an array of ints and return a pointer to the first occurrence of val:
+
 ```C
 int *search(int *p, int val) {
-   
+
    while (*p && *p != val)
-      p += sizeof(int); 
+      p += sizeof(int);
       // sizeof(int) is the number of bytes an int occupies (typically 4 bytes on most systems).
       // Pointer arithmetic operates on elements, not bytes. p +=4 increments the pointer by 4 elements
       // p +=4   increments the pointer by 4 elements (which is 4 * sizeof(int) bytes)  instead of 1 element.
@@ -911,15 +1321,15 @@ int *search(int *p, int val) {
 ```
 
 ### 9.11.8 Referencing Nonexistent Variables
-Forgetting that local variables disappear when a function returns
 
+Forgetting that local variables disappear when a function returns
 
 ```C
 int *foo () {
    int val;
 
    return &val;
-}  
+}
 
 ```
 
@@ -928,8 +1338,7 @@ int *foo () {
 ### 9.11.10 Introducing Memory Leaks
 
 Failing to Free Blocks (Memory Leaks)
-Slow, long-term killer! 
-
+Slow, long-term killer!
 
 ```C
 foo() {
@@ -943,22 +1352,17 @@ foo() {
 #### Dealing With Memory Bugs
 
 - Debugger: gdb
-Good for finding  bad pointer dereferences
-Hard to detect the other memory bugs
+  Good for finding bad pointer dereferences
+  Hard to detect the other memory bugs
 - Data structure consistency checker
- Runs silently, prints message only on error
-Use as a probe to zero in on error
-- Binary translator:  valgrind 
-Powerful debugging and analysis technique
-Rewrites text section of executable object file
-Checks each individual reference at runtime
-Bad pointers, overwrites, refs outside of allocated block
+  Runs silently, prints message only on error
+  Use as a probe to zero in on error
+- Binary translator: valgrind
+  Powerful debugging and analysis technique
+  Rewrites text section of executable object file
+  Checks each individual reference at runtime
+  Bad pointers, overwrites, refs outside of allocated block
 - glibc malloc contains checking code
-setenv MALLOC_CHECK_ 3 
-
-
+  setenv MALLOC*CHECK* 3
 
 ## 9.12 Summary 911
-
-
-## Solutions to Practice Problems 916

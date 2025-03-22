@@ -1512,4 +1512,18 @@ malloc(15)          payload 15 bytes +header(1 word/4 bytes) ->19 bytes-> 24 byt
 malloc(20)          payload 20 bytes +header(1 word/4 bytes) ->24 bytes-> 24 bytes       24=11000 = 0x18 | 0x1= 0x19
 
 
+
+Practice Problem 9.7 (solution page 919)
+Determine the minimum block size for each of the following combinations of
+alignment requirements and block formats. 
+Assumptions: Implicit free list, zerosize payloads are not allowed, 
+and headers and footers are stored in 4-byte words.
+
+Alignment      Allocated block          Free block          Minimum blocksize (bytes)
+Single word    Header and footer        Header and footer   header: 4 bytes + payload: 1 bytes+ footer:4 bytes=9 bytes ->12 bytes
+Single word    Header, but no footer    Header and footer   header: 4 bytes + payload: 1 bytes                =5 bytes -> 8 bytes
+Double word    Header and footer        Header and footer   header: 4 bytes + payload: 1 bytes+ footer:4 bytes=9 bytes ->16 bytes
+Double word    Header, but no footer    Header and footer   header: 4 bytes + payload: 1 bytes                =5 bytes -> 8 bytes
+
+
 */
