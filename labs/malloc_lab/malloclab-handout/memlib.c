@@ -80,8 +80,27 @@ void mem_reset_brk()
 
 /*
  * mem_sbrk - simple model of the sbrk function. 
- Extends the heap by incr bytes and returns the start address of the new area. 
- In this model, the heap cannot be shrunk.
+Extends the heap by incr bytes and returns the start address of the new area. 
+In this model, the heap cannot be shrunk.
+
+sbrk: Used internally by allocators to grows or shrinks the heap by adding incr to the kernel’s brk pointer.
+Returns: old brk pointer on success, −1 on error and sets errno to ENOMEM.
+
+sbrk 是一个系统调用，用于调整程序的堆（heap）大小。它的主要功能如下：
+
+1. 扩展或收缩堆：通过将内核维护的 brk 指针增加或减少指定的字节数（incr），从而改变堆的大小。
+
+    如果 incr > 0，堆会扩展，分配更多内存。
+    如果 incr < 0，堆会收缩，释放部分内存。
+2. 返回值：
+    成功时，返回调整前的 brk 指针地址（即旧的堆顶地址）。
+    失败时，返回 (void *)-1 并设置 errno 为 ENOMEM（通常表示内存不足或非法操作）。
+3. 限制：
+在某些实现中（如本代码中的 mem_sbrk 模拟），堆只能扩展，不能收缩（即 incr < 0 不被支持）。
+
+4. 注意
+    sbrk 是低级内存管理函数，现代程序通常使用更高级的内存分配器（如 malloc 和 free）。
+    直接使用 sbrk 可能导致内存碎片化或与其他内存管理函数冲突，因此需要谨慎使用。
  */
 void *mem_sbrk(int incr)
 {

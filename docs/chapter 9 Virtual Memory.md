@@ -544,8 +544,7 @@ realloc: Changes the size of a previously allocated block.
 void free(void *ptr);
 Returns: nothing
 
-// The ptr argument must point to the beginning of an allocated block that was obtained from malloc, calloc, or realloc. If not, then the behavior of free  is undefined.
-
+// The ptr argument must point to the beginning of an allocated block that was obtained from malloc, calloc, or realloc. If not, then the behavior of free is undefined.
 
 // sbrk: Used internally by allocators to grows or shrinks the heap by adding incr to the kernel’s brk pointer.
 // Returns: old brk pointer on success, −1 on error and sets errno to ENOMEM.
@@ -679,19 +678,16 @@ Standard method
 
 ##### Data structure of Heap Block
 
-Any practical allocator needs some data structure that allows it to distinguish
-block boundaries and to distinguish between allocated and free blocks. Most
-allocators embed this information in the blocks themselves.
+Any practical allocator needs some data structure that allows it to distinguish block boundaries and to distinguish between allocated and free blocks. Most allocators embed this information in the blocks themselves.
 
 #### Implicit Free Lists
 
 One simple approach is shown in Figure 9.35.
 
 - header
-
   - In this case, a block consists of a one-word header
   - The header encodes the block size (including the header and any padding)  
-    If we impose a double-word alignment constraint, then the block size is always a multiple of 8 and the 3 low-order bits of the block size are always zero. Thus, we need to store only the 29 high-order bits of the block size, freeing the remaining 3 bits to encode other information.
+    If we impose a ***double-word alignment*** constraint, then the block size is always a multiple of 8 and the 3 low-order bits of the block size are always zero. Thus, we need to store only the 29 high-order bits of the block size, freeing the remaining 3 bits to encode other information.
   - whether the block is allocated or free  
     In this case, we are using the least significant of these bits (the allocated bit) to indicate whether the block is allocated or free
 
@@ -770,7 +766,7 @@ Cons:
 
 - Will typically run slower than first fit
 
-### 9.9.8 Splitting Free Blocks(Allocating in Free Block)
+### 9.9.8 Splitting Free Blocks: Splitting policy
 
 Once the allocator has located a free block that fits, it must make another policy decision about how much of the free block to allocate.
 
@@ -801,7 +797,7 @@ However, if this does not yield a sufficiently large block, or if the free block
 - inserts the block into the free list
 - then places the requested block in this new free block.
 
-### 9.9.10 Coalescing Free Blocks
+### 9.9.10 Coalescing Free Blocks: Coalescing policy
 
 Join (coalesce) with next/previous blocks, if they are free
 Coalescing with next block
@@ -917,7 +913,6 @@ The invariant form of an implicit free list
 #define WSIZE 4 /* Word and header/footer size (bytes) */
 #define DSIZE 8 /* Double word size (bytes) */
 #define CHUNKSIZE (1<<12) /* Extend heap by this amount (bytes) */
-
 #define MAX(x, y) ((x) > (y)? (x) : (y))
 
 /* Pack a size and allocated bit into a word
@@ -925,14 +920,10 @@ The PACK macro (line 9) combines a size and an allocate bit and returns a value 
 */
 #define PACK(size, alloc) ((size) | (alloc))
 
-
-
  /* Read and write a word at address p
  The GET macro (line 12) reads and returns the word referenced by argument p.
  The casting here is crucial. The argument p is typically a (void *) pointer, which cannot be dereferenced directly.
-
  Similarly, the PUT macro (line 13) stores val in the word pointed at by argument p.
-
  */
  #define GET(p) (*(unsigned int *)(p))
  #define PUT(p, val) (*(unsigned int *)(p) = (val))
@@ -943,11 +934,9 @@ The PACK macro (line 9) combines a size and an allocate bit and returns a value 
  #define GET_SIZE(p) (GET(p) & ~0x7)
  #define GET_ALLOC(p) (GET(p) & 0x1)
 
-
  /* Given block ptr bp, compute address of its header and footer
  The remaining macros operate on block pointers (denoted bp) that point to the first payload byte.
  Given a block pointer bp, the HDRP and FTRP macros (lines 20–21) return pointers to the block header and footer, respectively. The NEXT_BLKP and PREV_BLKP macros (lines 24–25) return the block pointers of the next and previous blocks, respectively.
-
  */
  #define HDRP(bp) ((char *)(bp) - WSIZE)
  #define FTRP(bp) ((char *)(bp) + GET_SIZE(HDRP(bp)) - DSIZE)
@@ -955,7 +944,6 @@ The PACK macro (line 9) combines a size and an allocate bit and returns a value 
  /* Given block ptr bp, compute address of next and previous blocks */
  #define NEXT_BLKP(bp) ((char *)(bp) + GET_SIZE(((char *)(bp) - WSIZE)))
  #define PREV_BLKP(bp) ((char *)(bp) - GET_SIZE(((char *)(bp) - DSIZE)))
-
 ```
 
 #### Creating the Initial Free List
@@ -970,26 +958,22 @@ It then calls the extend_heap function (Figure 9.45), which extends the heap by 
 */
 int mm_init(void)
 {
-/* Create the initial empty heap */
-if ((heap_listp = mem_sbrk(4*WSIZE)) == (void *)-1)
-  return -1;
-PUT(heap_listp, 0); /* Alignment padding */
-PUT(heap_listp + (1*WSIZE), PACK(DSIZE, 1)); /* Prologue header */
-PUT(heap_listp + (2*WSIZE), PACK(DSIZE, 1)); /* Prologue footer */
-PUT(heap_listp + (3*WSIZE), PACK(0, 1)); /* Epilogue header */
-heap_listp += (2*WSIZE);
+    /* Create the initial empty heap */
+    if ((heap_listp = mem_sbrk(4 * WSIZE)) == (void *)-1)
+        return -1;
+    PUT(heap_listp, 0);                            /* Alignment padding */
+    PUT(heap_listp + (1 * WSIZE), PACK(DSIZE, 1)); /* Prologue header */
+    PUT(heap_listp + (2 * WSIZE), PACK(DSIZE, 1)); /* Prologue footer */
+    PUT(heap_listp + (3 * WSIZE), PACK(0, 1));     /* Epilogue header */
+    heap_listp += (2 * WSIZE);
 
-/* Extend the empty heap with a free block of CHUNKSIZE bytes */
-if (extend_heap(CHUNKSIZE/WSIZE) == NULL)
-  return -1;
-return 0;
+    /* Extend the empty heap with a free block of CHUNKSIZE bytes */
+    if (extend_heap(CHUNKSIZE / WSIZE) == NULL)
+        return -1;
+    return 0;
 }
 
-
-
-
-/*
-The extend_heap function is invoked in two different circumstances:
+/* The extend_heap function is invoked in two different circumstances:
 (1) when the heap is initialized and
 (2) when mm_malloc is unable to find a suitable fit.
 To maintain alignment, extend_heap rounds up the requested size to the nearest multiple of 2 words (8 bytes) and then requests the additional heap space from the memory system (lines 7–9).
@@ -1000,20 +984,53 @@ Finally, in the likely case that the previous heap was terminated by a free bloc
 */
 static void *extend_heap(size_t words)
 {
-char *bp;
-size_t size;
+    char *bp;
+    size_t size;
 
-/* Allocate an even number of words to maintain alignment */
-size = (words % 2) ? (words+1) * WSIZE : words * WSIZE;
-if ((long)(bp = mem_sbrk(size)) == -1)
-return NULL;
+    /* Allocate an even number of words to maintain alignment */
+    size = (words % 2) ? (words + 1) * WSIZE : words * WSIZE;
+    if ((long)(bp = mem_sbrk(size)) == -1)
+        return NULL;
 
-/* Initialize free block header/footer and the epilogue header */
-PUT(HDRP(bp), PACK(size, 0)); /* Free block header */
-PUT(FTRP(bp), PACK(size, 0)); /* Free block footer */
-PUT(HDRP(NEXT_BLKP(bp)), PACK(0, 1)); /* New epilogue header */
-/* Coalesce if the previous block was free */
-return coalesce(bp);
+    /* Initialize free block header/footer and the epilogue header */
+    PUT(HDRP(bp), PACK(size, 0));         /* Free block header */
+    PUT(FTRP(bp), PACK(size, 0));         /* Free block footer */
+    PUT(HDRP(NEXT_BLKP(bp)), PACK(0, 1)); /* New epilogue header */
+    /* Coalesce if the previous block was free */
+    return coalesce(bp);
+}
+
+static void *coalesce(void *bp)
+{
+    size_t prev_alloc = GET_ALLOC(FTRP(PREV_BLKP(bp)));
+    size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
+    size_t size = GET_SIZE(HDRP(bp));
+    if (prev_alloc && next_alloc)
+    { /* Case 1 */
+        return bp;
+    }
+    else if (prev_alloc && !next_alloc)
+    { /* Case 2 */
+        size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
+        PUT(HDRP(bp), PACK(size, 0));
+        PUT(FTRP(bp), PACK(size, 0));
+    }
+    else if (!prev_alloc && next_alloc)
+    { /* Case 3 */
+        size += GET_SIZE(HDRP(PREV_BLKP(bp)));
+        PUT(FTRP(bp), PACK(size, 0));
+        PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
+        bp = PREV_BLKP(bp);
+    }
+    else
+    { /* Case 4 */
+        size += GET_SIZE(HDRP(PREV_BLKP(bp))) +
+                GET_SIZE(FTRP(NEXT_BLKP(bp)));
+        PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
+        PUT(FTRP(NEXT_BLKP(bp)), PACK(size, 0));
+        bp = PREV_BLKP(bp);
+    }
+    return bp;
 }
 
 ```
@@ -1035,34 +1052,6 @@ void mm_free(void *bp)
   coalesce(bp);
 }
 
-static void *coalesce(void *bp)
-{
-  size_t prev_alloc = GET_ALLOC(FTRP(PREV_BLKP(bp)));
-  size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
-  size_t size = GET_SIZE(HDRP(bp));
-  if (prev_alloc && next_alloc) { /* Case 1 */
-    return bp;
-}
-else if (prev_alloc && !next_alloc) { /* Case 2 */
-  size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
-  PUT(HDRP(bp), PACK(size, 0));
-  PUT(FTRP(bp), PACK(size,0));
-}
-else if (!prev_alloc && next_alloc) { /* Case 3 */
-  size += GET_SIZE(HDRP(PREV_BLKP(bp)));
-  PUT(FTRP(bp), PACK(size, 0));
-  PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
-  bp = PREV_BLKP(bp);
-}
-else { /* Case 4 */
-  size += GET_SIZE(HDRP(PREV_BLKP(bp))) +
-  GET_SIZE(FTRP(NEXT_BLKP(bp)));
-  PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
-  PUT(FTRP(NEXT_BLKP(bp)), PACK(size, 0));
-  bp = PREV_BLKP(bp);
-}
-return bp;
-}
 // Figure 9.46 mm_free frees a block and uses boundary-tag coalescing to merge it with any adjacent free blocks in constant time.
 
 ```
@@ -1072,7 +1061,10 @@ return bp;
 An application requests a block of size bytes of memory by calling the mm_malloc function (Figure 9.47). 
 After checking for spurious requests, the allocator must adjust the requested block size to allow room for the header and the footer, and to satisfy the double-word alignment requirement. 
 
-Lines 12–13 enforce the minimum block size of 16 bytes: 8 bytes to satisfy the alignment requirement and 8 more bytes for the overhead of the header and footer. 
+Lines 12–13 enforce the minimum block size of 16 bytes:   
+- 8 bytes to satisfy the alignment requirement and
+- 8 more bytes for the overhead of the header and footer.  
+
 For requests over 8 bytes (line 15), the general rule is to add in the overhead bytes and then round up to the nearest
 multiple of 8. 
 Once the allocator has adjusted the requested size, it searches the free list for a suitable free block (line 18). If there is a fit, then the allocator places the requested block and optionally splits the excess (line 19) and then returns the address of the
@@ -1084,34 +1076,33 @@ If the allocator cannot find a fit, it extends the heap with a new free block (l
 // Figure 9.47 mm_malloc allocates a block from the free list.
 void *mm_malloc(size_t size)
 {
-size_t asize; /* Adjusted block size */
-size_t extendsize; /* Amount to extend heap if no fit */
-char *bp;
+    size_t asize;      /* Adjusted block size */
+    size_t extendsize; /* Amount to extend heap if no fit */
+    char *bp;
 
-/* Ignore spurious requests */
-if (size == 0)
-return NULL;
+    /* Ignore spurious requests */
+    if (size == 0)
+        return NULL;
 
-/* Adjust block size to include overhead and alignment reqs. */
-if (size <= DSIZE)
-  asize = 2*DSIZE;
-else
-  asize = DSIZE * ((size + (DSIZE) + (DSIZE-1)) / DSIZE);
+    /* Adjust block size to include overhead and alignment reqs. */
+    if (size <= DSIZE)
+        asize = 2 * DSIZE;
+    else
+        asize = DSIZE * ((size + (DSIZE) + (DSIZE - 1)) / DSIZE);
 
-/* Search the free list for a fit */
-if ((bp = find_fit(asize)) != NULL) {
-  place(bp, asize);
-return bp;
+    /* Search the free list for a fit */
+    if ((bp = find_fit(asize)) != NULL)
+    {
+        place(bp, asize);
+        return bp;
+    }
+    /* No fit found. Get more memory and place the block */
+    extendsize = MAX(asize, CHUNKSIZE);
+    if ((bp = extend_heap(extendsize / WSIZE)) == NULL)
+        return NULL;
+    place(bp, asize);
+    return bp;
 }
-/* No fit found. Get more memory and place the block */
-extendsize = MAX(asize,CHUNKSIZE);
-if ((bp = extend_heap(extendsize/WSIZE)) == NULL)
-  return NULL;
-place(bp, asize);
-return bp;
-}
-
-
 ```
 
 #### Summary of Key Allocator Policies
