@@ -2,6 +2,69 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Debug malloc_lab in remote WSL",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/labs/malloc_lab/malloclab-handout/mdriver", // for Ubuntu
+      "args": ["-V", "-f", "./traces/amptjp-bal.rep"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/labs/malloc_lab/malloclab-handout/",
+      "environment": [],
+      "externalConsole": false, // This enables an external terminal
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb", // The path to GDB in WSL
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": false
+        }
+      ],
+      "preLaunchTask": "Build with make mdriver", //Task to compile the code before running the debugger
+      // "sourceFileMap": {
+      //   "/mnt/d": "D:", // Mapping WSL filesystem to Windows
+      //   "/mnt/e": "E:", // Mapping WSL filesystem to Windows
+      //   // maps the WSL paths (/home/username/csapp/) to the Windows paths (E:\projects\csapp\)
+      //   "/home/michael/csapp": "E:\\projects\\csapp" // Mapping WSL home to your project
+      // },
+      "targetArchitecture": "x86_64",
+      "logging": { "engineLogging": true }
+    },
+
+    {
+      "name": "C/C++: gcc build and debug active file with args",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${fileDirname}/${fileBasenameNoExtension}",
+      // /mnt/e/projects/csapp/code_examples/16-io/ffifles1 does not exists
+      "args": ["abcde.txt"],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "C/C++: gcc build active file",
+      // remote WSL: sourceFileMap setting tells GDB how to map source files from your local environment (Windows) to the remote environment (WSL).
+      "sourceFileMap": {
+        "/mnt/d": "D:", // Mapping WSL filesystem to Windows
+        "/mnt/e": "E:", // Mapping WSL filesystem to Windows
+        // maps the WSL paths (/home/username/csapp/) to the Windows paths (E:\projects\csapp\)
+        "/home/michael/csapp": "E:\\projects\\csapp" // Mapping WSL home to your project
+      },
+
+      "targetArchitecture": "x86_64",
+      "logging": { "engineLogging": true }
+    },
+
+    {
       "name": "Debug tsh in WSL or Ubutu",
       "type": "cppdbg",
       "request": "launch",
@@ -76,201 +139,167 @@
 
       "targetArchitecture": "x86_64",
       "logging": { "engineLogging": true }
-    },
-
-    {
-      "name": "C/C++: gcc build and debug active file with args",
-      "type": "cppdbg",
-      "request": "launch",
-      "program": "${fileDirname}/${fileBasenameNoExtension}",
-      // /mnt/e/projects/csapp/code_examples/16-io/ffifles1 does not exists
-      "args": ["abcde.txt"],
-      "stopAtEntry": false,
-      "cwd": "${fileDirname}",
-      "environment": [],
-      "externalConsole": false,
-      "MIMode": "gdb",
-      "miDebuggerPath": "/usr/bin/gdb",
-      "setupCommands": [
-        {
-          "description": "Enable pretty-printing for gdb",
-          "text": "-enable-pretty-printing",
-          "ignoreFailures": true
-        }
-      ],
-      "preLaunchTask": "C/C++: gcc build active file",
-      // remote WSL: sourceFileMap setting tells GDB how to map source files from your local environment (Windows) to the remote environment (WSL).
-      "sourceFileMap": {
-        "/mnt/d": "D:", // Mapping WSL filesystem to Windows
-        "/mnt/e": "E:", // Mapping WSL filesystem to Windows
-        // maps the WSL paths (/home/username/csapp/) to the Windows paths (E:\projects\csapp\)
-        "/home/michael/csapp": "E:\\projects\\csapp" // Mapping WSL home to your project
-      },
-
-      "targetArchitecture": "x86_64",
-      "logging": { "engineLogging": true }
     }
-
-    // {
-    //   "name": "Debug shellex in WSL",
-    //   "type": "cppdbg",
-    //   "request": "launch",
-    //   //  Update with the path to your compiled binary,Translate the Windows path to a WSL path
-    //   // Use /mnt to access the corresponding drives in WSL (/mnt/c for the C: drive, /mnt/d for the D: drive, etc.).
-    //   "program": "/mnt/d/projects/csapp/code_examples/15-ecf-signals/shellex",
-    //   "args": [],
-    //   "stopAtEntry": false,
-    //   // Set working directory to where the executable will run
-    //   // cwd (current working directory) is used to specify where the program will be executed or run from on your local machine.
-    //   // This is relevant when you’re debugging locally or when you want to ensure that file paths and the execution context align with your local project.
-    //   // Update both cwd and pipeCwd to the correct WSL paths.
-    //   "cwd": "/mnt/d/projects/csapp/code_examples/15-ecf-signals/",
-    //   "environment": [],
-    //   //  set the "externalConsole" option to true. This will open a separate terminal window where you can interact with the program during debugging, allowing you to input data.
-    //   "externalConsole": true,
-    //   "avoidWindowsConsoleRedirection": true,
-    //   "MIMode": "gdb",
-    //   "miDebuggerPath": "/usr/bin/gdb", // The path to GDB in WSL
-    //   "setupCommands": [
-    //     {
-    //       "description": "Enable pretty-printing for gdb",
-    //       "text": "-enable-pretty-printing",
-    //       "ignoreFailures": true
-    //     }
-    //   ],
-    //   "preLaunchTask": "Build with gcc shellex", //Task to compile the code before running the debugger
-    //   // pipeTransport: This is necessary to run GDB in the WSL environment.
-    //   // It uses the WSL utility (wsl) to run the debugger from within the Linux subsystem.
-    //   //  launch GDB from WSL via the pipeTransport field, and it will map the filesystem between WSL and Windows using sourceFileMap
-    //   "pipeTransport": {
-    //       //pipeCwd specifies the working directory for the program that is running inside the remote environment (such as WSL.Docker).
-    //       // Essentially, pipeCwd defines the current working directory where the debugger will start its process on the remote machine or environment.
-    //       // It serves as the equivalent of setting the working directory when running programs in a terminal.
-    //       "pipeCwd":"",
-    //       "pipeProgram": "bash.exe",
-    //       "pipeArgs": ["-c"],
-    //       // "pipeProgram": "wsl",
-    //       // "pipeArgs": [],
-    //       "debuggerPath": "/usr/bin/gdb"
-    //   },
-    //     "sourceFileMap": {
-    //         // "/mnt/e": "E:\\", // Mapping WSL filesystem to Windows
-    //         "/home": "${workspaceFolder}" // Mapping WSL home to your project
-    //     },
-
-    //      "targetArchitecture": "x86_64",
-    //      "logging": { "engineLogging": true },
-
-    //   },
-
-    // {
-    //     "name": "Debug csim in WSL",
-    //     "type": "cppdbg",
-    //     "request": "launch",
-    //     //  Update with the path to your compiled binary,Translate the Windows path to a WSL path
-    //     // Use /mnt to access the corresponding drives in WSL (/mnt/c for the C: drive, /mnt/d for the D: drive, etc.).
-    //     "program": "/mnt/d/projects/csapp/labs/cachelab/cachelab-handout/csim",
-    //     "args": ["-s", "2" ,"-E", "2", "-b", "3", "-t", "traces/trans.trace"],
-    //     "stopAtEntry": false,
-    //     // Set working directory to where the executable will run
-    //     // cwd (current working directory) is used to specify where the program will be executed or run from on your local machine.
-    //     // This is relevant when you’re debugging locally or when you want to ensure that file paths and the execution context align with your local project.
-    //     // Update both cwd and pipeCwd to the correct WSL paths.
-    //     "cwd": "/mnt/d/projects/csapp/labs/cachelab/cachelab-handout",
-    //     "environment": [],
-    //     "externalConsole": true, // This enables an external terminal
-    //     "MIMode": "gdb",
-    //     "miDebuggerPath": "/usr/bin/gdb", // The path to GDB in WSL
-    //     "setupCommands": [
-    //       {
-    //         "description": "Enable pretty-printing for gdb",
-    //         "text": "-enable-pretty-printing",
-    //         "ignoreFailures": true
-    //       }
-    //     ],
-    //     "preLaunchTask": "Build with make csim", //Task to compile the code before running the debugger
-    //     // pipeTransport: This is necessary to run GDB in the WSL environment.
-    //     // It uses the WSL utility (wsl) to run the debugger from within the Linux subsystem.
-    //     //  launch GDB from WSL via the pipeTransport field, and it will map the filesystem between WSL and Windows using sourceFileMap
-    //     "pipeTransport": {
-    //         //pipeCwd specifies the working directory for the program that is running inside the remote environment (such as WSL.Docker).
-    //         // Essentially, pipeCwd defines the current working directory where the debugger will start its process on the remote machine or environment.
-    //         // It serves as the equivalent of setting the working directory when running programs in a terminal.
-    //         "pipeCwd":"",
-    //         "pipeProgram": "bash.exe",
-    //         "pipeArgs": ["-c"],
-    //         "debuggerPath": "/usr/bin/gdb"
-    //     },
-    //     "sourceFileMap": {
-    //         "/mnt/d": "D:\\", // Mapping WSL filesystem to Windows
-    //         "/home": "${workspaceFolder}" // Mapping WSL home to your project
-    //     },
-
-    //      "targetArchitecture": "x86_64",
-    //      "logging": { "engineLogging": true },
-
-    //   },
-
-    // {
-    //     "name": "msys64 C/C++: gdb debug active file",
-    //     "type": "cppdbg",
-    //     "request": "launch",
-    //     "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
-    //     "args": [],
-    //     "stopAtEntry": false,
-    //     "cwd": "${fileDirname}",
-    //     "environment": [],
-    //     "externalConsole": false,
-    //     "MIMode": "gdb",
-    //     "miDebuggerPath": "C:\\msys64\\ucrt64\\bin\\gdb.exe",
-    //     "setupCommands": [
-    //         {
-    //             "description": "Enable pretty-printing for gdb",
-    //             "text": "-enable-pretty-printing",
-    //             "ignoreFailures": true
-    //         },
-    //         {
-    //             "description": "Set Disassembly Flavor to Intel",
-    //             "text": "-gdb-set disassembly-flavor intel",
-    //             "ignoreFailures": true
-    //         }
-    //     ],
-    //     // debug the main.c, it will run prelaunch task:  "demo gcc build" to compile the source files
-    //     // "preLaunchTask": "demo gcc build"
-    //     // "preLaunchTask": "demo build with Makefile"
-    //      "preLaunchTask": "C/C++: gcc.exe build active file"
-    //     //  "preLaunchTask": "build with Makefile"
-    // }
-
-    // {
-    //   "name": "Debug tsh in Ubuntu",
-    //   "type": "cppdbg",
-    //   "request": "launch",
-    //   //  Update with the path to your compiled binary,Translate the Windows path to a WSL path
-    //   // Use /mnt to access the corresponding drives in WSL (/mnt/c for the C: drive, /mnt/d for the D: drive, etc.).
-    //   "program": "${workspaceFolder}/labs/shellalb/shlab-handout/tsh",
-    //   "args": ["-v"],
-    //   "stopAtEntry": false,
-    //   // Set working directory to where the executable will run
-    //   // cwd (current working directory) is used to specify where the program will be executed or run from on your local machine.
-    //   // This is relevant when you’re debugging locally or when you want to ensure that file paths and the execution context align with your local project.
-    //   // Update both cwd and pipeCwd to the correct WSL paths.
-    //   "cwd": "${workspaceFolder}/labs/shellalb/shlab-handout/",
-    //   "environment": [],
-    //   "externalConsole": false, // This enables an external terminal
-    //   "MIMode": "gdb",
-    //   "miDebuggerPath": "/usr/bin/gdb", // The path to GDB in WSL
-    //   "setupCommands": [
-    //     {
-    //       "description": "Enable pretty-printing for gdb",
-    //       "text": "-enable-pretty-printing",
-    //       "ignoreFailures": true
-    //     }
-    //   ],
-    //   "preLaunchTask": "Build with make tsh", //Task to compile the code before running the debugger
-    //    "targetArchitecture": "x86_64",
-    //    "logging": { "engineLogging": true },
-
-    // },
   ]
 }
+
+// {
+//   "name": "Debug tsh in Ubuntu",
+//   "type": "cppdbg",
+//   "request": "launch",
+//   //  Update with the path to your compiled binary,Translate the Windows path to a WSL path
+//   // Use /mnt to access the corresponding drives in WSL (/mnt/c for the C: drive, /mnt/d for the D: drive, etc.).
+//   "program": "${workspaceFolder}/labs/shellalb/shlab-handout/tsh",
+//   "args": ["-v"],
+//   "stopAtEntry": false,
+//   // Set working directory to where the executable will run
+//   // cwd (current working directory) is used to specify where the program will be executed or run from on your local machine.
+//   // This is relevant when you’re debugging locally or when you want to ensure that file paths and the execution context align with your local project.
+//   // Update both cwd and pipeCwd to the correct WSL paths.
+//   "cwd": "${workspaceFolder}/labs/shellalb/shlab-handout/",
+//   "environment": [],
+//   "externalConsole": false, // This enables an external terminal
+//   "MIMode": "gdb",
+//   "miDebuggerPath": "/usr/bin/gdb", // The path to GDB in WSL
+//   "setupCommands": [
+//     {
+//       "description": "Enable pretty-printing for gdb",
+//       "text": "-enable-pretty-printing",
+//       "ignoreFailures": true
+//     }
+//   ],
+//   "preLaunchTask": "Build with make tsh", //Task to compile the code before running the debugger
+//    "targetArchitecture": "x86_64",
+//    "logging": { "engineLogging": true },
+// },
+
+// {
+//   "name": "Debug shellex in WSL",
+//   "type": "cppdbg",
+//   "request": "launch",
+//   //  Update with the path to your compiled binary,Translate the Windows path to a WSL path
+//   // Use /mnt to access the corresponding drives in WSL (/mnt/c for the C: drive, /mnt/d for the D: drive, etc.).
+//   "program": "/mnt/d/projects/csapp/code_examples/15-ecf-signals/shellex",
+//   "args": [],
+//   "stopAtEntry": false,
+//   // Set working directory to where the executable will run
+//   // cwd (current working directory) is used to specify where the program will be executed or run from on your local machine.
+//   // This is relevant when you’re debugging locally or when you want to ensure that file paths and the execution context align with your local project.
+//   // Update both cwd and pipeCwd to the correct WSL paths.
+//   "cwd": "/mnt/d/projects/csapp/code_examples/15-ecf-signals/",
+//   "environment": [],
+//   //  set the "externalConsole" option to true. This will open a separate terminal window where you can interact with the program during debugging, allowing you to input data.
+//   "externalConsole": true,
+//   "avoidWindowsConsoleRedirection": true,
+//   "MIMode": "gdb",
+//   "miDebuggerPath": "/usr/bin/gdb", // The path to GDB in WSL
+//   "setupCommands": [
+//     {
+//       "description": "Enable pretty-printing for gdb",
+//       "text": "-enable-pretty-printing",
+//       "ignoreFailures": true
+//     }
+//   ],
+//   "preLaunchTask": "Build with gcc shellex", //Task to compile the code before running the debugger
+//   // pipeTransport: This is necessary to run GDB in the WSL environment.
+//   // It uses the WSL utility (wsl) to run the debugger from within the Linux subsystem.
+//   //  launch GDB from WSL via the pipeTransport field, and it will map the filesystem between WSL and Windows using sourceFileMap
+//   "pipeTransport": {
+//       //pipeCwd specifies the working directory for the program that is running inside the remote environment (such as WSL.Docker).
+//       // Essentially, pipeCwd defines the current working directory where the debugger will start its process on the remote machine or environment.
+//       // It serves as the equivalent of setting the working directory when running programs in a terminal.
+//       "pipeCwd":"",
+//       "pipeProgram": "bash.exe",
+//       "pipeArgs": ["-c"],
+//       // "pipeProgram": "wsl",
+//       // "pipeArgs": [],
+//       "debuggerPath": "/usr/bin/gdb"
+//   },
+//     "sourceFileMap": {
+//         // "/mnt/e": "E:\\", // Mapping WSL filesystem to Windows
+//         "/home": "${workspaceFolder}" // Mapping WSL home to your project
+//     },
+
+//      "targetArchitecture": "x86_64",
+//      "logging": { "engineLogging": true },
+
+//   },
+
+// {
+//     "name": "Debug csim in WSL",
+//     "type": "cppdbg",
+//     "request": "launch",
+//     //  Update with the path to your compiled binary,Translate the Windows path to a WSL path
+//     // Use /mnt to access the corresponding drives in WSL (/mnt/c for the C: drive, /mnt/d for the D: drive, etc.).
+//     "program": "/mnt/d/projects/csapp/labs/cachelab/cachelab-handout/csim",
+//     "args": ["-s", "2" ,"-E", "2", "-b", "3", "-t", "traces/trans.trace"],
+//     "stopAtEntry": false,
+//     // Set working directory to where the executable will run
+//     // cwd (current working directory) is used to specify where the program will be executed or run from on your local machine.
+//     // This is relevant when you’re debugging locally or when you want to ensure that file paths and the execution context align with your local project.
+//     // Update both cwd and pipeCwd to the correct WSL paths.
+//     "cwd": "/mnt/d/projects/csapp/labs/cachelab/cachelab-handout",
+//     "environment": [],
+//     "externalConsole": true, // This enables an external terminal
+//     "MIMode": "gdb",
+//     "miDebuggerPath": "/usr/bin/gdb", // The path to GDB in WSL
+//     "setupCommands": [
+//       {
+//         "description": "Enable pretty-printing for gdb",
+//         "text": "-enable-pretty-printing",
+//         "ignoreFailures": true
+//       }
+//     ],
+//     "preLaunchTask": "Build with make csim", //Task to compile the code before running the debugger
+//     // pipeTransport: This is necessary to run GDB in the WSL environment.
+//     // It uses the WSL utility (wsl) to run the debugger from within the Linux subsystem.
+//     //  launch GDB from WSL via the pipeTransport field, and it will map the filesystem between WSL and Windows using sourceFileMap
+//     "pipeTransport": {
+//         //pipeCwd specifies the working directory for the program that is running inside the remote environment (such as WSL.Docker).
+//         // Essentially, pipeCwd defines the current working directory where the debugger will start its process on the remote machine or environment.
+//         // It serves as the equivalent of setting the working directory when running programs in a terminal.
+//         "pipeCwd":"",
+//         "pipeProgram": "bash.exe",
+//         "pipeArgs": ["-c"],
+//         "debuggerPath": "/usr/bin/gdb"
+//     },
+//     "sourceFileMap": {
+//         "/mnt/d": "D:\\", // Mapping WSL filesystem to Windows
+//         "/home": "${workspaceFolder}" // Mapping WSL home to your project
+//     },
+
+//      "targetArchitecture": "x86_64",
+//      "logging": { "engineLogging": true },
+
+//   },
+
+// {
+//     "name": "msys64 C/C++: gdb debug active file",
+//     "type": "cppdbg",
+//     "request": "launch",
+//     "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
+//     "args": [],
+//     "stopAtEntry": false,
+//     "cwd": "${fileDirname}",
+//     "environment": [],
+//     "externalConsole": false,
+//     "MIMode": "gdb",
+//     "miDebuggerPath": "C:\\msys64\\ucrt64\\bin\\gdb.exe",
+//     "setupCommands": [
+//         {
+//             "description": "Enable pretty-printing for gdb",
+//             "text": "-enable-pretty-printing",
+//             "ignoreFailures": true
+//         },
+//         {
+//             "description": "Set Disassembly Flavor to Intel",
+//             "text": "-gdb-set disassembly-flavor intel",
+//             "ignoreFailures": true
+//         }
+//     ],
+//     // debug the main.c, it will run prelaunch task:  "demo gcc build" to compile the source files
+//     // "preLaunchTask": "demo gcc build"
+//     // "preLaunchTask": "demo build with Makefile"
+//      "preLaunchTask": "C/C++: gcc.exe build active file"
+//     //  "preLaunchTask": "build with Makefile"
+// }

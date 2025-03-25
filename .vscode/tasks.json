@@ -14,6 +14,18 @@
             "problemMatcher": []
         },
         {
+            "label": "Build with make mdriver",
+            "type": "shell",
+            "command": "make",
+            "args": [],
+            "options": {
+                "cwd": "${workspaceFolder}/labs/malloc_lab/malloclab-handout/"
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+
+        {
             "type": "cppbuild",
             "label": "C/C++: gcc build active file",
             "command": "/usr/bin/gcc",
