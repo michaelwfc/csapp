@@ -20,7 +20,7 @@ HANDINDIR = /afs/cs.cmu.edu/academic/class/15213-f01/malloclab/handin
 
 CC = gcc
 
-CFLAGS = -Wall -O2 
+# CFLAGS = -Wall -O2 
 #-m32
 # for debug
 CFLAGS = -g

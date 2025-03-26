@@ -99,6 +99,8 @@ make mdriver
 
 # Perf index = 30 (util) + 40 (thru) = 70/100
 
+
+# Testing md driver with first-fit
 ./mdriver -V  -t ./traces
 # Results for mm malloc:
 # trace  valid  util     ops      secs  Kops
@@ -117,9 +119,25 @@ make mdriver
 
 # Perf index = 44 (util) + 23 (thru) = 67/100
 
+
 ./mdriver  -V -f ./traces/amptjp-bal.rep
+# Testing md driver with best-fit
+# Results for mm malloc:
+# trace  valid  util     ops      secs  Kops
+#  0       yes   99%    5694  0.004745  1200
+#  1       yes   99%    5848  0.004675  1251
+#  2       yes   99%    6648  0.006889   965
+#  3       yes  100%    5380  0.004954  1086
+#  4       yes   66%   14400  0.000119120704
+#  5       yes   96%    4800  0.010781   445
+#  6       yes   95%    4800  0.010400   462
+#  7       yes   55%   12000  0.063861   188
+#  8       yes   51%   24000  0.202608   118
+#  9       yes   31%   14401  0.021868   659
+# 10       yes   30%   14401  0.000874 16485
+# Total          75%  112372  0.331773   339
 
-
+# Perf index = 45 (util) + 23 (thru) = 67/100
 ```
 
 # GDB

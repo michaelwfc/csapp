@@ -175,9 +175,10 @@ The p (or print) command in gdb is used to evaluate and print the value of an ex
 # Print the Value in Binary Format:
 (gdb) print/t $eax
 (gdb) print/t 0xF3
-(gdb) x/t 0xADDRESS
+
 # print the binary representation to character
 print (char)0b1000001
+
 
 # Format Specifiers in GDB:
 # /t - binary
@@ -193,6 +194,13 @@ print (char)0b1000001
 The x command in gdb is used to examine memory. Examine memory (x): View memory at a specific address:
 
 ```bash
+# - x/d <address>: View the memory as a signed integer.
+# - x/u <address>: View the memory as an unsigned integer.
+# - x/f <address>: View the memory as a floating-point number.
+# - x/s <address>: View the memory as a null-terminated string.
+# - x/<count>d <address>: View an array of integers.
+# - x/<count>f <address>: View an array of floats.
+
 # <count> specifies the number of units to display (optional).
 # <format> specifies how to display the memory contents (e.g., as an integer, character, etc.).
 # <address> is the memory address you want to examine.
@@ -217,18 +225,14 @@ The x command in gdb is used to examine memory. Examine memory (x): View memory 
 # This examines 4 words of memory starting at the address of x, showing them in hexadecimal.
 (gdb) x/4x &x
 
+# 使用 x 命令查看内存内容。x/8xb 表示以 8 进制字节格式显示 8 个字节的内容。
+(gdb) x/8xb $rsp       # 显示 rsp 指向的 8 个字节的内容。
+# 0x5561dc78:     0x01    0x02    0x03    0x04    0x05    0x06    0x07    0x08
+(gdb) x/8xb ($rsp + 8) # 查看 rsp + 8 字节的内存内容
 
+(gdb) x/8xb ($rsp+40)
+# 0x5561dca0:     0xc0    0x17    0x40    0x00    0x00    0x00    0x00    0x00
 
-- x/d <address>: View the memory as a signed integer.
-- x/u <address>: View the memory as an unsigned integer.
-- x/f <address>: View the memory as a floating-point number.
-- x/s <address>: View the memory as a null-terminated string.
-- x/<count>d <address>: View an array of integers.
-- x/<count>f <address>: View an array of floats.
-```
-
-
-```shell
 (gdb) x/8xb $rsp 
 0x5561dc78:     0xc7    0x44    0x24    0x08    0x39    0x37    0x66    0x61
 # This examines 8 bytes of memory starting at the address of $rsp, showing them in hexadecimal.
@@ -426,51 +430,3 @@ Looking for a particular tool? How about documentation? Don’t forget, the comm
 and info are your friends. In particular, man ascii might come in useful. info gas will give you
 more than you ever wanted to know about the GNU Assembler. Also, the web may also be a treasure trove
 of information. If you get stumped, feel free to ask your instructor for help.
-
-
-
-# Debug C with WSL gcc  in vscode
-
-## show the value of varible
-
-查看变量直接在 DEBUG CONSOLE 中输入变量名称就可以
-
-```C
-// directory 
-> var_name
-
->(char) var_name
-// use gdb command, need add -exec
->-exec print var_name
-
-// print address_mask as binary format
--exec print /x address_mask
-
-// run expression 1<<4
->-exec print 1 << 4
-
-// -exec p  getpid(), it shows 'getpid' has unknowun return type, cast the call to its declared return type
--exec p (int)getpid()
-
-//  -exec p (int)waitpid(-1, &status, WUNTRACED), No symbol WUNTRACED in current context
-(gdb) define WUNTRACED 0x02
--exec p (int)waitpid(-1, &status, WUNTRACED)
-
--exec p (int)waitpid(-1, &status, 0x02)
-```
-
-# gdb debug for tsh
-
-```bash
-# cd csapp/labs/shellalb/shlab-handout/
-make tsh
-./tsh -v
->tsh
-
-# find the PID in top
-top > press o > input: COMMAND=tsh
-top > press k > input: 24208(PID)
-
-sudo gdb  attach 24208
-
-```

@@ -17,7 +17,7 @@
 
 #include "mm.h"
 #include "memlib.h"
-
+#include "config.h"
 /*********************************************************
  * NOTE TO STUDENTS: Before you do anything else, please
  * provide your team information in the following struct.
@@ -82,7 +82,7 @@ The GET_SIZE and GET_ALLOC macros (lines 16–17) return the size and allocated 
 
 /* Given block ptr bp, compute address of its header and footer
 The remaining macros operate on block pointers (denoted bp) that point to the first payload byte.
-Given a block pointer bp, the HDRP and FTRP macros (lines 20–21) return pointers to the block header and footer, respectively. 
+Given a block pointer bp, the HDRP and FTRP macros (lines 20–21) return pointers to the block header and footer, respectively.
 The NEXT_BLKP and PREV_BLKP macros (lines 24–25) return the block pointers of the next and previous blocks, respectively.
 */
 #define HDRP(bp) ((char *)(bp) - WSIZE)
@@ -96,10 +96,11 @@ The NEXT_BLKP and PREV_BLKP macros (lines 24–25) return the block pointers of 
 static void *extend_heap(size_t words);
 static void *coalesce(void *bp);
 static void *find_fit(size_t asize);
+static void *first_fit(size_t asize);
+static void *best_fit(size_t asize);
 static void place(void *bp, size_t asize);
 
 static char *heap_listp; // Pointer to the first block
-
 
 /*
  * mm_init - initialize the malloc package.
@@ -137,12 +138,12 @@ int mm_init(void)
 /* The extend_heap function is invoked in two different circumstances:
 (1) when the heap is initialized and
 (2) when mm_malloc is unable to find a suitable fit.
-To maintain alignment, extend_heap rounds up the requested size to the nearest multiple of 2 words (8 bytes) 
+To maintain alignment, extend_heap rounds up the requested size to the nearest multiple of 2 words (8 bytes)
 and then requests the additional heap space from the memory system (lines 7–9).
 
 The remainder of the extend_heap function (lines 12–17) is somewhat subtle.
-The heap begins on a double-word aligned boundary, and every call to extend_heap returns a block whose size is an integral number of double words. 
-Thus, every call to mem_sbrk returns a double-word aligned chunk of memory immediately following the header of the epilogue block. 
+The heap begins on a double-word aligned boundary, and every call to extend_heap returns a block whose size is an integral number of double words.
+Thus, every call to mem_sbrk returns a double-word aligned chunk of memory immediately following the header of the epilogue block.
 This header becomes the header of the new free block (line 12), and the last word of the chunk becomes the new epilogue block header (line 14).
 Finally, in the likely case that the previous heap was terminated by a free block, we call the coalesce function to merge the two free blocks and return the block pointer of the merged blocks (line 17).
 */
@@ -220,17 +221,16 @@ your malloc implementation should do likewise and always return 8-byte aligned p
 //     }
 // }
 
-
 // code/vm/malloc/mm.c
 // Figure 9.47 mm_malloc allocates a block from the free list.
 
-/* An application requests a block of size bytes of memory by calling the mm_malloc function (Figure 9.47). 
-After checking for spurious requests, the allocator must adjust the requested block size to allow room for the header and the footer, 
-and to satisfy the double-word alignment requirement. 
+/* An application requests a block of size bytes of memory by calling the mm_malloc function (Figure 9.47).
+After checking for spurious requests, the allocator must adjust the requested block size to allow room for the header and the footer,
+and to satisfy the double-word alignment requirement.
 
-Once the allocator has adjusted the requested size, it searches the free list for a suitable free block (line 18). 
+Once the allocator has adjusted the requested size, it searches the free list for a suitable free block (line 18).
  - If there is a fit, then the allocator places the requested block and optionally splits the excess (line 19) and then returns the address of the newly allocated block.
- - If the allocator cannot find a fit, it extends the heap with a new free block (lines 24–26), places the requested block in the new free block, 
+ - If the allocator cannot find a fit, it extends the heap with a new free block (lines 24–26), places the requested block in the new free block,
  optionally splitting the block (line 27), and then returns a pointer to the newly allocated block.
 */
 
@@ -246,11 +246,11 @@ void *mm_malloc(size_t size)
 
     /* Adjust block size to include overhead and alignment reqs. */
     if (size <= DSIZE)
-        // enforce the minimum block size of 16 bytes:  
+        // enforce the minimum block size of 16 bytes:
         // 8 bytes to satisfy the alignment requirement + 8 more bytes for the overhead of the header and footer.
         asize = 2 * DSIZE;
     else
-        // For requests over 8 bytes (line 15), the general rule is to add in the overhead bytes and then round up to the nearest multiple of 8. 
+        // For requests over 8 bytes (line 15), the general rule is to add in the overhead bytes and then round up to the nearest multiple of 8.
         asize = DSIZE * ((size + (DSIZE) + (DSIZE - 1)) / DSIZE);
 
     /* Search the free list for a fit */
@@ -275,28 +275,53 @@ Your solution should perform a first-fit search of the implicit free list.
 */
 
 // Find a fit for a block with asize bytes
-static void *find_fit(size_t asize) {
+static void *find_fit(size_t asize)
+{
     void *bp;
 
-    for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)) {
-        if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
+    // bp = first_fit(asize);
+    bp = best_fit(asize);
+    return bp;
+}
+
+static void *first_fit(size_t asize)
+{
+    void *bp;
+
+    for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp))
+    {
+        if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp))))
+        {
             return bp;
         }
     }
     return NULL; /* No fit */
 }
 
-// 
-static void *best_fit(size_t asize){
-    void *bp;
-}
 
+//Search the list, choose the best free block: fits, with fewest bytes left over
+static void *best_fit(size_t asize)
+{
+    void *bp;
+    void *best_bp=NULL;
+    size_t left_size, min_left_size = MAX_HEAP ;
+    for(bp=heap_listp; GET_SIZE(HDRP(bp))>0; bp=NEXT_BLKP(bp)){
+        if(!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))){
+            left_size = GET_SIZE(HDRP(bp)) - asize;
+            if(left_size < min_left_size){
+                min_left_size = left_size;
+                best_bp = bp;
+            }
+        }
+    }
+    return best_bp;
+}
 
 /*
 Practice Problem 9.9 (solution page 920)
 Implement a place function for the example allocator.
 
-Your solution should place the requested block at the beginning of the free block, 
+Your solution should place the requested block at the beginning of the free block,
 splitting only if the size of the remainder would equal or exceed the minimum block size.
 
 Notice that for this allocator the minimum block size is 16 bytes. If the remainder
@@ -307,16 +332,20 @@ moving to the next block (line 8).
 
 */
 // Place block of asize bytes at start of free block bp
-static void place(void *bp, size_t asize) {
+static void place(void *bp, size_t asize)
+{
     size_t csize = GET_SIZE(HDRP(bp));
 
-    if ((csize - asize) >= (2 * DSIZE)) {
+    if ((csize - asize) >= (2 * DSIZE))
+    {
         PUT(HDRP(bp), PACK(asize, 1));
         PUT(FTRP(bp), PACK(asize, 1));
         bp = NEXT_BLKP(bp);
         PUT(HDRP(bp), PACK(csize - asize, 0));
         PUT(FTRP(bp), PACK(csize - asize, 0));
-    } else {
+    }
+    else
+    {
         PUT(HDRP(bp), PACK(csize, 1));
         PUT(FTRP(bp), PACK(csize, 1));
     }
@@ -329,17 +358,15 @@ is only guaranteed to work when the passed pointer (ptr) was returned by an earl
 mm malloc or mm realloc and has not yet been freed.
  */
 
-
 // code/vm/malloc/mm.c
 void mm_free(void *bp)
 {
-  size_t size = GET_SIZE(HDRP(bp));
+    size_t size = GET_SIZE(HDRP(bp));
 
-  PUT(HDRP(bp), PACK(size, 0));
-  PUT(FTRP(bp), PACK(size, 0));
-  coalesce(bp);
+    PUT(HDRP(bp), PACK(size, 0));
+    PUT(FTRP(bp), PACK(size, 0));
+    coalesce(bp);
 }
-
 
 /*
  * mm_realloc - Implemented simply in terms of mm_malloc and mm_free
