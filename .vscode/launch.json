@@ -21,12 +21,6 @@
         }
       ],
       "preLaunchTask": "Build with make mdriver", //Task to compile the code before running the debugger
-      // "sourceFileMap": {
-      //   "/mnt/d": "D:", // Mapping WSL filesystem to Windows
-      //   "/mnt/e": "E:", // Mapping WSL filesystem to Windows
-      //   // maps the WSL paths (/home/username/csapp/) to the Windows paths (E:\projects\csapp\)
-      //   "/home/michael/csapp": "E:\\projects\\csapp" // Mapping WSL home to your project
-      // },
       "targetArchitecture": "x86_64",
       "logging": { "engineLogging": true }
     },

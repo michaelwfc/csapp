@@ -54,7 +54,9 @@
     "unistd.h": "c",
     "getopt.h": "c",
     "csapp.h": "c",
-    "cctype": "c"
+    "cctype": "c",
+    "array": "c",
+    "string_view": "c"
   },
   "C_Cpp.default.compilerPath": "/usr/bin/gcc"
 }
