@@ -1144,21 +1144,32 @@ Insertion policy: Where in the free list do you put a newly freed block?
 
 - LIFO (last-in-first-out) policy
   Insert freed block at the beginning of the free list
-  Pro: simple and constant time
-  Con: studies suggest fragmentation is worse than address ordered
+
+  - Pro:  simple and freeing a block can be performed in constant time.    
+  - Cons: studies suggest fragmentation is worse than address ordered
 
 - Address-ordered policy
   Insert freed blocks so that free list blocks are always in address order:
   addr(prev) < addr(curr) < addr(next)
-  Con: requires search
-  Pro: studies suggest fragmentation is lower than LIFO
+  
+  - Pro: studies suggest fragmentation is lower than LIFO
+  - Cons: requires search
 
 
 
 
 ### 9.9.14 Segregated Free Lists
 
+#### segregated storage
+to maintain multiple free lists, where each list holds blocks that are roughly the same size.   
+The general idea is to partition the set of all possible block sizes into equivalence classes called size classes.
 
+
+#### Simple Segregated Storage
+
+#### Segregated Fits
+
+#### Buddy Systems
 
 
 
