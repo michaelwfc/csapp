@@ -140,7 +140,7 @@ There are eight basic steps:
 
 ![image](../images/Chapter%2011%20Network%20Programming/Figure%2011.8.png)
 
-#### Based on the TCP/IP protocol family
+### TCP/IP protocol family
 
 - **_IP (Internet Protocol)_**:
   Provides basic naming scheme and unreliable delivery capability of packets (**_datagrams_**) from host-to-host
@@ -166,10 +166,12 @@ Accessed via a mix of Unix file I/O and functions from the sockets interface
 
 #### IP address structure
 
-- 32-bit IP addresses are stored in an IP address struct
-- TCP/IP defines IP addresses are always stored in memory in **_network byte order (big-endian byte order)_**
+- 32-bit IP addresses are stored in an IP address struct (Network 网络层)
+- TCP/IP defines IP addresses are always stored in memory in **_network byte order (big-endian byte order)_** （Transport 传输层）
 - True in general for any integer transferred in a packet header from one machine to another.
   E.g., the port number used to identify an Internet connection.
+- http protocol (应用层)
+
 
 ```C
 /* IP address structure */
@@ -180,10 +182,21 @@ struct in_addr {
 #include <arpa/inet.h>
 uint32_t htonl(uint32_t hostlong);
 uint16_t htons(uint16_t hostshort);
-Returns: value in network byte order
+// Returns: value in network byte order
+
 uint32_t ntohl(uint32_t netlong);
 uint16_t ntohs(unit16_t netshort);
-Returns: value in host byte order
+// Returns: value in host byte order
+
+
+// Application programs can convert back and forth between IP addresses and
+// dotted-decimal strings using the functions inet_pton and inet_ntop.
+#include <arpa/inet.h>
+int inet_pton(AF_INET, const char *src, void *dst);
+// Returns: 1 if OK, 0 if src is invalid dotted decimal, −1 on error
+const char *inet_ntop(AF_INET, const void *src, char *dst, socklen_t size);
+// Returns: pointer to a dotted-decimal string if OK, NULL on error
+
 ```
 
 #### Dotted Decimal Notation
@@ -209,6 +222,40 @@ Conceptually, programmers can view the DNS database as a collection of millions 
 -
 
 ```bash
+ nslookup www.cs.cmu.edu
+# Server:         10.255.255.254    //查询的DNS服务器为 10.255.255.254，端口为 53。
+# Address:        10.255.255.254#53  
+
+# Non-authoritative answer:         //返回非权威答案：www.cs.cmu.edu 的规范名称为 SCS-WEB-LB.ANDREW.cmu.edu
+# www.cs.cmu.edu  canonical name = SCS-WEB-LB.ANDREW.cmu.edu.
+# Name:   SCS-WEB-LB.ANDREW.cmu.edu
+# Address: 128.2.42.95              //解析得到的IP地址为 128.2.42.95。
+
+nslookup www.cs.stanford.edu
+# Server:         10.255.255.254
+# Address:        10.255.255.254#53
+
+# Non-authoritative answer:
+# www.cs.stanford.edu     canonical name = stanfordedu.edgesuite.net.
+# stanfordedu.edgesuite.net       canonical name = a1662.b.akamai.net.
+# Name:   a1662.b.akamai.net
+# Address: 23.220.70.5
+# Name:   a1662.b.akamai.net
+# Address: 23.220.70.33
+
+
+nslookup www.google.com
+# ;; Got recursion not available from 10.255.255.254
+# Server:         10.255.255.254
+# Address:        10.255.255.254#53
+
+# Non-authoritative answer:
+# Name:   www.google.com
+# Address: 157.240.17.35
+# Name:   www.google.com
+# Address: 2001::1
+
+
 #  Can explore properties of DNS mappings using nslookup
 linux> nslookup localhost
 Address: 127.0.0.1
@@ -234,7 +281,7 @@ Clients and servers communicate by sending streams of bytes over connections. Ea
 
 ##### Ports
 
-- A port is a **_16-bit integer_** that identifies a process:
+- A port is a **_16-bit integer_** that identifies a process(每个port 对应一个进程):
 - **_Ephemeral port_**: Assigned automatically by client kernel when client makes a connection request.
 - **_Well-known port_**: Associated with some service provided by a server
   - 80 ： Web servers
@@ -278,7 +325,10 @@ A connection is uniquely identified by the socket addresses of its endpoints (so
 
 ##### Using Ports to Identify Services
 
+
+
 ### 11.4 Sockets Interface
+
 
 The sockets interface is a set of system-level functions that are used in conjunction with the Unix I/O functions to build network applications.
 
@@ -286,6 +336,8 @@ The sockets interface is a set of system-level functions that are used in conjun
 
 - Available on all modern systems
   Unix variants, Windows, OS X, IOS, Android, ARM
+
+![image](../images/Chapter%2011%20Network%20Programming/Figure%2011.12%20Overview%20of%20network%20applications%20based%20on%20the%20sockets%20interface.png)
 
 #### Sockets
 
@@ -305,8 +357,16 @@ The sockets interface is a set of system-level functions that are used in conjun
 - Necessary only because C did not have generic (void \*) pointers when the sockets interface was designed
 - For casting convenience, we adopt the Stevens convention:
   typedef struct sockaddr SA;
+- Internet-specific socket address:
+Must cast (struct sockaddr_in *) to (struct sockaddr *) for functions that take socket address arguments. 
 
 ```C
+/* Generic socket address structure (for connect, bind, and accept) */
+struct sockaddr {
+    uint16_t sa_family; /* Protocol family */
+    char sa_data[14]; /* Address data */
+};
+
 /* IP socket address structure */
 struct sockaddr_in {
     uint16_t sin_family; /* Protocol family (always AF_INET) */
@@ -314,76 +374,106 @@ struct sockaddr_in {
     struct in_addr sin_addr; /* IP address in network byte order */
     unsigned char sin_zero[8]; /* Pad to sizeof(struct sockaddr) */
 };
-/* Generic socket address structure (for connect, bind, and accept) */
-struct sockaddr {
-    uint16_t sa_family; /* Protocol family */
-    char sa_data[14]; /* Address data */
-};
+
 
 ```
 
-### 11.4.2 The socket Function
+
+
+### 11.4.2 Sockets Interface: The socket Function
+创建套接字 (socket)
 
 Clients and servers use the socket function to create a socket descriptor.
 
 ```C
 #include <sys/types.h>
 #include <sys/socket.h>
+
+
 int socket(int domain, int type, int protocol);
 // Returns: nonnegative descriptor if OK, −1 on error
 
-// If we wanted the socket to be the end point for a connection, then we could call
-// socket with the following hardcoded arguments:
+// If we wanted the socket to be the end point for a connection, then we could call socket with the following hardcoded arguments:
 
 clientfd = Socket(AF_INET, SOCK_STREAM, 0);
-// where AF_INET indicates that we are using 32-bit IP addresses and SOCK_STREAM indicates that the socket will be an end point for a connection.
+// AF_INET indicates that we are using IPV4: 32-bit IP addresses
+// SOCK_STREAM indicates that the socket will be an end point for a connection.
 // the best practice is to use the getaddrinfo function (Section 11.4.7) to generate these parameters automatically, so that the code is protocol-independent.
 //The clientfd descriptor returned by socket is only partially opened and cannot yet be used for reading and writing
 ```
 
-### 11.4.3 The connect Function
+### 11.4.3 Sockets Interface: The connect Function
 
 A client establishes a connection with a server by calling the connect function
 
 ```C
 #include <sys/socket.h>
 int connect(int clientfd, const struct sockaddr *addr, socklen_t addrlen);
+
+// sockfd: 由 socket 函数返回的描述符。
+// addr: 指向 sockaddr 结构的指针，包含地址信息。
+// addrlen: 地址结构的长度 sizeof(sockaddr_in)。
 // Returns: 0 if OK, −1 on error
 ```
 
-- The connect function attempts to establish an Internet connection with the server
-at socket address addr, where addrlen is sizeof(sockaddr_in). 
-- The connect function blocks until either the connection is successfully established or an error occurs. If successful, the clientfd descriptor is now ready for reading and writing, and the resulting connection is characterized by the socket pair ***(x:y, addr.sin_addr:addr.sin_port) ***
+- The connect function attempts to establish an Internet connection with the server at socket address addr. 
+- The connect function blocks until either the connection is successfully established or an error occurs. 
+  - If successful, the clientfd descriptor is now ready for reading and writing
+  - the resulting connection is characterized by the socket pair ***(x:y, addr.sin_addr:addr.sin_port) ***
+    - x is client address
+    - y is ephemeral port that uniquely identifies client process on client host
+    
 - As with socket, the best practice is to use getaddrinfo to supply the arguments to connect
 
-### 11.4.4 The bind Function
+### 11.4.4 Sockets Interface: The bind Function
+绑定套接字地址 (bind)
+
 The remaining sockets functions—bind, listen, and accept—are used by servers to establish connections with clients.
+
+The bind function asks the kernel to associate the server’s socket address in addr with the socket descriptor sockfd. 
 
 ```C
 #include <sys/socket.h>
 int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+// sockfd: 由 socket 函数返回的描述符。
+// addr: 指向 sockaddr 结构的指针，包含地址信息。
+// addrlen: 地址结构的长度。
 // Returns: 0 if OK, −1 on error
-```
 
-- The bind function asks the kernel to associate the server’s socket address in addr
-with the socket descriptor sockfd. The addrlen argument is sizeof(sockaddr_in). 
+```
+- the process can read bytes that arrive on the connection whose endpoint is add by reading from descriptor
+- similarly, the process can write to sockfd  are transferrd along the connection whose endpoint is addr
+- The addrlen argument is sizeof(sockaddr_in). 
 - As with socket and connect, the best practice is to use getaddrinfo to
 supply the arguments to bind
 
-### 11.4.5 The listen Function
+### 11.4.5 Sockets Interface: The listen Function
+
+
+By default, kernel assumes that descriptors from sockeet funcion is an ***active sockets*** that will be on the client end of a connection.
+
+The listen function converts sockfd from an active socket to a ***listening socket*** that can accept connection requests from clients.
+
+A server call the listen function to tell the kernel that a descriptor will be used by a server rather than a client
 
 ```C
 #include <sys/socket.h>
 int listen(int sockfd, int backlog);
 // Returns: 0 if OK, −1 on error
 ```
-The listen function converts sockfd from an active socket to a listening socket
-that can accept connection requests from clients. The backlog argument is a hint
-about the number of outstanding connection requests that the kernel should queue
-up before it starts to refuse requests.
+ The backlog argument is a hint about the number of outstanding connection requests that the kernel should queue up before it starts to refuse requests.
+
+![image](../images/Chapter%2011%20Network%20Programming/Figure%2011.14%20The%20roles%20of%20the%20listening%20and%20connected%20descriptors.png)
 
 
-### 11.4.6 The accept Function
+1. Server blocks in accept, waiting for connection request on
+listening descriptor listenfd.
+
+2. Client makes connection request by calling and blocking in connect.
+
+3. Server returns connfd from accept. Client returns from connect. Connection is now established between clientfd and connfd.
+
+### 11.4.6 Sockets Interface: The accept Function
 
 Servers wait for connection requests from clients by calling the accept function
 
@@ -392,6 +482,8 @@ Servers wait for connection requests from clients by calling the accept function
 int accept(int listenfd, struct sockaddr *addr, int *addrlen);
 // Returns: nonnegative connected descriptor if OK, −1 on erro
 ```
+- Waits for connection request to arrive on the connection bound to listenfd, then fills in client’s socket address in addr and size of the socket address in addrlen. 
+Returns a ***connected descriptor*** that can be used to communicate with the client via Unix I/O routines. 
 
 
 ### 11.4.7 Host and Service Conversion
@@ -404,15 +496,245 @@ getaddrinfo is the modern way to convert string representations of hostnames, ho
 Replaces obsolete gethostbyname and getservbyname funcs.
 
 Advantages:
-Reentrant (can be safely used by threaded programs).
-Allows us to write portable protocol-independent code
-Works with both IPv4 and IPv6
+- Reentrant (can be safely used by threaded programs).
+- Allows us to write portable protocol-independent code
+- Works with both IPv4 and IPv6
 
 Disadvantages
-Somewhat complex
-Fortunately, a small number of usage patterns suffice in most cases.
+- Somewhat complex
+- Fortunately, a small number of usage patterns suffice in most cases.
+
+
+Given host and service, getaddrinfo returns result that points to a linked list of ***addrinfo structs***, each of which points to a corresponding ***socket address struct***, and which contains arguments for the sockets interface functions.
+
+```C
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+
+
+int getaddrinfo(const char *host,            /* Hostname or address */
+                const char *service,         /* Port or service name */
+                const struct addrinfo *hints,/* Input parameters */
+                struct addrinfo **result);   /* Output linked list */
+
+// Returns: 0 if OK, nonzero error code on error
+
+void freeaddrinfo(struct addrinfo *result);
+// Returns: nothing
+
+const char *gai_strerror(int errcode);
+// Returns: error message
+
+
+struct addrinfo {
+    int ai_flags; /* Hints argument flags */
+    int ai_family; /* First arg to socket function */
+    int ai_socktype; /* Second arg to socket function */
+    int ai_protocol; /* Third arg to socket function */
+    char *ai_canonname; /* Canonical hostname */
+    size_t ai_addrlen; /* Size of ai_addr struct */
+    struct sockaddr *ai_addr; /* Ptr to socket address structure */
+    struct addrinfo *ai_next; /* Ptr to next item in linked list */
+};
+
+// Each addrinfo struct returned by getaddrinfo contains arguments that can be passed directly to socket function.
+// Also points to a socket address struct that can be passed directly to connect and bind functions.
+
+```
+
 
 #### Linked List Returned by getaddrinfo
+![image](../images/Chapter%2011%20Network%20Programming/Figure%2011.15.png)
+
+- Clients: walk this list, trying each socket address in turn, until the calls to socket and connect succeed.
+- Servers: walk the list until calls to socket and bind succeed
 
 
 
+#### getnameinfo
+
+getnameinfo is the inverse of getaddrinfo, converting a socket address to the corresponding host and service. 
+- Replaces obsolete gethostbyaddr and getservbyport funcs.
+- Reentrant and protocol independent. 
+
+```C
+#include <sys/socket.h>
+#include <netdb.h>
+
+int getnameinfo(const SA *sa, socklen_t salen, /* In: socket addr */
+                char *host, size_t hostlen,    /* Out: host */
+                char *serv, size_t servlen,    /* Out: service */
+                int flags);                    /* optional flags */
+
+// The sa argument points to a socket address structure of size salen bytes, 
+// host to a buffer of size hostlen bytes, 
+// service to a buffer of size servlen bytes.
+
+// The getnameinfo function converts the socket address structure sa to the corresponding host and service name strings and copies them to the host and service buffers. If getnameinfo returns a nonzero error code, the application can convert it to a string by calling gai_strerror.
+```
+
+The flags argument
+- NI_NUMERICHOST. By default, getnameinfo tries to return a domain name in host. Setting this flag will cause it to return a numeric address string instead.
+- NI_NUMERICSERV. By default, getnameinfo will look in /etc/services and if possible, return a service name instead of a port number. Setting this flag forces it to skip the lookup and simply return the port number.
+
+#### Conversion Example
+
+
+```C
+// hostinfo.c
+#include "csapp.h"
+
+int main(int argc, char **argv)
+{
+    struct addrinfo *p, *listp, hints;
+    char buf[MAXLINE];
+    int rc, flags;
+
+    /* Get a list of addrinfo records */
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_INET;       /* IPv4 only */
+    hints.ai_socktype = SOCK_STREAM; /* Connections only */
+    if ((rc = getaddrinfo(argv[1], NULL, &hints, &listp)) != 0) {
+        fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(rc));
+        exit(1);
+    }
+    /* Walk the list and display each IP address */
+    flags = NI_NUMERICHOST; /* Display address instead of name */
+    for (p = listp; p; p = p->ai_next) {
+        Getnameinfo(p->ai_addr, p->ai_addrlen, 
+                    buf, MAXLINE, NULL, 0, flags);
+        printf("%s\n", buf);
+    }
+
+    /* Clean up */
+    Freeaddrinfo(listp);
+
+    exit(0);
+}
+
+
+```
+
+### 11.4.8 Helper Functions for the Sockets Interface
+
+#### open_clientfd
+
+The open_clientfd function establishes a connection with a server running on host hostname and listening for connection requests on port number port. 
+- It returns an open socket descriptor that is ready for input and output using the Unix I/O functions.
+- We call getaddrinfo, which returns a list of addrinfo structures, each of which points to a socket address structure that is suitable for establishing a connection with a server running on hostname and listening on port. - We then walk the list, trying each list entry in turn, until the calls to socket and connect succeed.
+  - If the connect fails, we are careful to close the socket descriptor before trying the next entry. 
+  - If the connect succeeds, we free the list memory and return the socket descriptor to the client, which can immediately begin using Unix I/O to communicate with the server.
+
+```C
+
+/******************************** 
+ * Client/server helper functions
+ ********************************/
+/*
+ * open_clientfd - Open connection to server at <hostname, port> and
+ *     return a socket descriptor ready for reading and writing. This
+ *     function is reentrant and protocol-independent.
+ * 
+ *     On error, returns -1 and sets errno.  
+ */
+/* $begin open_clientfd */
+int open_clientfd(char *hostname, char *port) {
+    int clientfd;
+    struct addrinfo hints, *listp, *p;
+
+    /* Get a list of potential server addresses */
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_socktype = SOCK_STREAM;  /* Open a connection */
+    hints.ai_flags = AI_NUMERICSERV;  /* ... using a numeric port arg. */
+    hints.ai_flags |= AI_ADDRCONFIG;  /* Recommended for connections */
+    Getaddrinfo(hostname, port, &hints, &listp);
+  
+    /* Walk the list for one that we can successfully connect to */
+    for (p = listp; p; p = p->ai_next) {
+
+        /* Create the socket descriptor */
+        if ((clientfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0) 
+            continue; /* Socket failed, try the next */
+        if (connect(clientfd, p->ai_addr, p->ai_addrlen) != -1) 
+            break; /* Success */
+        Close(clientfd); /* Connect failed, try another */
+    } 
+
+    /* Clean up */
+    Freeaddrinfo(listp);
+    if (!p) /* All connects failed */
+        return -1;
+    else    /* The last connect succeeded */
+        return clientfd;
+}
+/* $end open_clientfd */
+```
+
+#### open_listenfd
+A server creates a listening descriptor that is ready to receive connection requests
+by calling the open_listenfd function
+
+The open_listenfd function returns a listening descriptor that is ready to receive connection requests on port port.
+
+- We call getaddrinfo and then walk the resulting list until the calls to socket and bind succeed. 
+- Note that in line 20 we use the setsockopt function (not described here) to configure the server so that it can be terminated, be restarted, and begin accepting connection requests immediately. 
+- By default, a restarted server will deny connection requests from clients for approximately 30 seconds, which seriously hinders debugging.
+- Since we have called getaddrinfo with the AI_PASSIVE flag and a NULL host argument, the address field in each socket address structure is set to the wildcard address, which tells the kernel that this server will accept requests to any of the IP addresses for this host.
+- Finally, we call the listen function to convert listenfd to a listening descriptor and return it to the caller.   
+  - If the listen fails, we are careful to avoid a memory leak by closing the descriptor before returning.
+
+```C
+/*  
+ * open_listenfd - Open and return a listening socket on port. This
+ *     function is reentrant and protocol-independent.
+ *
+ *     On error, returns -1 and sets errno.
+ */
+/* $begin open_listenfd */
+int open_listenfd(char *port) 
+{
+    struct addrinfo hints, *listp, *p;
+    int listenfd, optval=1;
+
+    /* Get a list of potential server addresses */
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_socktype = SOCK_STREAM;  /* Accept TCP connections */
+    hints.ai_flags = AI_PASSIVE;      /* ... on any IP address */
+    hints.ai_flags |= AI_NUMERICSERV; /* ... using a numeric port arg. */
+    hints.ai_flags |= AI_ADDRCONFIG;  /* Recommended for connections */
+    Getaddrinfo(NULL, port, &hints, &listp);
+
+    /* Walk the list for one that we can bind to */
+    for (p = listp; p; p = p->ai_next) {
+
+        /* Create a socket descriptor */
+        if ((listenfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0) 
+            continue;  /* Socket failed, try the next */
+
+        /* Eliminates "Address already in use" error from bind */
+        Setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, 
+                   (const void *)&optval , sizeof(int));
+
+        /* Bind the descriptor to the address */
+        if (bind(listenfd, p->ai_addr, p->ai_addrlen) == 0)
+            break; /* Success */
+        Close(listenfd); /* Bind failed, try the next */
+    }
+
+    /* Clean up */
+    Freeaddrinfo(listp);
+    if (!p) /* No address worked */
+        return -1;
+
+    /* Make it a listening socket ready to accept connection requests */
+    if (listen(listenfd, LISTENQ) < 0)
+	  return -1;
+    return listenfd;
+}
+/* $end open_listenfd */
+
+
+```
+
+### 11.4.9 Example Echo Client and Server
