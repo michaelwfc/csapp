@@ -101,3 +101,6 @@ use gcc -g to compile the code to allow stop at breakpoints:
     ]
 }
 ```
+
+## c_cpp_properties.json
+在 c_cpp_properties.json 文件中添加 includePath 可以帮助 VSCode 的 IntelliSense 正确识别头文件路径，从而提供更好的代码补全和错误检查。虽然 includePath 不会影响编译过程，但它可以显著提升开发体验。
