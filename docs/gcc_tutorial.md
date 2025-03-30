@@ -4,6 +4,16 @@ To compile a C file using `gcc`, you can use the following basic command:
 
 ```bash
 gcc filename.c -o outputfile
+
+# 包含头文件路径： if filename.c 依赖于 csapp.h 头文件，并且该头文件不在标准路径中，假设 csapp.h 位于 /mnt/e/projects/csapp/include/ 目录下， 你需要使用 -I 标志指定头文件路径。
+gcc filename.c -o outputfile -I/path/to/csapp/include/ 
+
+# 链接外部库： 如果 hostinfo.c 依赖于某些外部库（例如 libcsapp），你需要使用 -l 标志链接这些库，并使用 -L 标志指定库的路径。假设 libcsapp 位于 /mnt/e/projects/csapp/lib/ 目录下，可以这样编译：
+gcc filename.c -o outputfile -I/mnt/e/projects/csapp/include/ -L/mnt/e/projects/csapp/lib/ -lcsapp
+
+
+gcc hostinfo.c csapp.c -o hostinfo2 -lpthread -lrt
+
 ```
 
 ### Explanation:

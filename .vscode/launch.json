@@ -26,12 +26,12 @@
     },
 
     {
-      "name": "C/C++: gcc build and debug active file with args",
+      "name": "C/C++: gcc build and debug active file",
       "type": "cppdbg",
       "request": "launch",
       "program": "${fileDirname}/${fileBasenameNoExtension}",
       // /mnt/e/projects/csapp/code_examples/16-io/ffifles1 does not exists
-      "args": ["abcde.txt"],
+      "args": ["www.taobao.com"],
       "stopAtEntry": false,
       "cwd": "${fileDirname}",
       "environment": [],
@@ -47,12 +47,12 @@
       ],
       "preLaunchTask": "C/C++: gcc build active file",
       // remote WSL: sourceFileMap setting tells GDB how to map source files from your local environment (Windows) to the remote environment (WSL).
-      "sourceFileMap": {
-        "/mnt/d": "D:", // Mapping WSL filesystem to Windows
-        "/mnt/e": "E:", // Mapping WSL filesystem to Windows
-        // maps the WSL paths (/home/username/csapp/) to the Windows paths (E:\projects\csapp\)
-        "/home/michael/csapp": "E:\\projects\\csapp" // Mapping WSL home to your project
-      },
+      // "sourceFileMap": {
+      //   "/mnt/d": "D:", // Mapping WSL filesystem to Windows
+      //   "/mnt/e": "E:", // Mapping WSL filesystem to Windows
+      //   // maps the WSL paths (/home/username/csapp/) to the Windows paths (E:\projects\csapp\)
+      //   "/home/michael/csapp": "E:\\projects\\csapp" // Mapping WSL home to your project
+      // },
 
       "targetArchitecture": "x86_64",
       "logging": { "engineLogging": true }

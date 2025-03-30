@@ -56,7 +56,10 @@
     "csapp.h": "c",
     "cctype": "c",
     "array": "c",
-    "string_view": "c"
+    "string_view": "c",
+    "inet.h": "c",
+    "socket.h": "c",
+    "netdb.h": "c"
   },
   "C_Cpp.default.compilerPath": "/usr/bin/gcc"
 }

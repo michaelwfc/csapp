@@ -6,7 +6,8 @@
                 // "\\\\wsl$\\Ubuntu-22.04\\usr\\include",         
                 "/usr/include",           // Standard system includes
                 "/usr/local/include",    // Local includes
-                "${workspaceFolder}/labs/shellalb/shlab-handout/**"  // Workspace-specific includes
+                // "${workspaceFolder}/labs/shellalb/shlab-handout/**"  // Workspace-specific includes
+                "${workspaceFolder}/code_examples/code/include"
             ],
             "compilerPath": "/usr/bin/gcc",    // Path to the compiler
             "defines": [

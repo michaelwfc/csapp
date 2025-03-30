@@ -33,10 +33,13 @@
                 "-fdiagnostics-color=always",
                 "-g",
                 "${file}",
-                "csapp.c",
+                // "csapp.c",
+                "${workspaceFolder}/code_examples/code/src/csapp.c",
                 "-o",
-                "${fileDirname}/${fileBasenameNoExtension}",
-                "-lpthread"
+                // "${fileDirname}/${fileBasenameNoExtension}",
+                "${fileBasenameNoExtension}",
+                "-lpthread",
+                "-I${workspaceFolder}/code_examples/code/include"
             ],
             "options": {
                 "cwd": "${fileDirname}"

@@ -10,8 +10,13 @@ can trace through a program line by line, examine memory and registers, look at 
 and assembly code (we are not giving you the source code for most of your bomb), set breakpoints,
 set memory watch points, and write scripts.
 
-The CS:APP web site
+## Resources:
+- The CS:APP web site
 http://csapp.cs.cmu.edu/public/students.html
+- Beej's Quick Guide to GDB (based on the very handy gdb -tui mode)
+  https://beej.us/guide/bggdb/
+- Two-page x86-64 GDB cheat sheet
+- 
 
 – To keep the bomb from blowing up every time you type in a wrong input, you’ll want to learn how to set breakpoints.
 – For online documentation, type “help” at the gdb command prompt, or type “man gdb”,
