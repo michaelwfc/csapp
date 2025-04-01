@@ -8,3 +8,18 @@
 - [Lecture-notes](http://www.cs.cmu.edu/afs/cs/academic/class/15213-f15/www/schedule.html)
 
 - [CMU-ECE-CS-Guide](https://github.com/CMU-HKN/CMU-ECE-CS-Guide)
+
+# Books
+
+- The Unix bible:
+W. Richard  Stevens & Stephen A. Rago, Advanced Programming in the Unix Environment, 2nd Edition, Addison Wesley, 2005
+Updated from Stevens’s 1993 classic text
+
+- The Linux bible:
+Michael Kerrisk, The Linux Programming Interface, No Starch Press, 2010
+Encyclopedic and authoritative
+
+The essential Linux system programming guide by the maintainer of the Linux man pages. Clear, authoritative, and encyclopedic. Includes file I/O, processes, signals, time, threads, shared libraries, IPC, synchronization, and sockets. A great book.
+
+
+

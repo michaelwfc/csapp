@@ -31,7 +31,7 @@
       "request": "launch",
       "program": "${fileDirname}/${fileBasenameNoExtension}",
       // /mnt/e/projects/csapp/code_examples/16-io/ffifles1 does not exists
-      "args": ["www.taobao.com"],
+      "args": ["foo.txt"],
       "stopAtEntry": false,
       "cwd": "${fileDirname}",
       "environment": [],
