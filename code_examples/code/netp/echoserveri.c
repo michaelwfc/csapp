@@ -10,7 +10,9 @@ int main(int argc, char **argv)
 {
     int listenfd, connfd;
     socklen_t clientlen;
+    
     struct sockaddr_storage clientaddr; /* Enough space for any address */ // line:netp:echoserveri:sockaddrstorage
+
     char client_hostname[MAXLINE], client_port[MAXLINE];
 
     if (argc != 2)
@@ -28,6 +30,7 @@ int main(int argc, char **argv)
     while (1)
     {
         clientlen = sizeof(struct sockaddr_storage);
+        // Before accept returns, it fills in clientaddr with the socket address of the client on the other end of the connection
         connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
         Getnameinfo((SA *)&clientaddr, clientlen, client_hostname, MAXLINE,
                     client_port, MAXLINE, 0);

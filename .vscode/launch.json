@@ -2,6 +2,54 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Debug echo client",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/code_examples/code/netp/echoclient", // for Ubuntu
+      "args": ["localhost","8000"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/code_examples/code",
+      "environment": [],
+      "externalConsole": false, // This enables an external terminal
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb", // The path to GDB in WSL
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": false
+        }
+      ],
+      "preLaunchTask": "gcc build echo client", //Task to compile the code before running the debugger
+      "targetArchitecture": "x86_64",
+      "logging": { "engineLogging": true }
+    },
+    {
+      "name": "Debug echo server",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/code_examples/code/netp/echoserver", // for Ubuntu
+      "args": ["8000"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/code_examples/code/netp",
+      "environment": [],
+      "externalConsole": false, // This enables an external terminal
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb", // The path to GDB in WSL
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": false
+        }
+      ],
+      "preLaunchTask": "gcc build echo server", //Task to compile the code before running the debugger
+      "targetArchitecture": "x86_64",
+      "logging": { "engineLogging": true }
+    },
+
+
+    {
       "name": "Debug malloc_lab in remote WSL",
       "type": "cppdbg",
       "request": "launch",

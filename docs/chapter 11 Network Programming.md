@@ -444,8 +444,7 @@ int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 - the process can read bytes that arrive on the connection whose endpoint is add by reading from descriptor
 - similarly, the process can write to sockfd  are transferrd along the connection whose endpoint is addr
 - The addrlen argument is sizeof(sockaddr_in). 
-- As with socket and connect, the best practice is to use getaddrinfo to
-supply the arguments to bind
+- As with socket and connect, the best practice is to use getaddrinfo to supply the arguments to bind
 
 ### 11.4.5 Sockets Interface: The listen Function
 
@@ -466,10 +465,9 @@ int listen(int sockfd, int backlog);
 ![image](../images/Chapter%2011%20Network%20Programming/Figure%2011.14%20The%20roles%20of%20the%20listening%20and%20connected%20descriptors.png)
 
 
-1. Server blocks in accept, waiting for connection request on
-listening descriptor listenfd.
+1. ***Server blocks in accept***, waiting for connection request on listening descriptor listenfd.
 
-2. Client makes connection request by calling and blocking in connect.
+2. Client makes connection request by ***calling and blocking in connect***.
 
 3. Server returns connfd from accept. Client returns from connect. Connection is now established between clientfd and connfd.
 
