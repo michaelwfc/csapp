@@ -184,6 +184,16 @@ The p (or print) command in gdb is used to evaluate and print the value of an ex
 # print the binary representation to character
 print (char)0b1000001
 
+# print` 命令打印字符串
+p (char*)input_pointer
+
+# 直接通过变量名查看字符串内容
+(gdb) x/s input_pointer
+# 0x55555555a000: "Hello, GDB!"
+
+# 或者通过地址查看
+(gdb) x/s &input_pointer
+# 0x55555577b018: 0x55555555a000   → 0x55555555a000: "Hello, GDB!"
 
 # Format Specifiers in GDB:
 # /t - binary

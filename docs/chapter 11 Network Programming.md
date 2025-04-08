@@ -352,22 +352,26 @@ The sockets interface is a set of system-level functions that are used in conjun
 ### 11.4.1 Socket Address Structures
 
 #### Generic socket address:
-
+- `struct sockaddr` is a universal container for network addresses.
 - For address arguments to connect, bind, and accept
 - Necessary only because C did not have generic (void \*) pointers when the sockets interface was designed
 - For casting convenience, we adopt the Stevens convention:
   typedef struct sockaddr SA;
 - Internet-specific socket address:
-Must cast (struct sockaddr_in *) to (struct sockaddr *) for functions that take socket address arguments. 
+Must cast (struct sockaddr_in * ) IPv4-specific structure. to (struct sockaddr *) for functions that take socket address arguments. 
 
 ```C
 /* Generic socket address structure (for connect, bind, and accept) */
 struct sockaddr {
-    uint16_t sa_family; /* Protocol family */
+    uint16_t sa_family; /* Protocol family: Socket Address family, e.g., AF_INET for IPv4, AF_INET6 for IPv6 */
     char sa_data[14]; /* Address data */
+    // A flexible array to store address-specific data (e.g., IP address, port number).
+    // Size: 14 bytes ensures compatibility with legacy systems and accommodates most address types (e.g., IPv4 requires 8 bytes beyond sa_family, leaving space for padding or extensions).
 };
 
-/* IP socket address structure */
+/* IP socket address structure 
+   IPv4-specific structure.
+*/
 struct sockaddr_in {
     uint16_t sin_family; /* Protocol family (always AF_INET) */
     uint16_t sin_port; /* Port number in network byte order */
@@ -376,11 +380,25 @@ struct sockaddr_in {
 };
 
 
+// Type Safety:
+// Direct use of sockaddr requires manual type casting to access address-specific fields (e.g., sin_port in sockaddr_in).
+
+struct sockaddr_in ipv4_addr; // IPv4-specific structure.
+ipv4_addr.sin_family = AF_INET;
+ipv4_addr.sin_port = htons(8080);
+inet_pton(AF_INET, "127.0.0.1", &ipv4_addr.sin_addr);
+
+struct sockaddr *generic = (struct sockaddr*)&ipv4_addr; // Cast to generic type.
+bind(sockfd, generic, sizeof(ipv4_addr)); // Use in system call.
+
+
 ```
 
 
 
 ### 11.4.2 Sockets Interface: The socket Function
+
+
 创建套接字 (socket)
 
 Clients and servers use the socket function to create a socket descriptor.
@@ -736,3 +754,109 @@ int open_listenfd(char *port)
 ```
 
 ### 11.4.9 Example Echo Client and Server
+
+#### Echo client
+After establishing a connection with the server, the client enters a loop that repeatedly 
+- reads a text line from standard input
+- sends the text line to the server
+- reads the echo line from the server, and 
+- prints the result to standard output. 
+The loop terminates when fgets encounters EOF on standard input, either because the user typed Ctrl+D at the keyboard or because it has exhausted the text lines in a redirected input file.
+
+After the loop terminates, the client closes the descriptor. 
+This results in an EOF notification being sent to the server, which it detects when it receives a return code of zero from its rio_readlineb function. 
+
+After closing its descriptor, the client terminates. 
+
+Since the client’s kernel automatically closes all open descriptors when a process terminates, the close in line 24 is not necessary. 
+However, it is good programming practice to explicitly close any descriptors that you have opened.
+
+```C
+// echoclient.c
+#include "csapp.h"
+
+int main(int argc, char **argv)
+{
+    int clientfd;
+    char *host, *port, buf[MAXLINE];
+    rio_t rio;
+
+    if (argc != 3)
+    {
+        fprintf(stderr, "usage: %s <host> <port>\n", argv[0]);
+        exit(0);
+    }
+    host = argv[1];
+    port = argv[2];
+
+    // establishing a connection with the server
+    clientfd = Open_clientfd(host, port);
+    Rio_readinitb(&rio, clientfd);
+
+    // the client enters a loop that repeatedly  
+    // reads a text line from standard input, 
+    // sends the text line to the server
+    // reads the echo line from the server, 
+    // and prints the result to standard output.
+    // The loop terminates when fgets encounters EOF on standard input, either because the user typed Ctrl+D at the keyboard or because it has exhausted the text lines in a redirected input file.
+    while (Fgets(buf, MAXLINE, stdin) != NULL)
+    {
+        Rio_writen(clientfd, buf, strlen(buf));
+        Rio_readlineb(&rio, buf, MAXLINE);
+        Fputs(buf, stdout);
+    }
+    // After the loop terminates, the client closes the descriptor
+    // This results in an EOF notification being sent to the server, which it detects when it receives a return code of zero from its rio_readlineb function
+    Close(clientfd); // line:netp:echoclient:close
+    exit(0);
+}
+
+```
+
+#### Echo Server
+
+
+```C
+/*
+ * echoserveri.c - An iterative echo server
+ */
+/* $begin echoserverimain */
+#include "csapp.h"
+
+void echo(int connfd);
+
+int main(int argc, char **argv)
+{
+    int listenfd, connfd;
+    socklen_t clientlen;
+    // The clientaddr variable in line 9 is a socket address structure that is passed to accept.
+    struct sockaddr_storage clientaddr; /* Enough space for any address */ // line:netp:echoserveri:sockaddrstorage
+
+    char client_hostname[MAXLINE], client_port[MAXLINE];
+
+    if (argc != 2)
+    {
+        fprintf(stderr, "usage: %s <port>\n", argv[0]);
+        exit(0);
+    }
+
+    listenfd = Open_listenfd(argv[1]);
+    // After opening the listening descriptor, it enters an infinite loop.
+    // Each iteration waits for a connection request from a client, 
+    // prints the domain name and port of the connected client
+    // then calls the echo function that services the client. After
+    while (1)
+    {
+        clientlen = sizeof(struct sockaddr_storage);
+        // Before accept returns, it fills in clientaddr with the socket address of the client on the other end of the connection
+        connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
+        Getnameinfo((SA *)&clientaddr, clientlen, client_hostname, MAXLINE,client_port, MAXLINE, 0);
+        printf("Connected to (%s, %s)\n", client_hostname, client_port);
+        echo(connfd);
+        Close(connfd);
+    }
+    exit(0);
+}
+/* $end echoserverimain */
+
+```

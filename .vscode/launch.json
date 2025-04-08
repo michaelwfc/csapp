@@ -25,10 +25,10 @@
       "logging": { "engineLogging": true }
     },
     {
-      "name": "Debug echo server",
+      "name": "Debug echo serveri",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/code_examples/code/netp/echoserver", // for Ubuntu
+      "program": "${workspaceFolder}/code_examples/code/netp/echoserveri", // for Ubuntu
       "args": ["8000"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/code_examples/code/netp",
@@ -43,7 +43,7 @@
           "ignoreFailures": false
         }
       ],
-      "preLaunchTask": "gcc build echo server", //Task to compile the code before running the debugger
+      "preLaunchTask": "gcc build echo serveri", //Task to compile the code before running the debugger
       "targetArchitecture": "x86_64",
       "logging": { "engineLogging": true }
     },

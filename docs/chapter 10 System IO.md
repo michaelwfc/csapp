@@ -276,11 +276,11 @@ close(fd);
 
 ### Reading Files
 
-The read function copies at most n bytes from the current file position of descriptor fd to memory location buf.
-- a return value of −1 indicates an error
-- a return value of 0 indicates EOF.
-- Otherwise return value indicates the number of bytes that were actually transferred. read from file fd into buf
-- Return type ssize_t is signed integer
+The read function copies ***at most n bytes*** from the current file position of descriptor fd to memory location buf.
+- a return value of `−1 indicates an error`
+- a return value of `0 indicates EOF`.
+- Otherwise return value indicates `the number of bytes` that were actually transferred. read from file fd into buf
+- Return type `ssize_t is signed integer`
   - On x86-64 systems, a size_t is defined as an unsigned long
   - an ssize_t (signed size) is defined as a long.
 
@@ -331,10 +331,8 @@ Thus, the answer is **100**.
 
 
 #### Short counts 
-In some situations, read and write transfer fewer bytes than the application requests. 
-Such short counts do not indicate an error. 
-
-They occur for a number of reasons:
+In some situations, read and write transfer ***fewer bytes*** than the application requests. 
+Such `short counts` do not indicate an error. They occur for a number of reasons:
 - Encountering EOF((end-of-file) ) on reads.
 - Reading text lines from a terminal.
   If the open file is associated with a terminal (i.e., a keyboard and display), then each read function will transfer one text line at a time, returning a short count equal to the size of the text line.
@@ -508,8 +506,6 @@ ssize_t rio_readnb(rio_t *rp, void *usrbuf, size_t n);
 // Return: num. bytes read if OK, 0 on EOF, -1 on error
 ```
 
-
-
 Efficiently read text lines and binary data from a file partially cached in an internal memory buffer
 
 #### read buffer of type rio_t
@@ -528,30 +524,8 @@ typedef struct {
 
 #### rio_readinitb
 - The rio_readinitb function is called once per open descriptor. 
-- The rio_readinitb function sets up an empty read buffer 
+- The rio_readinitb function sets up `an empty internal read buffer` 
 - It associates the open file descriptor fd with that read buffer of type rio_t at address rp.
- 
-#### rio_readlineb
-- rio_readlineb reads a text line of up to maxlen bytes from file rp (including the terminating newline character),
-- copies it to memory location usrbuf， 
-- terminates the text line with the NULL (zero) character
-- The rio_readlineb function reads at most maxlen-1 bytes, leaving room for the terminating NULL character.
-- Especially useful for reading text lines from network sockets
-- Stopping conditions
-    - maxlen bytes read
-    - EOF encountered
-    - Newline (‘\n’) encountered
-
-#### rio_readnb
-- The rio_readnb function reads up to n bytes from file rp to memory location usrbuf. 
-- rio_readnb reads up to n bytes from file fd
-- Stopping conditions
-    - maxlen bytes read
-    - EOF encountered
-
-Calls to rio_readlineb and rio_readnb can be interleaved arbitrarily on the same descriptor. 
-calls to these buffered functions should not be interleaved with calls to the unbuffered rio_readn function.
-Warning: Don’t interleave with calls to rio_readn
 
 ```C
 /* rio_readinitb - Associate a descriptor with a read buffer and reset buffer */
@@ -561,30 +535,23 @@ void rio_readinitb(rio_t *rp, int fd)
     rp->rio_cnt = 0;  
     rp->rio_bufptr = rp->rio_buf;
 }
+```
 
 
-/* rio_readnb - Robustly read n bytes (buffered) */
-ssize_t rio_readnb(rio_t *rp, void *usrbuf, size_t n) 
-{
-    size_t nleft = n;
-    ssize_t nread;
-    char *bufp = usrbuf;
-    
-    while (nleft > 0) {
-        if ((nread = rio_read(rp, bufp, nleft)) < 0) {
-            if (errno == EINTR) /* interrupted by sig handler return */
-                nread = 0;      /* call read() again */
-            else
-                return -1;      /* errno set by read() */ 
-        } 
-        else if (nread == 0)
-            break;              /* EOF */
-        nleft -= nread;
-        bufp += nread;
-    }
-    return (n - nleft);         /* return >= 0 */
-}
+#### rio_readlineb
+- rio_readlineb reads a text line of up to maxlen bytes from file rp (including the terminating newline character)
+- copies the text line from an `internal read buffer`, automatically making a read call to refill the buffer whenever it becomes empty
+- copies it to memory location usrbuf， 
+- terminates the text line with the `NULL (zero) character`
+- The rio_readlineb function reads `at most maxlen-1 bytes`, leaving room for the terminating NULL character.
+- Especially useful for reading text lines from network sockets
+- Stopping conditions
+    - maxlen bytes read
+    - EOF encountered
+    - Newline (‘\n’) encountered
 
+
+```C
 /* rio_readlineb - robustly read a text line (buffered) */
 ssize_t rio_readlineb(rio_t *rp, void *usrbuf, size_t maxlen) 
 {   
@@ -611,9 +578,52 @@ ssize_t rio_readlineb(rio_t *rp, void *usrbuf, size_t maxlen)
     *bufp = 0;
     return n;
 }
+```
 
-/* 
- * rio_read  
+
+#### rio_readnb
+- The rio_readnb function reads `up to n bytes` from file rp to memory location usrbuf. 
+- Stopping conditions
+    - maxlen bytes read
+    - EOF encountered
+
+Calls to rio_readlineb and rio_readnb can be interleaved arbitrarily on the same descriptor. 
+calls to these buffered functions should not be interleaved with calls to the unbuffered rio_readn function.
+Warning: Don’t interleave with calls to rio_readn
+
+
+```C
+/* rio_readnb - Robustly read n bytes (buffered) */
+ssize_t rio_readnb(rio_t *rp, void *usrbuf, size_t n) 
+{
+    size_t nleft = n;
+    ssize_t nread;
+    char *bufp = usrbuf;
+    
+    while (nleft > 0) {
+        if ((nread = rio_read(rp, bufp, nleft)) < 0) {
+            if (errno == EINTR) /* interrupted by sig handler return */
+                nread = 0;      /* call read() again */
+            else
+                return -1;      /* errno set by read() */ 
+        } 
+        else if (nread == 0)
+            break;              /* EOF */
+        nleft -= nread;
+        bufp += nread;
+    }
+    return (n - nleft);         /* return >= 0 */
+}
+
+```
+
+
+
+
+#### rio_read
+```c
+/*
+ * rio_read
 参数说明
     rio_t *rp: 指向 rio_t 结构体的指针，包含文件描述符、缓冲区状态等信息。
     char *usrbuf: 用户提供的缓冲区，用于存储从文件或设备中读取的数据。
@@ -623,60 +633,61 @@ ssize_t rio_readlineb(rio_t *rp, void *usrbuf, size_t maxlen)
     如果遇到 EOF（文件末尾），返回 0。
     如果发生错误，返回 -1，并设置相应的 errno。
 
- This is a wrapper for the Unix read() function that transfers min(n, rio_cnt) bytes from an internal buffer to a user buffer, 
+ This is a wrapper for the Unix read() function that transfers min(n, rio_cnt) bytes from an internal buffer to a user buffer,
   n is the number of bytes requested by the user and
  *    rio_cnt is the number of unread bytes in the internal buffer. On
  *    entry, rio_read() refills the internal buffer via a call to
  *    read() if the internal buffer is empty.
- * 
+ *
 Minimizing System Calls ：
 The key to minimizing system calls lies in the buffer refill strategy:
 Large Chunk Reads: When the internal buffer is empty, rio_read refills it by reading a large chunk of data (up to RIO_BUFSIZE bytes) in a single read system call. This reduces the frequency of system calls compared to reading one byte at a time.
 
-Buffered Reads: 
+Buffered Reads:
 Subsequent reads can be satisfied from the internal buffer without additional system calls until the buffer is exhausted. This means that multiple user requests can be handled with a single system call.
- * 
+ *
  */
 
 static ssize_t rio_read(rio_t *rp, char *usrbuf, size_t n)
 {
     int cnt;
 
-    
     // 1. 检查缓冲区是否为空 Check Buffer: The function first checks if the internal buffer is empty
     // rio_cnt: 表示当前缓冲区中尚未读取的字节数。
-    while (rp->rio_cnt <= 0) {  /* refill if buf is empty */
+    while (rp->rio_cnt <= 0)
+    { /* refill if buf is empty */
         // 缓冲机制: 只有当缓冲区为空时，才会调用 read 系统调用
         // Refill Buffer: If the buffer is empty, it refills the buffer by calling the read system call to read a large chunk of data (up to RIO_BUFSIZE bytes) from the file descriptor into the internal buffer
         // rio_buf: 实际的缓冲区，大小为 RIO_BUFSIZE（8192 字节）
-        rp->rio_cnt = read(rp->rio_fd, rp->rio_buf,sizeof(rp->rio_buf));
+        rp->rio_cnt = read(rp->rio_fd, rp->rio_buf, sizeof(rp->rio_buf));
         // Handle Read Results:
-            // If read returns a negative value (indicating an error), it checks if the error is EINTR (interrupted by a signal). If not, it returns -1 to indicate an error.
-            // If read returns 0, it indicates the end of the file (EOF), and the function returns 0.
-            // If read returns a positive value, it updates the buffer pointer (rio_bufptr) and the count of unread bytes (rio_cnt).
-        
+        // If read returns a negative value (indicating an error), it checks if the error is EINTR (interrupted by a signal). If not, it returns -1 to indicate an error.
+        // If read returns 0, it indicates the end of the file (EOF), and the function returns 0.
+        // If read returns a positive value, it updates the buffer pointer (rio_bufptr) and the count of unread bytes (rio_cnt).
+
         // 2. 处理 read 系统调用的结果
-        // 如果 read 返回负值，表示发生错误： 
-        if (rp->rio_cnt < 0) {
+        // 如果 read 返回负值，表示发生错误：
+        if (rp->rio_cnt < 0)
+        {
             // 信号中断处理 : 如果 read 被信号中断（errno == EINTR），rio_read 会忽略中断并重新尝试读取. 否则返回 -1 表示错误。
             if (errno != EINTR) /* interrupted by sig handler return */
-            return -1;
+                return -1;
         }
-        else if (rp->rio_cnt == 0)  /* EOF 处理: 如果 read 返回 0，表示到达文件末尾（EOF），返回 0*/
+        else if (rp->rio_cnt == 0) /* EOF 处理: 如果 read 返回 0，表示到达文件末尾（EOF），返回 0*/
             return 0;
-        else 
-            //如果 read 返回正值，更新缓冲区指针 rp->rio_bufptr 和未读字节数 rp->rio_cnt
-            // rio_bufptr: 指向缓冲区中下一个未读字节的位置。
+        else
+            // 如果 read 返回正值，更新缓冲区指针 rp->rio_bufptr 和未读字节数 rp->rio_cnt
+            //  rio_bufptr: 指向缓冲区中下一个未读字节的位置。
             rp->rio_bufptr = rp->rio_buf; /* reset buffer ptr */
     }
 
-    /* 3. 从缓冲区复制数据到用户缓冲区 
-    Copy min(n, rp->rio_cnt) bytes from internal buf to user buf 
+    /* 3. 从缓冲区复制数据到用户缓冲区
+    Copy min(n, rp->rio_cnt) bytes from internal buf to user buf
     Copy Data: The function then copies the minimum of n (requested bytes) and rp->rio_cnt (unread bytes in the buffer) from the internal buffer to the user buffer (usrbuf).
     */
-    cnt = n;          
-    if (rp->rio_cnt < n)   
-	    cnt = rp->rio_cnt;
+    cnt = n;
+    if (rp->rio_cnt < n)
+        cnt = rp->rio_cnt;
     memcpy(usrbuf, rp->rio_bufptr, cnt);
 
     // 4. Update Buffer State: It updates the buffer pointer and the count of unread bytes accordingly.
@@ -684,6 +695,7 @@ static ssize_t rio_read(rio_t *rp, char *usrbuf, size_t n)
     rp->rio_cnt -= cnt;
     return cnt;
 }
+
 
 ```
 
@@ -894,13 +906,52 @@ The C standard library (libc.so) contains a collection of higher-level standard 
 Documented in Appendix B of K&R
 
 The library (libc) provides functions for :
- - Opening and closing files (fopen and fclose)
- - Reading and writing bytes (fread and fwrite)
- - Reading and writing text lines/strings (fgets and fputs)
- - Formatted reading and writing (fscanf and fprintf) vs (scanf and printf)？
+ - Opening and closing files ( `fopen and fclose`)
+ - Reading and writing bytes ( `fread and fwrite` )
+ - Reading and writing text lines/strings ( `fgets and fputs` )
+ - Formatted reading and writing (`fscanf and fprintf`) vs (`scanf and printf`)？
  - sscanf and sprintf
  - fgets and fputs
  - fflush fseek
+
+
+#### fgets(char *str, int n, FILE *stream)
+Reads exactly what is typed, including whitespace (unless the input is truncated by the buffer size).
+
+Safe if used correctly: The n parameter limits the maximum characters read, preventing buffer overflow.
+Requires manual trimming of the newline (e.g., strtok() or strcspn()).
+
+```c
+char buf[100];
+fgets(buf, sizeof(buf), stdin);  // Reads up to 99 characters or until newline
+// - Returns a pointer to the buffer (char*) if successful.
+// - Returns NULL on EOF or error.
+
+```
+- Reads at most n-1 characters, leaving space for '\0'.
+- Stops at newline (\n) or EOF.
+- Stores the string in a character array, including the newline (if space allows), but terminates with a null character (\0).
+- Does not skip whitespace.
+- Does not parse data types — treats everything as a string. (e.g., integers, floats).
+
+#### scanf(const char *format, ...)
+Use it for formatted input directly from stdin.
+Dangerous for string input without proper format constraints (e.g., %s can overflow buffers if input is too long).  
+Use "%ms" (allocates memory) or "%Ns" (limits length) to mitigate risks.
+```c
+int x;
+scanf("%d", &x);  // Reads an integer
+// Returns the number of successfully parsed items (e.g., 2 if two values are read correctly).
+// Returns EOF on EOF or input failure.
+```
+- Parses formatted input (e.g., %d for integers, %f for floats).
+- Automatically skips leading whitespace (spaces, tabs, newlines) by default.
+- Stops reading at whitespace for %s.
+- Prone to buffer overflows (e.g., %s can overrun).
+- Dangerous if not used carefully. Can crash if user input is unexpected.
+  
+#### fscanf(FILE *stream, const char *format, ...)
+Exactly like scanf, but lets you specify the input stream.
 
 ### Standard I/O Streams
 

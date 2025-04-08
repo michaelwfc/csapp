@@ -22,12 +22,21 @@ int main(int argc, char **argv)
     clientfd = Open_clientfd(host, port);
     Rio_readinitb(&rio, clientfd);
 
-    // the client enters a loop that repeatedly reads a text line from standard input, 
+    // the client enters a loop that repeatedly
+    // reads a text line from standard input,
     // sends the text line to the server
-    // reads the echo line from the server, and prints the result to standard output.
+    // reads the echo line from the server,
+    // and prints the result to standard output.
     // The loop terminates when fgets encounters EOF on standard input, either because the user typed Ctrl+D at the keyboard or because it has exhausted the text lines in a redirected input file.
-    while (Fgets(buf, MAXLINE, stdin) != NULL)
+
+    while (1) // Fgets(buf, MAXLINE, stdin) != NULL
     {
+        printf("%s", "client input:");
+        fflush(stdout);
+        char * input_pointer = Fgets(buf, MAXLINE, stdin);
+        if (input_pointer == NULL)
+            break;
+        
         Rio_writen(clientfd, buf, strlen(buf));
         Rio_readlineb(&rio, buf, MAXLINE);
         Fputs(buf, stdout);
