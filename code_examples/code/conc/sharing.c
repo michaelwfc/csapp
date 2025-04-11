@@ -3,28 +3,28 @@
 #define N 2
 void *thread(void *vargp);
 
-char **ptr;  /* Global variable */ //line:conc:sharing:ptrdec
+char **ptr; /* Global variable */ // line:conc:sharing:ptrdec
 
-int main() 
+int main()
 {
-    int i;  
+    int i;
     pthread_t tid;
     char *msgs[N] = {
-	"Hello from foo",  
-	"Hello from bar"   
-    };
+        "Hello from foo",
+        "Hello from bar"};
 
-    ptr = msgs; 
-    for (i = 0; i < N; i++)  
-        Pthread_create(&tid, NULL, thread, (void *)i); 
-    Pthread_exit(NULL); 
+    ptr = msgs;
+    for (i = 0; i < N; i++)
+        Pthread_create(&tid, NULL, thread, (void *)i);
+    Pthread_exit(NULL);
 }
 
-void *thread(void *vargp) 
+void *thread(void *vargp)
 {
     int myid = (int)vargp;
-    static int cnt = 0; //line:conc:sharing:cntdec
-    printf("[%d]: %s (cnt=%d)\n", myid, ptr[myid], ++cnt); //line:conc:sharing:stack
+    static int cnt = 0; // line:conc:sharing:cntdec
+    // the peer threads reference the contents of the main thread’s stack indirectly through the global ptr variable
+    printf("[%d]: %s (cnt=%d)\n", myid, ptr[myid], ++cnt); // line:conc:sharing:stack
     return NULL;
 }
 /* $end sharing */
