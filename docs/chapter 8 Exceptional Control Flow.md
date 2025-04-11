@@ -531,9 +531,9 @@ wait
 
 waitpid
 - parent calls waitpid() and Suspends current process until specific process terminates
-- If the child is still running, waitpid() blocks the parent until the child terminates (unless WNOHANG is used).
+- If the child is still running, waitpid() `blocks` the parent until the child terminates (unless `WNOHANG` is used).
 - When a child process terminates normally (calls exit() or returns from main()), it becomes a zombie process.
-- The kernel keeps its exit status so that the parent can retrieve it using waitpid()
+- The kernel keeps its `exit status` so that the parent can retrieve it using waitpid()
 - waitpid() immediately returns with its PID.
 - Once the child is reaped, the kernel removes all traces of it, and its PID can be reused.
 
