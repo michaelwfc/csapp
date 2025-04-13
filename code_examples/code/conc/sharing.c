@@ -13,7 +13,7 @@ int main()
         "Hello from foo",
         "Hello from bar"};
 
-    ptr = msgs;
+    // ptr = msgs;
     for (i = 0; i < N; i++)
         Pthread_create(&tid, NULL, thread, (void *)i);
     Pthread_exit(NULL);

@@ -78,7 +78,7 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${fileDirname}/${fileBasenameNoExtension}",
-      "args": ["3"],
+      "args": ["1000000"],
       "stopAtEntry": false,
       "cwd": "${fileDirname}",
       "environment": [],

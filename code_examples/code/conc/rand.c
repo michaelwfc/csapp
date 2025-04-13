@@ -21,6 +21,7 @@ int main()
 {
     srand(100);
     printf("%d\n", rand());
+    srand(100);
     printf("%d\n", rand());
     printf("%d\n", rand());
     return 0;
