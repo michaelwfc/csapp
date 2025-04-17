@@ -59,7 +59,10 @@
     "string_view": "c",
     "inet.h": "c",
     "socket.h": "c",
-    "netdb.h": "c"
+    "netdb.h": "c",
+    "quick_sort.h": "c",
+    "pthread.h": "c",
+    "thread": "c"
   },
   "C_Cpp.default.compilerPath": "/usr/bin/gcc"
 }
