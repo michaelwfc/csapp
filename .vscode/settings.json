@@ -62,7 +62,10 @@
     "netdb.h": "c",
     "quick_sort.h": "c",
     "pthread.h": "c",
-    "thread": "c"
+    "thread": "c",
+    "*.tcc": "c",
+    "functional": "c",
+    "tuple": "c"
   },
   "C_Cpp.default.compilerPath": "/usr/bin/gcc"
 }

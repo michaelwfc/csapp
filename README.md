@@ -9,6 +9,10 @@
 
 - [CMU-ECE-CS-Guide](https://github.com/CMU-HKN/CMU-ECE-CS-Guide)
 
+Complete versions of all code in this lecture is available from the 213 schedule page. 
+http://www.cs.cmu.edu/~213/schedule.html
+
+
 # Books
 
 - The Unix bible:
@@ -20,6 +24,12 @@ Michael Kerrisk, The Linux Programming Interface, No Starch Press, 2010
 Encyclopedic and authoritative
 
 The essential Linux system programming guide by the maintainer of the Linux man pages. Clear, authoritative, and encyclopedic. Includes file I/O, processes, signals, time, threads, shared libraries, IPC, synchronization, and sockets. A great book.
+
+- THE network programming bible.
+W. Richard Stevens et. al. “Unix Network Programming: The Sockets Networking API”, Volume 1, Third Edition, Prentice Hall, 2003
+
+
+
 
 
 
