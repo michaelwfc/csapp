@@ -902,8 +902,7 @@ to Unix I/O.
 
 ### Standard I/O Functions
 
-The C standard library (libc.so) contains a collection of higher-level standard I/O functions
-Documented in Appendix B of K&R
+The C standard library (libc.so) contains a collection of higher-level standard I/O functions Documented in Appendix B of K&R
 
 The library (libc) provides functions for :
  - Opening and closing files ( `fopen and fclose`)
@@ -1083,7 +1082,6 @@ close(fd);
 Unix I/O vs. Standard I/O vs. RIO
 
 - Standard I/O and RIO are implemented using low-level Unix I/O
--
 
 ### Pros and Cons of Unix I/O
 - Pros
