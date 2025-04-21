@@ -89,13 +89,48 @@ Your proxy must properly function whether or not the port number is included in 
 The listening port is the port on which your proxy should listen for incoming connections. 
 Your proxy should accept a command line argument specifying the listening port number for your proxy. 
 For example, with the following command, your proxy should listen for connections on port 15213:
-`linux> ./proxy 15213`
+`linux> ./proxy 8000`
 You may select any non-privileged listening port (greater than 1,024 and less than 65,536) as long as it is not used by other processes. Since each proxy must use a unique listening port and many people will simultaneously be working on each machine, the script port-for-user.pl is provided to help you pick your own personal port number. Use it to generate port number based on your user ID:
 `linux> ./port-for-user.pl droh`
 droh: 45806
 The port, p, returned by port-for-user.pl is always an even number. So if you need an additional port number, say for the Tiny server, you can safely use ports p and p + 1.
 Please don’t pick your own random port. If you do, you run the risk of interfering with another user.
 
+
+
+```bash
+run debug tiny server
+
+curl -v http://localhost:8001/home.html
+# * Uses proxy env variable no_proxy == 'localhost,127.0.0.1,::1'
+# *   Trying 127.0.0.1:8001...
+# * TCP_NODELAY set
+# * Connected to localhost (127.0.0.1) port 8001 (#0)
+# > GET /home.html HTTP/1.1
+# > Host: localhost:8001
+# > User-Agent: curl/7.68.0
+# > Accept: */*
+# > 
+# * Mark bundle as not supporting multiuse
+# * HTTP 1.0, assume close after body
+# < HTTP/1.0 200 OK
+# < Server: Tiny Web Server
+# < Content-length: 120
+# < Content-type: text/html
+# < 
+# <html>
+# <head><title>test</title></head>
+# <body> 
+# <img align="middle" src="godzilla.gif">
+# Dave O'Hallaron
+# </body>
+# </html>
+# * Closing connection 0
+
+run debug proxy (--port 8000)
+
+curl -v http://localhost:8000/home.html
+```
 
 # Hints
 - the Robust I/O (RIO) package

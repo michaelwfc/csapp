@@ -5,13 +5,13 @@
 # build your proxy from sources.
 
 CC = gcc
-CFLAGS = -g -Wall
+CFLAGS = -g -Wall -I .
 LDFLAGS = -lpthread
 
 all: proxy
 
 csapp.o: csapp.c csapp.h
-	$(CC) $(CFLAGS) -c csapp.c
+	$(CC) $(CFLAGS)  -c csapp.c
 
 proxy.o: proxy.c csapp.h
 	$(CC) $(CFLAGS) -c proxy.c

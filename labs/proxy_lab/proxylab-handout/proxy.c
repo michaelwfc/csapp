@@ -15,8 +15,9 @@
 /* You won't lose style points for including this long line in your code */
 static const char *user_agent_hdr = "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3\r\n";
 
-void *handleRequest(int connfd,char *port);
+void handleRequest(int connfd);
 // int parse_uri(char *uri, char *filename, char *cgiargs);
+void forwardRequest(int connfd, char *host, char *port, char *buf);
 void clienterror(int fd, char *cause, char *errnum,
                  char *shortmsg, char *longmsg);
 
@@ -36,11 +37,13 @@ int main(int argc, char **argv)
         fprintf(stderr, "usage: %s <port>\n", argv[0]);
         exit(1);
     }
- 
+
     char *proxy_port = argv[1];
 
     int listenfd, connfd;
-    char hostname[MAXLINE], port[MAXLINE];
+    char hostname[MAXLINE];
+    char client_port[6]; // Enough to hold max 5 digits + null terminator
+    int proxy_request_port_int;
     socklen_t clientlen;
     struct sockaddr_storage clientaddr;
     // listen on the proxy port
@@ -49,9 +52,9 @@ int main(int argc, char **argv)
     {
         clientlen = sizeof(clientaddr);
         connfd = accept(listenfd, (SA *)&clientaddr, &clientlen);
-        getnameinfo((SA *)&clientaddr, clientlen, hostname, MAXLINE, port, MAXLINE, 0);
-        printf("Accepted connection from (%s, %s)\n", hostname, port);
-        handleRequest(connfd, port);
+        getnameinfo((SA *)&clientaddr, clientlen, hostname, MAXLINE, client_port, MAXLINE, 0);
+        printf("Accepted connection from (%s, %s)\n", hostname, client_port);
+        handleRequest(connfd);
         close(connfd);
     }
 
@@ -66,20 +69,57 @@ int main(int argc, char **argv)
  * read the servers’ responses,
  * forward those responses to the corresponding clients.
  */
-void *handleRequest(int connfd, char *port)
+void handleRequest(int connfd)
 {
-    int is_static;
-    struct stat sbuf;
     char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
-    char filename[MAXLINE], cgiargs[MAXLINE];
     rio_t rio;
-
+    char request[MAXLINE];
     Rio_readinitb(&rio, connfd);
+
+    // parse the request from client :
+    // ex:  curl -v http://localhost:8000/home.html  (8000 is proxy port)
+    // request line: GET /index.html HTTP/1.1
+    // request headers: Host: localhost:8000
+    // Empty text line: \r\n
+
+    // parse the request line of client request to get method, uri, version
     if (Rio_readlineb(&rio, buf, MAXLINE) == 0)
     {
         return;
     }
     sscanf(buf, "%s %s %s", method, uri, version);
+
+    // parse the request headers
+    char host[MAXLINE], host_and_port[MAXLINE];
+    char client_headers[MAXLINE];
+    while (Rio_readlineb(&rio, buf, MAXLINE) > 0)
+    {
+        if (strcmp(buf, "\r\n") == 0)
+        {
+            // Empty text line: \r\n
+            break;
+        }
+        else if (strncmp(buf, "Host: ", 6) == 0)
+        {
+            strncpy(host_and_port, buf + 6, strlen(buf) - 8); // Remove "Host: " and "\r\n"
+            host_and_port[strlen(buf) - 8] = '\0';
+            // Find the colon
+            char *colon = strchr(host_and_port, ':');
+            if (colon != NULL)
+            {
+                *colon = '\0'; // Null-terminate the hostname
+                strcpy(host, host_and_port);
+            }
+            else
+            {
+                strcpy(host, host_and_port);
+            }
+        }
+        else
+        {
+            strcat(client_headers, buf);
+        }
+    }
 
     if (strcasecmp(method, "POST") == 1)
     {
@@ -88,30 +128,49 @@ void *handleRequest(int connfd, char *port)
         return;
     }
 
-    // forward the request to the server
-    char *proxy_buf[MAXLINE];
+    // Construct the request from proxy then send to the server
+    // Request line: <method> <uri> <version>
+    // Request headers:
+    // Empty text line: \r\n
+    sprintf(request, "%s %s %s\r\n", method, uri, version);
 
-    forwardRequest(connfd, uri, port, proxy_buf);
+    sprintf(request + strlen(request), "Host: %s\r\n", host);
+    sprintf(request + strlen(request), "User-Agent: proxy\r\n");
+    sprintf(request + strlen(request), "\r\n");
+
+    // forward the request to the server
+    char *tiny_server_port = "8001";
+
+    forwardRequest(connfd, host, tiny_server_port, request);
 }
 
-int forwardRequest(int connfd, char *host, char *port, char *buf)
+void forwardRequest(int connfd, char *host, char *port, char *request)
 {
+    int n;
+    char buf[MAXLINE];
+    char response[MAXBUF];
     // the proxy clientfd
     int clientfd;
-    // char *host, *port, buf[MAXLINE];
+    // open the connection from proxy to the server: proxy -> server
     rio_t rio;
-
+    printf("Proxy: Forwarding to %s:%s\n", host, port);
     clientfd = Open_clientfd(host, port);
+    // initialize the rio for clienfd
     Rio_readinitb(&rio, clientfd);
 
-    Rio_writen(clientfd, buf, strlen(buf));
+    // Send the request to the server
+    Rio_writen(clientfd, request, strlen(request));
 
-    // wait the response from the server
-    Rio_readnb(&rio, buf, MAXLINE);
+    // block and wait the response from the server
+    // read the response from the server until the end of the response
+    while ((n = Rio_readlineb(&rio, buf, MAXLINE)) != 0)
+    {
+        strcat(response, buf);
+    }
 
     // response to the client connfd
     // proxyResponseRequest(connfd, buf);
-    Rio_writen(connfd, buf, MAXLINE);
+    Rio_writen(connfd, response, strlen(response));
 
     Close(clientfd); // line:netp:echoclient:close
 }

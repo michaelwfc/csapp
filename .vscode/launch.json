@@ -43,7 +43,7 @@
           "ignoreFailures": false
         }
       ],
-      "preLaunchTask": "gcc build proxy", //Task to compile the code before running the debugger
+      "preLaunchTask": "Build with make proxy", //Task to compile the code before running the debugger
       "targetArchitecture": "x86_64",
       "logging": { "engineLogging": true }
     },

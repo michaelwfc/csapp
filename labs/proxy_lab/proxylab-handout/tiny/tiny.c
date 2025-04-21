@@ -125,8 +125,8 @@ void read_requesthdrs(rio_t *rp)
 /*
  * parse_uri - parse URI into filename and CGI args
  *             return 0 if dynamic content, 1 if static
- * 
- * 
+ *
+ *
 CGI (Common Gateway Interface) arguments, often referred to as **CGI args**, are parameters passed to a CGI program when it is invoked by a web server. These arguments typically come from the client's HTTP request and are used to provide input data to the CGI script or program for processing.
 
 ### Key Points about CGI Args:
