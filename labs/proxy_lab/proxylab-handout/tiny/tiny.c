@@ -30,6 +30,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "usage: %s <port>\n", argv[0]);
         exit(1);
     }
+    printf("start tiny web server at port: %s\n", argv[1]);
 
     listenfd = Open_listenfd(argv[1]);
     while (1)

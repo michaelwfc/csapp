@@ -19,29 +19,24 @@ web content.
 # Part I: Implementing a sequential web proxy
 
 The first step is implementing a basic sequential proxy that handles HTTP/1.0 GET requests. Other requests type, such as POST, are strictly optional.
-When started, your proxy should listen for incoming connections on a port whose number will be specified on the command line. 
-Once a connection is established, your proxy should read the entirety of the request from the client and parse the request. 
-It should determine whether the client has sent a valid HTTP request;
-if so, it can then establish its own connection to the appropriate web server then request the object the client specified. 
-Finally, your proxy should read the server’s response and forward it to the client.
+- When started, your proxy should listen for incoming connections on a port whose number will be specified on the command line. 
+- Once a connection is established, your proxy should read the entirety of the request from the client and parse the request. 
+- It should determine whether the client has sent a valid HTTP request;
+- if so, it can then establish its own connection to the appropriate web server then request the object the client specified. 
+- Finally, your proxy should read the server’s response and forward it to the client.
 
 
 ## 4.1 HTTP/1.0 GET requests
 When an end user enters a URL such as http://www.cmu.edu/hub/index.html into the address bar of a web browser, the browser will send an HTTP request to the proxy that begins with a line that might resemble the following:
-
 `GET http://www.cmu.edu/hub/index.html HTTP/1.1`
-
 In that case, the proxy should parse the request into at least the following fields: 
-- the hostname, www.cmu.edu;
-- the path or query and everything following it, /hub/index.html. 
+- the `hostname`, www.cmu.edu;
+- the `path` or `query` and everything following it, /hub/index.html. 
   
 That way, the proxy can determine that it should open a connection to www.cmu.edu and send an HTTP request of its own starting with a line of the following form:
-
 `GET /hub/index.html HTTP/1.0`
-
 Note that all lines in an HTTP request end with a `carriage return`, ‘\r’, followed by a newline, ‘\n’. 
 Also important is that every HTTP request is terminated by `an empty line`: "\r\n".
-
 
 You should notice in the above example that the web browser’s request line ends with `HTTP/1.1`, while the proxy’s request line ends with `HTTP/1.0.` Modern web browsers will generate HTTP/1.1 requests, but your proxy should handle them and forward them as HTTP/1.0 requests.
 It is important to consider that HTTP requests, even just the subset of HTTP/1.0 GET requests, can be incredibly complicated. 
@@ -50,99 +45,63 @@ Of course, your proxy should never prematurely abort due to a malformed request.
 
 
 ## 4.2 Request headers
-The important request headers for this lab are the Host, User-Agent, Connection, and Proxy-Connection headers:
+The important request headers for this lab are the `Host`, `User-Agent`, `Connection`, and `Proxy-Connection` headers:
 
 
-- Always send a `Host header`. While this behavior is technically not sanctioned by the HTTP/1.0 specification, it is necessary to coax sensible responses out of certain Web servers, especially those that use virtual hosting.
-The Host header describes the hostname of the end server. For example, to access http://www.cmu.edu/hub/index.html, your proxy would send the following header:
-
-`Host: www.cmu.edu`
-
-It is possible that web browsers will attach `their own Host headers` to their HTTP requests. If that is the case, your proxy should use the same Host header as the browser.
+- Always send a `Host` header. 
+  While this behavior is technically not sanctioned by the HTTP/1.0 specification, it is necessary to coax sensible responses out of certain Web servers, especially those that use virtual hosting.
+  The Host header describes `the hostname of the end server`. 
+  For example, to access http://www.cmu.edu/hub/index.html, your proxy would send the following header:
+     `Host: www.cmu.edu`
+  It is possible that web browsers will attach `their own Host headers` to their HTTP requests. If that is the case, your proxy should use the same Host header as the browser.
 
 - You may choose to always send the following `User-Agent header`:
+  `User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3`
 
-`User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3`
+  The User-Agent header identifies `the client` (in terms of parameters such as the operating system and browser), and web servers often use the identifying information to manipulate the content they serve. 
+  Sending this particular `User-Agent:` string may improve, in content and diversity, the material that you get back during simple telnet-style testing.
 
-The header is provided on two separate lines because it does not fit as a single line in the writeup, but your proxy should send the header as a single line.
-The User-Agent header identifies the client (in terms of parameters such as the operating system and browser), and web servers often use the identifying information to manipulate the content they serve. 
-Sending this particular `User-Agent:` string may improve, in content and diversity, the material that you get back during simple telnet-style testing.
+  For your convenience, the values of the described User-Agent header is provided to you as a string constant in proxy.c.
 
 - Always send the following `Connection header`:
-`Connection: close`
-
+  `Connection: close`
 - Always send the following `Proxy-Connection header`:
-`Proxy-Connection: close`
-The Connection and Proxy-Connection headers are used to specify whether a connection will be kept alive after the first request/response exchange is completed. It is perfectly acceptable (and suggested) to have your proxy open a new connection for each request. Specifying close as the value of these headers alerts web servers that your proxy intends to close connections after the first request/response exchange.
+  `Proxy-Connection: close`
+  The Connection and Proxy-Connection headers are used to specify whether a connection will be kept alive after the first request/response exchange is completed. It is perfectly acceptable (and suggested) to have your proxy open a new connection for each request. Specifying close as the value of these headers alerts web servers that your proxy intends to close connections after the first request/response exchange.
 
-For your convenience, the values of the described User-Agent header is provided to you as a string constant in proxy.c.
-Finally, if a browser sends any additional request headers as part of an HTTP request, your proxy should forward them unchanged.
+- Finally, if a browser sends `any additional request headers` as part of an HTTP request, your proxy should forward them unchanged.
 
 
 ## 4.3 Port numbers
 There are two significant classes of port numbers for this lab: 
-- HTTP request ports
-- your proxy’s listening port.
-The HTTP request port is an optional field in the URL of an HTTP request. That is, the URL may be of the form, http://www.cmu.edu:8080/hub/index.html, in which case your proxy should connect to the host www.cmu.edu on port 8080 instead of the `default HTTP port`, which is port 80. 
-Your proxy must properly function whether or not the port number is included in the URL.
+- `HTTP request ports`
+  The HTTP request port is an optional field in the URL of an HTTP request. That is, the URL may be of the form, http://www.cmu.edu:8080/hub/index.html, in which case your proxy should connect to the host www.cmu.edu on port 8080 instead of the `default HTTP port`, which is port 80. 
+  Your proxy must properly function whether or not the port number is included in the URL.
 
-The listening port is the port on which your proxy should listen for incoming connections. 
-Your proxy should accept a command line argument specifying the listening port number for your proxy. 
-For example, with the following command, your proxy should listen for connections on port 15213:
-`linux> ./proxy 8000`
-You may select any non-privileged listening port (greater than 1,024 and less than 65,536) as long as it is not used by other processes. Since each proxy must use a unique listening port and many people will simultaneously be working on each machine, the script port-for-user.pl is provided to help you pick your own personal port number. Use it to generate port number based on your user ID:
+- your `proxy’s listening port`.
+  The listening port is the port on which your proxy should listen for incoming connections. 
+  Your proxy should accept a command line argument specifying the listening port number for your proxy. 
+  For example, with the following command, your proxy should listen for connections on port 15213:
+  `linux> ./proxy 8000`
+
+You may select any `non-privileged listening port` (greater than 1,024 and less than 65,536) as long as it is not used by other processes. Since each proxy must use a unique listening port and many people will simultaneously be working on each machine, the script port-for-user.pl is provided to help you pick your own personal port number. Use it to generate port number based on your user ID:
 `linux> ./port-for-user.pl droh`
 droh: 45806
 The port, p, returned by port-for-user.pl is always an even number. So if you need an additional port number, say for the Tiny server, you can safely use ports p and p + 1.
 Please don’t pick your own random port. If you do, you run the risk of interfering with another user.
 
-
-
-```bash
-run debug tiny server
-
-curl -v http://localhost:8001/home.html
-# * Uses proxy env variable no_proxy == 'localhost,127.0.0.1,::1'
-# *   Trying 127.0.0.1:8001...
-# * TCP_NODELAY set
-# * Connected to localhost (127.0.0.1) port 8001 (#0)
-# > GET /home.html HTTP/1.1
-# > Host: localhost:8001
-# > User-Agent: curl/7.68.0
-# > Accept: */*
-# > 
-# * Mark bundle as not supporting multiuse
-# * HTTP 1.0, assume close after body
-# < HTTP/1.0 200 OK
-# < Server: Tiny Web Server
-# < Content-length: 120
-# < Content-type: text/html
-# < 
-# <html>
-# <head><title>test</title></head>
-# <body> 
-# <img align="middle" src="godzilla.gif">
-# Dave O'Hallaron
-# </body>
-# </html>
-# * Closing connection 0
-
-run debug proxy (--port 8000)
-
-curl -v http://localhost:8000/home.html
-```
-
 # Hints
 - the Robust I/O (RIO) package
   As discussed in Section 10.11 of your textbook, using standard I/O functions for socket input and output is a problem. 
   Instead, we recommend that you use the Robust I/O (RIO) package, which is provided in the csapp.c file in the handout directory.
+
 - The error-handling
   The error-handling functions provide in csapp.c are not appropriate for your proxy because once a server begins accepting connections, it is not supposed to terminate. You’ll need to modify them or write your own.
 
 - good modularity
   You are free to modify the files in the handout directory any way you like. 
-  For example, for the sake of good modularity, you might implement your cache functions as a library in files called cache.c
-and cache.h. Of course, adding new files will require you to update the provided Makefile.
+  For example, for the sake of good modularity, you might implement your cache functions as a library in files called cache.c and cache.h. 
+  Of course, adding new files will require you to update the provided Makefile.
 - SIGPIPE signals & EPIPE errors
   As discussed in the Aside on page 964 of the CS:APP3e text, your proxy must ignore SIGPIPE signals
 and should deal gracefully with write operations that return EPIPE errors.
@@ -150,8 +109,254 @@ and should deal gracefully with write operations that return EPIPE errors.
   Sometimes, calling read to receive bytes from a socket that has been prematurely closed will cause
 read to return -1 with errno set to ECONNRESET. Your proxy should not terminate due to this
 error either.
-- Remember that not all content on the web is ASCII text. Much of the content on the web is binary
-data, such as images and video. Ensure that you account for binary data when selecting and using
-functions for network I/O.
-- HTTP/1.0
+- Remember that not all content on the web is ASCII text. Much of the content on the web is `binary data`, such as images and video. Ensure that you account for binary data when selecting and using functions for network I/O.
+- `HTTP/1.0`
   Forward all requests as HTTP/1.0 even if the original request was HTTP/1.1.
+
+  
+# Debug 
+## debug with curl
+
+vscode debug tiny server (--port 8001)
+vscode debug proxy (--port 8000)
+
+```bash
+curl -v http://localhost:8000/home.html
+* Uses proxy env variable no_proxy == 'localhost,127.0.0.1,::1'
+*   Trying 127.0.0.1:8001...
+* TCP_NODELAY set
+* Connected to localhost (127.0.0.1) port 8001 (#0)
+> GET /home.html HTTP/1.1
+> Host: localhost:8001
+> User-Agent: curl/7.68.0
+> Accept: */*
+> 
+* Mark bundle as not supporting multiuse
+* HTTP 1.0, assume close after body
+< HTTP/1.0 200 OK
+< Server: Tiny Web Server
+< Content-length: 120
+< Content-type: text/html
+< 
+<html>
+<head><title>test</title></head>
+<body> 
+<img align="middle" src="godzilla.gif">
+Dave O'Hallaron
+</body>
+</html>
+* Closing connection 0
+```
+
+debug proxy
+
+```bash
+start proxy at port:8000
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3
+Accepted connection from (localhost, 52750)
+method: GET, uri: /home.html, version: HTTP/1.1
+buf-------------------
+Host: localhost:8000
+User-Agent: curl/7.68.0
+Accept: */*
+
+Proxy: Forwarding to localhost:8001
+
+
+Proxy: Receiving from localhost:8001
+response buf--------------
+HTTP/1.0 200 OK
+Server: Tiny Web Server
+Content-length: 120
+Content-type: text/html
+
+<html>
+<head><title>test</title></head>
+<body> 
+<img align="middle" src="godzilla.gif">
+Dave O'Hallaron
+</body>
+</html>
+```
+
+
+## debug with chrome
+### Web browser directly on tiny server port:  http://localhost:8001/home.html
+
+when I input  browser with  http://localhost:8001/home.html, why the browser  
+- first make request line with GET /home.html HTTP/1.1 from Host: localhost:8001,
+  return response:
+```html
+  HTTP/1.0 200 OK
+  Server: Tiny Web Server
+  Content-length: 120
+  Content-type: text/html
+
+  <html>
+  <head><title>test</title></head>
+  <body> 
+  <img align="middle" src="godzilla.gif">
+  Dave O'Hallaron
+  </body>
+  </html>
+```
+
+- then make second request:  GET /godzilla.gif HTTP/1.1
+- but why the web browser  make a thrid request GET /favicon.ico HTTP/1.1?
+Browsers automatically try to fetch a favicon (the small icon shown in browser tabs or bookmarks) by requesting:
+
+
+1. Initial HTML Request:
+First Request: Fetch the main HTML document (/home.html).
+2. Parsing the HTML:
+Upon receiving the HTML content, the browser parses it to render the page.
+In your case, the HTML contains an image tag <img align="middle" src="godzilla.gif">.
+3. Subsequent Resource Requests:
+Fetch additional resources referenced within the HTML (in this case, the image godzilla.gif).
+
+This multi-step process ensures that all elements required to display the complete web page are retrieved from the server.
+
+```bash
+start tiny web server at port: 8001
+Accepted connection from (localhost, 50548)
+GET /home.html HTTP/1.1
+Host: localhost:8001
+Connection: keep-alive
+sec-ch-ua: "Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "Windows"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Accept-Encoding: gzip, deflate, br, zstd
+Accept-Language: zh-CN,zh;q=0.9
+
+Accepted connection from (localhost, 50558)
+GET /godzilla.gif HTTP/1.1
+Host: localhost:8001
+Connection: keep-alive
+sec-ch-ua-platform: "Windows"
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+sec-ch-ua: "Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"
+sec-ch-ua-mobile: ?0
+Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: no-cors
+Sec-Fetch-Dest: image
+Referer: http://localhost:8001/home.html
+Accept-Encoding: gzip, deflate, br, zstd
+Accept-Language: zh-CN,zh;q=0.9
+
+Accepted connection from (localhost, 50566)
+```
+
+### Web browser on proxy port:  http://localhost:8000/home.html
+```bash
+start proxy at port:8000
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3
+Accepted connection from (localhost, 50668)
+method uri version(request line from client):
+GET /home.html HTTP/1.1
+client request buf-------------------
+Host: localhost:8000
+Connection: keep-alive
+Cache-Control: max-age=0
+sec-ch-ua: "Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "Windows"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Accept-Encoding: gzip, deflate, br, zstd
+Accept-Language: zh-CN,zh;q=0.9
+
+Proxy: Forwarding to localhost:8001
+
+
+Proxy: Receiving from localhost:8001
+response buf--------------
+HTTP/1.0 200 OK
+Server: Tiny Web Server
+Content-length: 120
+Content-type: text/html
+
+<html>
+<head><title>test</title></head>
+<body> 
+<img align="middle" src="godzilla.gif">
+Dave O'Hallaron
+</body>
+</html>
+Accepted connection from (localhost, 50670)
+method uri version(request line from client):
+GET /godzilla.gif HTTP/1.1
+client request buf-------------------
+Host: localhost:8000
+Connection: keep-alive
+sec-ch-ua-platform: "Windows"
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+sec-ch-ua: "Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"
+sec-ch-ua-mobile: ?0
+Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: no-cors
+Sec-Fetch-Dest: image
+Referer: http://localhost:8000/home.html
+Accept-Encoding: gzip, deflate, br, zstd
+Accept-Language: zh-CN,zh;q=0.9
+
+Proxy: Forwarding to localhost:8001
+
+
+Proxy: Receiving from localhost:8001
+response buf--------------
+HTTP/1.0 200 OK
+Server: Tiny Web Server
+Content-length: 12155
+Content-type: image/gif
+
+GIF87ad���XcH�amBUyQ��5%H4Z��G��@3��X�����ː̍�LbsiH�$��hT��!�r�(8d Q�R��LX���X�T���
+......
+                           �E@
+Accepted connection from (localhost, 50684)
+method uri version(request line from client):
+GET /favicon.ico HTTP/1.1
+client request buf-------------------
+Host: localhost:8000
+Connection: keep-alive
+sec-ch-ua-platform: "Windows"
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+sec-ch-ua: "Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"
+sec-ch-ua-mobile: ?0
+Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: no-cors
+Sec-Fetch-Dest: image
+Referer: http://localhost:8000/home.html
+Accept-Encoding: gzip, deflate, br, zstd
+Accept-Language: zh-CN,zh;q=0.9
+
+Proxy: Forwarding to localhost:8001
+
+
+Proxy: Receiving from localhost:8001
+response buf--------------
+HTTP/1.0 404 Not found
+Content-type: text/html
+
+<html><title>Tiny Error</title><body bgcolor=ffffff>
+404: Not found
+<p>Tiny couldn't find this file: ./favicon.ico
+<hr><em>The Tiny Web server</em>
+```
+
+
+

@@ -30,7 +30,7 @@ void clienterror(int fd, char *cause, char *errnum,
  */
 int main(int argc, char **argv)
 {
-    printf("%s", user_agent_hdr);
+    printf("start proxy at port:%s\n", argv[1]);
 
     if (argc != 2)
     {
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
     int listenfd, connfd;
     char hostname[MAXLINE];
     char client_port[6]; // Enough to hold max 5 digits + null terminator
-    int proxy_request_port_int;
+
     socklen_t clientlen;
     struct sockaddr_storage clientaddr;
     // listen on the proxy port
@@ -69,18 +69,19 @@ int main(int argc, char **argv)
  * read the servers’ responses,
  * forward those responses to the corresponding clients.
  */
-void handleRequest(int connfd)
-{
-    char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
-    rio_t rio;
-    char request[MAXLINE];
-    Rio_readinitb(&rio, connfd);
 
+void parse_request(int connfd, char *method, char *uri, char *version, char *host,
+                   char *client_user_agent, char *client_connection, char *client_headers)
+{
     // parse the request from client :
     // ex:  curl -v http://localhost:8000/home.html  (8000 is proxy port)
     // request line: GET /index.html HTTP/1.1
     // request headers: Host: localhost:8000
     // Empty text line: \r\n
+    printf("\nProxy: parsing request from client:\n");
+    char buf[MAXLINE], host_and_port[MAXLINE];
+    rio_t rio;
+    Rio_readinitb(&rio, connfd);
 
     // parse the request line of client request to get method, uri, version
     if (Rio_readlineb(&rio, buf, MAXLINE) == 0)
@@ -88,12 +89,12 @@ void handleRequest(int connfd)
         return;
     }
     sscanf(buf, "%s %s %s", method, uri, version);
+    printf("%s %s %s\n", method, uri, version);
 
     // parse the request headers
-    char host[MAXLINE], host_and_port[MAXLINE];
-    char client_headers[MAXLINE];
     while (Rio_readlineb(&rio, buf, MAXLINE) > 0)
     {
+        printf("%s", buf);
         if (strcmp(buf, "\r\n") == 0)
         {
             // Empty text line: \r\n
@@ -115,11 +116,46 @@ void handleRequest(int connfd)
                 strcpy(host, host_and_port);
             }
         }
+        else if (strncmp(buf, "User-Agent: ", 12) == 0)
+        {
+            // get the client User-Agent header
+            strncpy(client_user_agent, buf + 12, strlen(buf) - 14);
+            client_user_agent[strlen(buf) - 14] = "\0";
+        }
+        else if (strncmp(buf, "Connection: ", 12) == 0)
+        {
+            // get the client Connection header
+            strncpy(client_connection, buf + 12, strlen(buf) - 14);
+            client_connection[strlen(buf) - 14] = "\0";
+        }
         else
         {
             strcat(client_headers, buf);
         }
     }
+}
+
+void buildProxyRequest(char *request, char *method, char *uri, char *version, char *host, char *client_user_agent, char *client_connection, char *client_headers)
+{
+    // Construct the request from proxy then send to the server
+    // Request line: <method> <uri> <version>
+    // Request headers:
+    // Empty text line: \r\n
+    char proxy_verion[MAXLINE] = "HTTP/1.0";
+    sprintf(request, "%s %s %s\r\n", method, uri, proxy_verion);
+    sprintf(request + strlen(request), "Host: %s\r\n", host);
+    sprintf(request + strlen(request), "User-Agent: %s", user_agent_hdr);
+    sprintf(request + strlen(request), "%s", "Connection: close\r\n");
+    sprintf(request + strlen(request), "%s", "Proxy-Connection: close\r\n");
+    sprintf(request + strlen(request), "%s", client_headers);
+    sprintf(request + strlen(request), "\r\n");
+}
+void handleRequest(int connfd)
+{
+    char method[MAXLINE], uri[MAXLINE], version[MAXLINE], host[MAXLINE], client_user_agent[MAXLINE], client_connection[MAXLINE], client_headers[MAXLINE];
+    
+
+    parse_request(connfd, method, uri, version, host, client_user_agent, client_connection, client_headers);
 
     if (strcasecmp(method, "POST") == 1)
     {
@@ -127,33 +163,37 @@ void handleRequest(int connfd)
         clienterror(connfd, uri, "501", "Not Implemented", "Proxy does not implement this method");
         return;
     }
-
-    // Construct the request from proxy then send to the server
-    // Request line: <method> <uri> <version>
-    // Request headers:
-    // Empty text line: \r\n
-    sprintf(request, "%s %s %s\r\n", method, uri, version);
-
-    sprintf(request + strlen(request), "Host: %s\r\n", host);
-    sprintf(request + strlen(request), "User-Agent: proxy\r\n");
-    sprintf(request + strlen(request), "\r\n");
+    char request[MAXLINE];
+    buildProxyRequest(request, method, uri, version, host, client_user_agent, client_connection, client_headers);
 
     // forward the request to the server
     char *tiny_server_port = "8001";
-
+    printf("Proxy: Forwarding to %s:%s\n%s\n\n", host, tiny_server_port, request);
     forwardRequest(connfd, host, tiny_server_port, request);
 }
 
+
+/**    
+ * binary data: Can contain null bytes (\0), which means you cannot treat it like a normal string.
+ * Needs to be handled with byte counts, not string functions like strlen.
+ * If you’re forwarding HTTP responses with binary content, parse the HTTP headers to get:  Content-Length: 84923
+ * 
+ * Bonus: Chunked Transfer Encoding?
+If the server uses chunked transfer encoding (in HTTP/1.1), you’ll need to:
+- Parse chunk sizes
+- Read chunks accordingly
+- Handle \r\n correctly
+ */
 void forwardRequest(int connfd, char *host, char *port, char *request)
 {
     int n;
-    char buf[MAXLINE];
-    char response[MAXBUF];
+    char buf[MAXLINE], response[MAXBUF];
+
     // the proxy clientfd
     int clientfd;
     // open the connection from proxy to the server: proxy -> server
     rio_t rio;
-    printf("Proxy: Forwarding to %s:%s\n", host, port);
+
     clientfd = Open_clientfd(host, port);
     // initialize the rio for clienfd
     Rio_readinitb(&rio, clientfd);
@@ -163,31 +203,36 @@ void forwardRequest(int connfd, char *host, char *port, char *request)
 
     // block and wait the response from the server
     // read the response from the server until the end of the response
-    while ((n = Rio_readlineb(&rio, buf, MAXLINE)) != 0)
-    {
-        strcat(response, buf);
-    }
+    printf("Proxy Receiving  response from %s:%s\n", host, port);
+    // while ((n = Rio_readlineb(&rio, buf, MAXLINE)) != 0)
+    // {
+    //     printf("%s", buf);
+    //     strcat(response, buf);
+    // }
+    // // response to the client connfd
+    // // proxyResponseRequest(connfd, buf);
+    // Rio_writen(connfd, response, strlen(response));
 
-    // response to the client connfd
-    // proxyResponseRequest(connfd, buf);
-    Rio_writen(connfd, response, strlen(response));
+    int response_len = 0;
+
+    while ((n = Rio_readnb(&rio, buf, MAXBUF)) > 0) // Read from server and write to client until EOF or error
+    {   
+        printf("%s", buf);  // might stop early on binary data  include null bytes (\0)                         
+        /* This is streaming, not buffering the full data. It works well even for large files.
+         the client will start receiving data as each write() call is made — not only after the loop finishes.
+        The key here is that write(client_fd, buf, n) sends data over a TCP socket. TCP is a streaming protocol, so:
+            1. Each write() pushes bytes into the TCP send buffer.
+            2. The kernel starts transmitting the data immediately (subject to buffering and flow control).
+            3. The client can start receiving the data incrementally, often even before your while loop finishes.
+         */
+        Rio_writen(connfd, buf, n); 
+        response_len += n;              
+    }
 
     Close(clientfd); // line:netp:echoclient:close
 }
 /* $end echoclientmain */
 
-/**
- * copy the response from the server in clientfd to the connfd
- */
-// void proxyResponseRequest(int fd, int clientfd)
-// {
-//     /* Send response body to client */
-//     char * srcp;
-//     int filesize = sizeof(clientfd);
-//     srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, clientfd, 0);
-//     Rio_writen(fd, srcp, filesize);
-//     Munmap(srcp, filesize);
-// }
 
 /**
  * HTTP request parser
