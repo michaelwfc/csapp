@@ -1336,14 +1336,14 @@ Other approaches (out of our scope)
 
 Semaphores are synchronization primitives used in concurrent programming to control access to shared resources.
 
-Semaphore: `non-negative global integer synchronization variabl`e. Manipulated by P and V operations.
+Semaphore: `non-negative global integer synchronization variable`. Manipulated by P and V operations.
 
 They are typically represented as a non-negative global integer variable that can be modified only via two atomic operations called P (often pronounced “P” or "wait") and V (often pronounced “V” or "signal").
 
 Semaphore (s):
 
-- A semaphore is essentially a counter. It might represent, for example, the number of available resources or slots in a shared system.
-- Global and Non-Negative: The semaphore is global (visible to all threads) and it must remain non-negative. When it reaches zero, it means there are no more resources available.
+- A semaphore is `essentially a counter`. It might represent, for example, the number of available resources or slots in a shared system.
+- `Global and Non-Negative`: The semaphore is global (visible to all threads) and it must remain non-negative. When it reaches zero, it means there are no more resources available.
 
 #### The P (Wait) Operation : P(s)
 
@@ -1357,12 +1357,12 @@ The operation P(s) (sometimes called wait or down) is used by a thread to `acqui
 - If s is zero, Blocking When s Is Zero
   - If s is zero, this means no resources are available.
   - The thread does not spin in a loop—it is `suspended (blocked)`, meaning it is put to sleep by the operating system.
-  - The thread will remain suspended until some other thread performs a V operation on s (i.e., releases a resource), which will eventually wake up one blocked thread.
+  - The thread will remain suspended until some other thread performs a `V operation` on s (i.e., releases a resource), which will eventually wake up one blocked thread.
   - After restarting,the thread will then again do the P operation atomically decrements s and returns control to the caller.
 
 ##### Atomicity:
 
-- `Test` and `decrement` operations occur atomically (`indivisibly`), that are steps in P(s) are performed as an atomic operation, meaning the thread checks s and decrements it in one indivisible step. o
+- `Test` and `decrement` operations occur atomically (`indivisibly`), that are steps in P(s) are performed as an atomic operation, meaning the thread checks s and decrements it in one indivisible step. 
 - This avoids race conditions where multiple threads might check the value at the same time.
 
 #### The V (Signal) Operation: V(s)
@@ -1465,7 +1465,6 @@ Terminology:
 - Counting semaphores are a type of semaphore that can have a value greater than 1.
 - They are used to control access to a resource that has multiple instances.
 - Unlike binary semaphores, which are used for mutual exclusion and can only have values of 0 or 1, counting semaphores can be used to manage a pool of resources.
--
 
 ##### Why Use Counting Semaphores?
 
@@ -1557,8 +1556,7 @@ void *thread(void *vargp)
 
 ### 12.5.4 Using Semaphores to Schedule Shared Resources
 
-Another important use of semaphores, besides providing mutual exclusion, is to
-`schedule accesses to shared resources`
+Another important use of semaphores, besides providing mutual exclusion, is to `schedule accesses to shared resources`
 In this scenario, a thread uses a semaphore operation to notify another thread that some condition in the program state has become true.
 
 #### Basic idea:
@@ -1566,7 +1564,7 @@ In this scenario, a thread uses a semaphore operation to notify another thread t
 Thread uses a semaphore operation to notify another thread that some condition has become true
 
 - Use `counting semaphores` to keep track of resource state and to notify other threads
-- Use mutex to protect access to resource
+- Use `mutex` to protect access to resource
 
 #### Two classic examples:
 
@@ -1659,14 +1657,13 @@ Thread uses a semaphore operation to notify another thread that some condition h
 typedef struct {
     int *buf;          /* Buffer array : Items are stored in a dynamically allocated integer array (buf) with n items.*/
     int n;             /* Maximum number of slots */
-    int front;         /* buf[(front+1)%n] is first item:keep track of the first and last items in the array. */
+    int front;         /* buf[(front+1)%n] keep track of the first items in the array. */
     int rear;          /* buf[rear%n] indicates the position where the last item was inserted.*/
     sem_t mutex;       /* Protects accesses to buf : provides mutually exclusive buffer access*/
     sem_t slots;       /* Counts available slots : counting semaphore that count the number of empty slots*/
     sem_t items;       /* Counts available items : counting semaphore that count the number of available items*/
 } sbuf_t;
 /* $end sbuft */
-
 
 
 /* $begin sbufc */
@@ -1704,9 +1701,8 @@ void sbuf_insert(sbuf_t *sp, int item)
     V(&sp->mutex);                          /* Unlock the buffer */
     V(&sp->items);                          /* Announce available item */
 }
-
-
 /* $end sbuf_insert */
+
 
 /* Remove and return the first item from buffer sp */
 /* $begin sbuf_remove */
@@ -2044,7 +2040,7 @@ void writer(void)
 In the concurrent server in Figure 12.14, we created` a new thread for each new client`.
 A disadvantage of this approach is that we incur the nontrivial cost of creating a new thread for each new client.
 
-`A server based on prethreading` tries to reduce this overhead by using `the producer-consumer model` shown in Figure 12.27.
+`A server based on prethreading` tries to reduce this overhead by using ***the producer-consumer model*** shown in Figure 12.27.
 
 ![image](../images/Chapter%2012%20Concurrent%20Programming/Figure%2012.27%20Organization%20of%20a%20prethreaded%20concurrent%20server.png)
 

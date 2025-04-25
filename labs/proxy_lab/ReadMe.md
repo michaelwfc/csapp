@@ -90,6 +90,17 @@ droh: 45806
 The port, p, returned by port-for-user.pl is always an even number. So if you need an additional port number, say for the Tiny server, you can safely use ports p and p + 1.
 Please don’t pick your own random port. If you do, you run the risk of interfering with another user.
 
+
+# 5 Part II: Dealing with multiple concurrent requests
+Once you have a working sequential proxy, you should alter it to simultaneously handle multiple requests.
+The simplest way to implement a concurrent server is to spawn a new thread to handle each new connection
+request. Other designs are also possible, such as the prethreaded server described in Section 12.5.5 of your
+textbook.
+- Note that your threads should run in detached mode to avoid memory leaks.
+- The open clientfd and open listenfd functions described in the CS:APP3e textbook are
+based on the modern and protocol-independent getaddrinfo function, and thus are thread safe.
+
+
 # Hints
 - the Robust I/O (RIO) package
   As discussed in Section 10.11 of your textbook, using standard I/O functions for socket input and output is a problem. 
@@ -102,6 +113,7 @@ Please don’t pick your own random port. If you do, you run the risk of interfe
   You are free to modify the files in the handout directory any way you like. 
   For example, for the sake of good modularity, you might implement your cache functions as a library in files called cache.c and cache.h. 
   Of course, adding new files will require you to update the provided Makefile.
+  
 - SIGPIPE signals & EPIPE errors
   As discussed in the Aside on page 964 of the CS:APP3e text, your proxy must ignore SIGPIPE signals
 and should deal gracefully with write operations that return EPIPE errors.
@@ -114,12 +126,5 @@ error either.
   Forward all requests as HTTP/1.0 even if the original request was HTTP/1.1.
 
 
-# 5 Part II: Dealing with multiple concurrent requests
-Once you have a working sequential proxy, you should alter it to simultaneously handle multiple requests.
-The simplest way to implement a concurrent server is to spawn a new thread to handle each new connection
-request. Other designs are also possible, such as the prethreaded server described in Section 12.5.5 of your
-textbook.
-- Note that your threads should run in detached mode to avoid memory leaks.
-- The open clientfd and open listenfd functions described in the CS:APP3e textbook are
-based on the modern and protocol-independent getaddrinfo function, and thus are thread safe.
+
 

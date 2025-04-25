@@ -38,6 +38,9 @@ Dave O'Hallaron
 # Use localhost:8000 as an HTTP proxy server
 # And request the URL http://localhost:8001/home.html through that proxy
 curl -v --proxy http://localhost:8000  http://localhost:8001/home.html
+
+curl -v --proxy http://localhost:8000  http://localhost:8001/home.html -o ./.proxy/home.html
+
 *   Trying 127.0.0.1:8000...
 * TCP_NODELAY set
 * Connected to localhost (127.0.0.1) port 8000 (#0)
