@@ -29,36 +29,55 @@
  **************************/
 /* $begin errorfuns */
 /* $begin unixerror */
-void unix_error(char *msg) /* Unix-style error */
+void log_error(char *msg) {
+    // fprintf(stderr, "[ERROR] %s: %s\n", msg, strerror(errno));
+    fprintf(stderr, "[WARN] %s: %s\n", msg, strerror(errno));    // Useful if you want to distinguish fatal vs recoverable situations.
+}
+
+
+int unix_error(char *msg) /* Unix-style error */
 {
-    fprintf(stderr, "%s: %s\n", msg, strerror(errno));
-    exit(0);
+    // fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+    //  calling exit(0) means: Kill the entire server, stop accepting new connections, drop all current clients — just because one operation failed
+    // exit(0);
+    log_error(msg); 
+    return -1; // Or handle as appropriate
+    
 }
 /* $end unixerror */
 
-void posix_error(int code, char *msg) /* Posix-style error */
+int posix_error(int code, char *msg) /* Posix-style error */
 {
     fprintf(stderr, "%s: %s\n", msg, strerror(code));
-    exit(0);
+    // exit(0);
+    // log_error(msg); 
+    return -1;
+
 }
 
-void gai_error(int code, char *msg) /* Getaddrinfo-style error */
+int gai_error(int code, char *msg) /* Getaddrinfo-style error */
 {
-    fprintf(stderr, "%s: %s\n", msg, gai_strerror(code));
-    exit(0);
+    // fprintf(stderr, "%s: %s\n", msg, gai_strerror(code));
+    // exit(0);
+    log_error(msg); 
+    return -1;
 }
 
-void app_error(char *msg) /* Application error */
+int app_error(char *msg) /* Application error */
 {
-    fprintf(stderr, "%s\n", msg);
-    exit(0);
+    // fprintf(stderr, "%s\n", msg);
+    // exit(0);
+    log_error(msg); 
+    return -1;
 }
 /* $end errorfuns */
 
-void dns_error(char *msg) /* Obsolete gethostbyname error */
+int dns_error(char *msg) /* Obsolete gethostbyname error */
 {
-    fprintf(stderr, "%s\n", msg);
-    exit(0);
+    // fprintf(stderr, "%s\n", msg);
+    // exit(0);
+    log_error(msg); 
+    return -1;
 }
 
 /*********************************************

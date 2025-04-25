@@ -61,11 +61,11 @@ extern char **environ; /* Defined by libc */
 #define LISTENQ  1024  /* Second argument to listen() */
 
 /* Our own error-handling functions */
-void unix_error(char *msg);
-void posix_error(int code, char *msg);
-void dns_error(char *msg);
-void gai_error(int code, char *msg);
-void app_error(char *msg);
+int unix_error(char *msg);
+int posix_error(int code, char *msg);
+int dns_error(char *msg);
+int gai_error(int code, char *msg);
+int app_error(char *msg);
 
 /* Process control wrappers */
 pid_t Fork(void);
