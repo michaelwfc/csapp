@@ -330,7 +330,7 @@ void forwardRequest(int connfd, char *host, char *port, char *request)
     // Rio_writen(connfd, response, strlen(response));
 
     int response_len = 0;
-    Sleep(5);
+    
     while ((n = Rio_readnb(&rio, buf, MAXBUF)) > 0) // Read from server and write to client until EOF or error
     {
         printf("%s", buf); // might stop early on binary data  include null bytes (\0)
