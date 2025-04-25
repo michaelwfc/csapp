@@ -136,7 +136,7 @@ There are eight basic steps:
 
 - Each Internet host runs software that implements the **_TCP/IP protocol(Transmission Control Protocol/Internet Protocol)_**
 - Internet clients and servers communicate using a mix of **_sockets interface functions_** and **_Unix I/O functions_**
-- The sockets functions are typically implemented as system calls that trap into the kernel and call various kernel-mode functions in TCP/IP.
+- The `sockets functions` are typically implemented as system calls that trap into the kernel and call various kernel-mode functions in TCP/IP.
 
 ![image](../images/Chapter%2011%20Network%20Programming/Figure%2011.8.png)
 
@@ -434,19 +434,19 @@ int connect(int clientfd, const struct sockaddr *addr, socklen_t addrlen);
 // Returns: 0 if OK, −1 on error
 ```
 
-- The connect function attempts to establish an Internet connection with the server at socket address addr. 
-- The connect function blocks until either the connection is successfully established or an error occurs. 
+- The connect function attempts to ***establish an Internet connection*** with the server at `socket address addr`. 
+- The connect function `blocks` until either the connection is successfully established or an error occurs. 
   - If successful, the clientfd descriptor is now ready for reading and writing
   - the resulting connection is characterized by the socket pair ***(x:y, addr.sin_addr:addr.sin_port) ***
-    - x is client address
-    - y is ephemeral port that uniquely identifies client process on client host
+    - x is `client address`
+    - y is `ephemeral port` that uniquely identifies client process on client host
     
-- As with socket, the best practice is to use getaddrinfo to supply the arguments to connect
+- As with socket, the best practice is to use `getaddrinfo` to supply the arguments to connect
 
 ### 11.4.4 Sockets Interface: The bind Function
 绑定套接字地址 (bind)
 
-The remaining sockets functions—bind, listen, and accept—are used by servers to establish connections with clients.
+The remaining sockets functions— `bind, listen, and accept` —are used by servers to establish connections with clients.
 
 The bind function asks the kernel to associate the server’s socket address in addr with the socket descriptor sockfd. 
 
@@ -459,15 +459,15 @@ int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 // Returns: 0 if OK, −1 on error
 
 ```
-- the process can read bytes that arrive on the connection whose endpoint is add by reading from descriptor
-- similarly, the process can write to sockfd  are transferrd along the connection whose endpoint is addr
+- the process can ***read bytes*** that arrive on the connection whose endpoint is add by reading from descriptor
+- similarly, the process can ***write to sockfd***  are transferrd along the connection whose endpoint is addr
 - The addrlen argument is sizeof(sockaddr_in). 
-- As with socket and connect, the best practice is to use getaddrinfo to supply the arguments to bind
+- As with socket and connect, the best practice is to use `getaddrinfo` to supply the arguments to bind
 
 ### 11.4.5 Sockets Interface: The listen Function
 
 
-By default, kernel assumes that descriptors from sockeet funcion is an ***active sockets*** that will be on the client end of a connection.
+By default, kernel assumes that descriptors from socket funcion is an ***active sockets*** that will be on the client end of a connection.
 
 The listen function converts sockfd from an active socket to a ***listening socket*** that can accept connection requests from clients.
 
@@ -478,7 +478,7 @@ A server call the listen function to tell the kernel that a descriptor will be u
 int listen(int sockfd, int backlog);
 // Returns: 0 if OK, −1 on error
 ```
- The backlog argument is a hint about the number of outstanding connection requests that the kernel should queue up before it starts to refuse requests.
+ The `backlog` argument is a hint about the number of outstanding connection requests that the kernel should queue up before it starts to refuse requests.
 
 ![image](../images/Chapter%2011%20Network%20Programming/Figure%2011.14%20The%20roles%20of%20the%20listening%20and%20connected%20descriptors.png)
 

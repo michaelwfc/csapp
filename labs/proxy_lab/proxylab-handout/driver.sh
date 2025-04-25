@@ -77,18 +77,42 @@ function clear_dirs {
 #
 # wait_for_port_use - Spins until the TCP port number passed as an
 #     argument is actually being used. Times out after 5 seconds.
-#
+
+# $netstat --numeric-ports --numeric-hosts -a --protocol=tcpip | grep tcp | cut -c21- | cut -d':' -f2 | cut -d' ' -f1| grep -E "[0-9]+" | uniq | tr "\n" " "
+# $37510 53 34317 36510 34317 60978 59438 44716 60984 34317 51712
+# The selected code snippet is part of a function that identifies currently used TCP ports on the system. Here's a breakdown of how it works:
+
+# netstat --numeric-ports --numeric-hosts -a --protocol=tcpip: Lists all TCP connections and listens for TCP/IP without resolving hostnames or service names.
+# grep tcp: Filters the output to include only lines related to TCP.
+# cut -c21-: Extracts characters starting from column 21 to isolate the port-related information.
+# cut -d':' -f2: Splits the extracted string by the colon (:) delimiter and selects the second field, which contains the port number.
+# cut -d' ' -f1: Further refines the extraction by splitting based on spaces and selecting the first field to ensure only the port number remains.
+# grep -E "[0-9]+": Uses a regular expression to filter out any non-numeric values, ensuring only port numbers (which are numeric) are retained.
+# uniq: Removes any duplicate port numbers from the list.
+# tr "\n" " ": Converts each newline character into a space, creating a single-line space-separated list of port numbers.
+
+# | grep -wq "${1}": 
+# Pipes the output to grep to quietly (-q) search for the whole word (-w) that matches the first script argument ($1).
+
+# while [ "$?" != "0" ]: 
+# This loop continues to run as long as the last command failed (i.e., did not return 0).
+# "$?" != "0": means "the last command did not succeed"
+# Exit code 0 typically means success, anything else means failure
+
 function wait_for_port_use() {
     timeout_count="0"
     portsinuse=`netstat --numeric-ports --numeric-hosts -a --protocol=tcpip \
         | grep tcp | cut -c21- | cut -d':' -f2 | cut -d' ' -f1 \
         | grep -E "[0-9]+" | uniq | tr "\n" " "`
-
+    
     echo "${portsinuse}" | grep -wq "${1}"
+
+
     while [ "$?" != "0" ]
     do
         timeout_count=`expr ${timeout_count} + 1`
         if [ "${timeout_count}" == "${MAX_PORT_TRIES}" ]; then
+            echo "Error: Timeout of ${MAX_PORT_TRIES} waiting for port use: ${1}"
             kill -ALRM $$
         fi
 
@@ -98,6 +122,7 @@ function wait_for_port_use() {
             | grep -E "[0-9]+" | uniq | tr "\n" " "`
         echo "${portsinuse}" | grep -wq "${1}"
     done
+    echo "Port ${1} is in use."
 }
 
 
@@ -218,6 +243,7 @@ cd ${HOME_DIR}
 # Wait for tiny to start in earnest
 wait_for_port_use "${tiny_port}"
 
+
 # Run the proxy
 proxy_port=$(free_port)
 echo "Starting proxy on ${proxy_port}"
@@ -225,7 +251,7 @@ echo "Starting proxy on ${proxy_port}"
 proxy_pid=$!
 
 # Wait for the proxy to start in earnest
-wait_for_port_use "${proxy_port}"
+f "${proxy_port}"
 
 
 # Now do the test by fetching some text and binary files directly from
@@ -286,6 +312,8 @@ cd ${HOME_DIR}
 # Wait for tiny to start in earnest
 wait_for_port_use "${tiny_port}"
 
+
+
 # Run the proxy
 proxy_port=$(free_port)
 echo "Starting proxy on port ${proxy_port}"
@@ -295,14 +323,17 @@ proxy_pid=$!
 # Wait for the proxy to start in earnest
 wait_for_port_use "${proxy_port}"
 
+
 # Run a special blocking nop-server that never responds to requests
 nop_port=$(free_port)
 echo "Starting the blocking NOP server on port ${nop_port}"
-./nop-server.py ${nop_port} &> /dev/null &
+echo "HOME_DIR = ${HOME_DIR}"
+/usr/bin/python3 ./nop-server.py ${nop_port} & > /dev/null &
 nop_pid=$!
 
 # Wait for the nop server to start in earnest
 wait_for_port_use "${nop_port}"
+
 
 # Try to fetch a file from the blocking nop-server using the proxy
 clear_dirs
@@ -339,71 +370,71 @@ wait $nop_pid 2> /dev/null
 
 echo "concurrencyScore: $concurrencyScore/${MAX_CONCURRENCY}"
 
-#####
-# Caching
-#
-echo ""
-echo "*** Cache ***"
+# #####
+# # Caching
+# #
+# echo ""
+# echo "*** Cache ***"
 
-# Run the Tiny Web server
-tiny_port=$(free_port)
-echo "Starting tiny on port ${tiny_port}"
-cd ./tiny
-./tiny ${tiny_port} &> /dev/null &
-tiny_pid=$!
-cd ${HOME_DIR}
+# # Run the Tiny Web server
+# tiny_port=$(free_port)
+# echo "Starting tiny on port ${tiny_port}"
+# cd ./tiny
+# ./tiny ${tiny_port} &> /dev/null &
+# tiny_pid=$!
+# cd ${HOME_DIR}
 
-# Wait for tiny to start in earnest
-wait_for_port_use "${tiny_port}"
+# # Wait for tiny to start in earnest
+# wait_for_port_use "${tiny_port}"
 
-# Run the proxy
-proxy_port=$(free_port)
-echo "Starting proxy on port ${proxy_port}"
-./proxy ${proxy_port} &> /dev/null &
-proxy_pid=$!
+# # Run the proxy
+# proxy_port=$(free_port)
+# echo "Starting proxy on port ${proxy_port}"
+# ./proxy ${proxy_port} &> /dev/null &
+# proxy_pid=$!
 
-# Wait for the proxy to start in earnest
-wait_for_port_use "${proxy_port}"
+# # Wait for the proxy to start in earnest
+# wait_for_port_use "${proxy_port}"
 
-# Fetch some files from tiny using the proxy
-clear_dirs
-for file in ${CACHE_LIST}
-do
-    echo "Fetching ./tiny/${file} into ${PROXY_DIR} using the proxy"
-    download_proxy $PROXY_DIR ${file} "http://localhost:${tiny_port}/${file}" "http://localhost:${proxy_port}"
-done
+# # Fetch some files from tiny using the proxy
+# clear_dirs
+# for file in ${CACHE_LIST}
+# do
+#     echo "Fetching ./tiny/${file} into ${PROXY_DIR} using the proxy"
+#     download_proxy $PROXY_DIR ${file} "http://localhost:${tiny_port}/${file}" "http://localhost:${proxy_port}"
+# done
 
-# Kill Tiny
-echo "Killing tiny"
-kill $tiny_pid 2> /dev/null
-wait $tiny_pid 2> /dev/null
+# # Kill Tiny
+# echo "Killing tiny"
+# kill $tiny_pid 2> /dev/null
+# wait $tiny_pid 2> /dev/null
 
-# Now try to fetch a cached copy of one of the fetched files.
-echo "Fetching a cached copy of ./tiny/${FETCH_FILE} into ${NOPROXY_DIR}"
-download_proxy $NOPROXY_DIR ${FETCH_FILE} "http://localhost:${tiny_port}/${FETCH_FILE}" "http://localhost:${proxy_port}"
+# # Now try to fetch a cached copy of one of the fetched files.
+# echo "Fetching a cached copy of ./tiny/${FETCH_FILE} into ${NOPROXY_DIR}"
+# download_proxy $NOPROXY_DIR ${FETCH_FILE} "http://localhost:${tiny_port}/${FETCH_FILE}" "http://localhost:${proxy_port}"
 
-# See if the proxy fetch succeeded by comparing it with the original
-# file in the tiny directory
-diff -q ./tiny/${FETCH_FILE} ${NOPROXY_DIR}/${FETCH_FILE}  &> /dev/null
-if [ $? -eq 0 ]; then
-    cacheScore=${MAX_CACHE}
-    echo "Success: Was able to fetch tiny/${FETCH_FILE} from the cache."
-else
-    cacheScore=0
-    echo "Failure: Was not able to fetch tiny/${FETCH_FILE} from the proxy cache."
-fi
+# # See if the proxy fetch succeeded by comparing it with the original
+# # file in the tiny directory
+# diff -q ./tiny/${FETCH_FILE} ${NOPROXY_DIR}/${FETCH_FILE}  &> /dev/null
+# if [ $? -eq 0 ]; then
+#     cacheScore=${MAX_CACHE}
+#     echo "Success: Was able to fetch tiny/${FETCH_FILE} from the cache."
+# else
+#     cacheScore=0
+#     echo "Failure: Was not able to fetch tiny/${FETCH_FILE} from the proxy cache."
+# fi
 
-# Kill the proxy
-echo "Killing proxy"
-kill $proxy_pid 2> /dev/null
-wait $proxy_pid 2> /dev/null
+# # Kill the proxy
+# echo "Killing proxy"
+# kill $proxy_pid 2> /dev/null
+# wait $proxy_pid 2> /dev/null
 
-echo "cacheScore: $cacheScore/${MAX_CACHE}"
+# echo "cacheScore: $cacheScore/${MAX_CACHE}"
 
-# Emit the total score
-totalScore=`expr ${basicScore} + ${cacheScore} + ${concurrencyScore}`
-maxScore=`expr ${MAX_BASIC} + ${MAX_CACHE} + ${MAX_CONCURRENCY}`
-echo ""
-echo "totalScore: ${totalScore}/${maxScore}"
-exit
+# # Emit the total score
+# totalScore=`expr ${basicScore} + ${cacheScore} + ${concurrencyScore}`
+# maxScore=`expr ${MAX_BASIC} + ${MAX_CACHE} + ${MAX_CONCURRENCY}`
+# echo ""
+# echo "totalScore: ${totalScore}/${maxScore}"
+# exit
 

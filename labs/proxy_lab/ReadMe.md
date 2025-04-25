@@ -113,13 +113,27 @@ based on the modern and protocol-independent getaddrinfo function, and thus are 
   You are free to modify the files in the handout directory any way you like. 
   For example, for the sake of good modularity, you might implement your cache functions as a library in files called cache.c and cache.h. 
   Of course, adding new files will require you to update the provided Makefile.
-  
+
 - SIGPIPE signals & EPIPE errors
-  As discussed in the Aside on page 964 of the CS:APP3e text, your proxy must ignore SIGPIPE signals
+  As discussed in the Aside on page 964 of the CS:APP3e text, your proxy must ignore SIGPIPE signals 
 and should deal gracefully with write operations that return EPIPE errors.
+
+Aside Dealing with prematurely closed connections
+Although the basic functions of a Web server are quite simple, we don’t want to give you the false
+impression that writing a realWeb server is easy. Building a robustWeb server that runs for extended
+periods without crashing is a difficult task that requires a deeper understanding of Linux systems
+programming than we’ve learned here. 
+For example, if a server writes to a connection that has already been closed by the client (say, because you clicked the “Stop” button on your browser), then the first such write returns normally, but the second write causes the delivery of a `SIGPIPE` signal whose default behavior is to terminate the process. 
+If the SIGPIPE signal is caught or ignored, then the second write
+operation returns −1 with errno set to EPIPE. The strerr and perror functions report the EPIPE
+error as a “Broken pipe,” a nonintuitive message that has confused generations of students. The bottom
+line is that a robust server must catch these SIGPIPE signals and check write function calls for EPIPE
+errors.
+
+
 - not terminate
   Sometimes, calling read to receive bytes from a socket that has been prematurely closed will cause
-read to return -1 with errno set to ECONNRESET. Your proxy should not terminate due to this
+read to return -1 with errno set to `ECONNRESET`. Your proxy should not terminate due to this
 error either.
 - Remember that not all content on the web is ASCII text. Much of the content on the web is `binary data`, such as images and video. Ensure that you account for binary data when selecting and using functions for network I/O.
 - `HTTP/1.0`
@@ -127,4 +141,55 @@ error either.
 
 
 
+# SIGPIPE
 
+Great question!
+
+### What is `SIGPIPE`?
+
+`SIGPIPE` is a **signal** sent to a process **when it tries to write to a pipe or socket that has been closed** by the reading end (e.g., a client disconnected).
+
+- In your example, when a proxy or server tries to `write()` to a socket that the browser has closed (say the user hit "Stop"), it might not error immediately.
+- The **first write might succeed** (because it goes into the buffer), but the **second write** detects that the peer is gone and the system sends a `SIGPIPE`.
+
+---
+
+### What happens by default?
+
+By default, receiving a `SIGPIPE` **terminates the process** — that's dangerous for servers which should keep running!
+
+---
+
+### How to avoid termination?
+
+You can handle `SIGPIPE` in two common ways:
+
+#### 1. Ignore the signal:
+```c
+#include <signal.h>
+
+signal(SIGPIPE, SIG_IGN);
+```
+This prevents the process from dying. Instead, your `write()` call will fail and return `-1`, and `errno` will be set to `EPIPE`.
+
+#### 2. Install a custom signal handler:
+If you want to log or take some other action:
+```c
+void sigpipe_handler(int sig) {
+    fprintf(stderr, "Caught SIGPIPE: lost connection\n");
+}
+
+signal(SIGPIPE, sigpipe_handler);
+```
+
+---
+
+### Summary
+
+| Signal      | Trigger                          | Default Action         |
+|-------------|----------------------------------|------------------------|
+| `SIGPIPE`   | Write to a closed socket/pipe    | Terminates the process |
+
+Ignoring or handling it properly is crucial in robust server software (like your proxy).
+
+Want help modifying your proxy to ignore `SIGPIPE`?

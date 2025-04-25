@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <csapp.h>
 #include <sbuf.h>
+#include <signal.h>
 
 /* Misc constants */
 #define MAXLINE 8192 /* Max text line length */
@@ -32,6 +33,12 @@ void clienterror(int fd, char *cause, char *errnum,
                  char *shortmsg, char *longmsg);
 
 void *thread(void *vargp);
+
+void sigpipe_handler(int sig) {
+    fprintf(stderr, "Caught SIGPIPE: lost connection\n");
+}
+
+
 
 /**
  * listing on port
@@ -67,6 +74,9 @@ int main(int argc, char **argv)
     // the main thread creates the set of worker threads
     for (i = 0; i < NTHREADS; i++) /* Create worker threads */
         Pthread_create(&tid, NULL, thread, NULL);
+
+    signal(SIGPIPE, sigpipe_handler);
+
 
     while (1)
     {
@@ -330,7 +340,7 @@ void forwardRequest(int connfd, char *host, char *port, char *request)
     // Rio_writen(connfd, response, strlen(response));
 
     int response_len = 0;
-    
+
     while ((n = Rio_readnb(&rio, buf, MAXBUF)) > 0) // Read from server and write to client until EOF or error
     {
         printf("%s", buf); // might stop early on binary data  include null bytes (\0)
