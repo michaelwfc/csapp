@@ -2,6 +2,7 @@
 // #include <socket.h>
 #include <sys/socket.h>
 #include <csapp.h>
+#include <sbuf.h>
 
 /* Misc constants */
 #define MAXLINE 8192 /* Max text line length */
@@ -12,14 +13,25 @@
 #define MAX_CACHE_SIZE 1049000
 #define MAX_OBJECT_SIZE 102400
 
+#define NTHREADS 4
+#define SBUFSIZE 16
+
+sbuf_t sbuf; /* Shared buffer of connected descriptors */
+
 /* You won't lose style points for including this long line in your code */
 static const char *user_agent_hdr = "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3\r\n";
 
 void handleRequest(int connfd);
+void parse_request(int connfd, char *method, char *url, char *server_host, char *server_port, char *path, char *version,
+                   char *client_user_agent, char *client_connection, char *client_headers);
+void buildProxyRequest(char *request, char *method, char *server_host, char *server_port, char *path, char *version,
+                       char *client_user_agent, char *client_connection, char *client_headers);
 // int parse_url(char *url, char *filename, char *cgiargs);
 void forwardRequest(int connfd, char *host, char *port, char *buf);
 void clienterror(int fd, char *cause, char *errnum,
                  char *shortmsg, char *longmsg);
+
+void *thread(void *vargp);
 
 /**
  * listing on port
@@ -40,25 +52,49 @@ int main(int argc, char **argv)
 
     char *proxy_port = argv[1];
 
-    int listenfd, connfd;
+    int listenfd, connfd, i;
     char hostname[MAXLINE];
     char client_port[6]; // Enough to hold max 5 digits + null terminator
+    pthread_t tid;
 
     socklen_t clientlen;
     struct sockaddr_storage clientaddr;
     // listen on the proxy port
     listenfd = Open_listenfd(proxy_port);
+
+    // instial the sbuf
+    sbuf_init(&sbuf, SBUFSIZE);
+    // the main thread creates the set of worker threads
+    for (i = 0; i < NTHREADS; i++) /* Create worker threads */
+        Pthread_create(&tid, NULL, thread, NULL);
+
     while (1)
     {
         clientlen = sizeof(clientaddr);
         connfd = accept(listenfd, (SA *)&clientaddr, &clientlen);
         getnameinfo((SA *)&clientaddr, clientlen, hostname, MAXLINE, client_port, MAXLINE, 0);
         printf("Accepted connection from (%s, %s)\n", hostname, client_port);
-        handleRequest(connfd);
-        close(connfd);
+
+        // inserting the resulting connected descriptors in sbuf.
+        sbuf_insert(&sbuf, connfd); /* Insert connfd in buffer */
+
+        // handleRequest(connfd);
+        // close(connfd);
     }
 
     return 0;
+}
+
+void *thread(void *vargp)
+{
+    Pthread_detach(pthread_self());
+    while (1)
+    {
+        // It waits until it is able to remove a connected descriptor from the buffer
+        int connfd = sbuf_remove(&sbuf); /* Remove connfd from buffer */ // line:conc:pre:removeconnfd
+        handleRequest(connfd);                                           /* Service client */
+        Close(connfd);
+    }
 }
 
 /**
@@ -177,7 +213,6 @@ void parse_request(int connfd, char *method, char *url, char *server_host, char 
             // {
             //     strcpy(host, host_in_header);
             // }
-            
         }
         else if (strncmp(buf, "User-Agent: ", 12) == 0)
         {
@@ -248,8 +283,9 @@ void handleRequest(int connfd)
     User-Agent: User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3
     Connection: close
     Proxy-Connection: close
-    Accept: *//*
-    */
+    Accept: */
+    /*
+     */
     forwardRequest(connfd, server_host, server_port, request);
 }
 
@@ -294,7 +330,7 @@ void forwardRequest(int connfd, char *host, char *port, char *request)
     // Rio_writen(connfd, response, strlen(response));
 
     int response_len = 0;
-
+    Sleep(5);
     while ((n = Rio_readnb(&rio, buf, MAXBUF)) > 0) // Read from server and write to client until EOF or error
     {
         printf("%s", buf); // might stop early on binary data  include null bytes (\0)
@@ -308,7 +344,7 @@ void forwardRequest(int connfd, char *host, char *port, char *request)
         Rio_writen(connfd, buf, n);
         response_len += n;
     }
-
+    
     Close(clientfd); // line:netp:echoclient:close
 }
 /* $end echoclientmain */

@@ -65,7 +65,9 @@
     "thread": "c",
     "*.tcc": "c",
     "functional": "c",
-    "tuple": "c"
+    "tuple": "c",
+    "sbuf.h": "c",
+    "curl.h": "c"
   },
   "C_Cpp.default.compilerPath": "/usr/bin/gcc"
 }
