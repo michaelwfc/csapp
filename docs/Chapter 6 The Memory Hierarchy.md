@@ -26,21 +26,18 @@ Programs with good locality tend to access more data items from the upper levels
 
 Random access memory (RAM)comes in two varieties—static and dynamic.
 
-- Static RAM (SRAM)  
+- **Static RAM (SRAM)**  
   is faster and significantly more expensive than dynamic RAM (DRAM)
   SRAM is used for cache memories, both on and off the CPU chip.
-- dynamic RAM (DRAM)
+- **dynamic RAM (DRAM)**
   DRAM is used for the main memory plus the frame buffer of a graphics system
-
-#### Static RAM (SRAM)  
 
 
 #### Conventional DRAMs
 
-The cells (bits) in a DRAM chip are partitioned into d supercells, each consisting
-of w DRAM cells. A d × w DRAM stores a total of dw bits of information. The
-supercells are organized as a rectangular array with r rows and c columns, where
-rc = d.
+The cells (bits) in a DRAM chip are partitioned into d supercells, each consisting of w DRAM cells. 
+A d × w DRAM stores a total of dw bits of information. 
+The supercells are organized as a rectangular array with r rows and c columns, where rc = d.
 
 - RAS (row access strobe)
 The row address i is called a RAS (row access strobe) request. 
@@ -53,7 +50,7 @@ Notice that the RAS and CAS requests share the same DRAM address pins.
 
 DRAM chips are packaged in memory modules that plug into expansion slots on the main system board (motherboard). 
 
-Core i7 systems use the 240-pin dual inline memory module (DIMM),which transfers data to and from the memory controller
+Core i7 systems use the `240-pin dual inline memory module (DIMM)`,which transfers data to and from the memory controller
 in 64-bit chunks.
 
 #### Nonvolatile Memory
@@ -63,22 +60,18 @@ in 64-bit chunks.
 - Eraseable PROM (EPROM): can be bulk erased (UV, X-Ray)
 - Electrically eraseable PROM (EEPROM): electronic erase - capability
 - Flash memory: EEPROMs. with partial (block-level) erase capability
-  Wears out after about 100,000 erasings
-  solid state disk (SSD): a new form of flash-based disk drive
+  Wears out after about `100,000 erasings`
+  `solid state disk (SSD)`: a new form of flash-based disk drive
 
 Uses for Nonvolatile Memories
 
-- Firmware programs stored in a ROM (BIOS, controllers  for disks, network cards, graphics accelerators, - security subsystems,…)
-- Solid state disks (replace rotating disks in thumb  drives, smart phones, mp3 players, tablets, laptops,…)
+- Firmware programs stored in a ROM (BIOS, controllers for disks, network cards, graphics accelerators, - security subsystems,…)
+- Solid state disks (replace rotating disks in thumb drives, smart phones, mp3 players, tablets, laptops,…)
 - Disk caches
-
-
 
 #### Accessing Main Memory
 
-Buses:
-
-Data flows back and forth between the processor and the DRAM main memory
+**Buses**: Data flows back and forth between the processor and the DRAM main memory
 over shared electrical conduits called buses
 
 ### 6.1.2 Disk Storage
@@ -86,8 +79,6 @@ over shared electrical conduits called buses
 Disks are workhorse storage devices that hold enormous amounts of data, on the order of hundreds to thousands of gigabytes, as opposed to the hundreds or thousands of megabytes in a RAM-based memory
 
 #### Disk Geometry
-
-
 
 - Sectors
     A sector is the smallest unit of data storage on a hard disk
@@ -171,11 +162,10 @@ I/O buses: Unlike the system bus and memory buses, which are CPU-specific, I/O b
 
 #### Accessing Disks
 
+
 ### 6.1.3 Solid State Disks
 
-A solid state disk (SSD) is a storage technology, based on flash memory (Section
-6.1.1), that in some situations is an attractive alternative to the conventional
-rotating disk.
+A solid state disk (SSD) is a storage technology, based on flash memory (Section 6.1.1), that in some situations is an attractive alternative to the conventional rotating disk.
 
 flash translation layer
 
@@ -197,9 +187,9 @@ Programs tend to use data and instructions with addresses near or equal to those
 #### Temporal locality & Spatial locality
 Locality is typically described as having two distinct forms:
 
-- temporal locality
+- **temporal locality**
   In a program with good temporal locality, a memory location that is referenced once is likely to be referenced again multiple times in the near future. 
-- spatial locality
+- **spatial locality**
   In a program with good spatial locality, if a memory location is referenced once, then the program is likely to reference a nearby memory location in the near future.
 
 
@@ -298,14 +288,14 @@ the better the locality.
 ### Ideas about locality
 
 #### Hardware level : cache memories
-At the hardware level, the principle of locality allows computer designers to speed up main memory accesses by introducing small fast memories known as cache memories that hold blocks of the most recently referenced instructions and data items. 
+At the hardware level, the principle of locality allows computer designers to speed up main memory accesses by introducing small fast memories known as `cache memories` that hold blocks of the most recently referenced instructions and data items. 
 
 #### Operating system level :  virtual address space
-At the operating system level, the principle of locality allows the system to use the main memory as a cache of the most recently referenced chunks of the virtual address space
-the operating system uses main memory to cache the most recently used disk blocks in the disk file system.
+At the operating system level, the principle of locality allows the system to `use the main memory as a cache` of the most recently referenced chunks of the virtual address space
+the operating system uses main memory to `cache the most recently used disk blocks` in the disk file system.
 
 #### Appication levle:
-Web browsers exploit temporal locality by caching recently referenced documents on a local disk. 
+Web browsers exploit temporal locality by `caching recently referenced documents` on a local disk. 
 High-volumeWeb servers hold recently requested documents in front-end disk caches that satisfy requests for these documents without requiring any intervention from the server.
 
 
@@ -330,49 +320,42 @@ The memory hierarchy creates a large pool of storage that costs as much as the c
 
 ### 6.3.1 Caching in the Memory Hierarchy
 
-
 #### Cache 
- a small, fast storage device that acts as a staging area for the data objects stored in a larger, slower device.
+ a small, fast storage device that acts as `a staging area` for the data objects stored in a larger, slower device.
 
 ![image](../images/Chapter%206%20The%20Memory%20Hierarchy/Figure%206.22%20The%20basic%20principle%20of%20caching%20in%20a%20memory%20hierarchy.png)
 
 #### Blocks: 
-The storage at level k + 1 is partitioned into contiguous chunks of data objects called blocks. 
+The storage at level k + 1 is partitioned into contiguous chunks of data objects called `blocks`. 
 Each block has a unique address or name that distinguishes it from other blocks.
 
 #### Transfer Units
-Data are always copied back and forth between level k and level k + 1 in
-block-size transfer units
+Data are always copied back and forth between level k and level k + 1 in block-size transfer units
 
 #### Cache Hits
 
-When a program needs a particular data object d from level k + 1, it first looks
-for d in one of the blocks currently stored at level k. If d happens to be cached
-at level k, then we have what is called a cache hit. 
-
+When a program needs a particular data object d from level k + 1, it first looks for d in one of the blocks currently stored at level k. If d happens to be cached at level k, then we have what is called `a cache hit`. 
 The program reads d directly from level k, which by the nature of the memory hierarchy is faster than reading d from level k + 1
 
 #### Cache Misses
 
 #### Evicting the block
-This process of overwriting an existing block is known as replacing or evicting
-the block. 
-The block that is evicted is sometimes referred to as a victim block.
-The decision about which block to replace is governed by the cache’s replacement
-policy
+This process of overwriting an existing block is known as `replacing or evicting the block`. 
+The block that is evicted is sometimes referred to as `a victim block`. 
+The decision about which block to replace is governed by `the cache’s Replacement/Eviction policy`
 
-#### Cache’s replacement policy
-  - A cache with a random replacement policy would choose a random victim block.
-  - A cache with a least recently used (LRU)replacement policy
+#### Cache’s Replacement/Eviction policy
+  - A cache with `a random replacement policy` would choose a random victim block.
+  - A cache with `a least recently used (LRU) replacement policy`
   would choose the block that was last accessed the furthest in the past.
 
 #### Kinds of Cache Misses
 
-- Cold (compulsory) miss
+- **Cold (compulsory) miss**
 Cold misses occur because the cache is empty.
 
-- Conflict miss
-Most caches limit blocks at level k+1 to a small subset (sometimes a singleton)of the block positions at level k.
+- **Conflict miss**
+Most caches limit blocks at level k+1 to a small subset (sometimes a singleton) of the block positions at level k.
   - E.g. Block i at level k+1 must be placed in block (i mod 4) at level k.
   Conflict misses occur when the level k cache is large enough, but multiple data objects all map to the same level k block.
   - E.g. Referencing blocks 0, 8, 0, 8, 0, 8, ... would miss every time.
@@ -385,18 +368,18 @@ Occurs when the set of active cache blocks (working set) is larger than the cach
 
 the essence of the memory hierarchy is that the storage device at each level is a cache for the next lower level.
 
-- How to partition the cache storage into blocks
-- transfer blocks between different levels, 
-- when there are hits and misses how to deal with them.
+- How to `partition` the cache storage into blocks
+- `transfer blocks` between different levels, 
+- when there are `hits` and `misses` how to deal with them.
 
 
 ### 6.3.2 Summary of Memory Hierarchy Concepts
 
 memory hierarchies based on caching work because slower storage is cheaper than faster storage and because programs tend to exhibit locality:
-- Exploiting temporal locality. 
+- Exploiting `temporal locality`. 
   Because of temporal locality, the same data objects are likely to be reused multiple times. 
   Once a data object has been copied into the cache on the first miss, we can expect a number of subsequent hits on that object. Since the cache is faster than the storage at the next lower level, these subsequent hits can be served much faster than the original miss.
-- Exploiting spatial locality. 
+- Exploiting `spatial locality`. 
   Blocks usually contain multiple data objects. Because of spatial locality, we can expect that the cost of copying a block after a miss will be amortized by subsequent references to other objects within that block.
 
 ![image](../images/Chapter%206%20The%20Memory%20Hierarchy/Figure%206.23%20The%20ubiquity%20of%20caching%20in%20modern%20computer%20systems.png)
@@ -420,41 +403,40 @@ memrory address: m bit -> M=2^m unique address
 
 cache’s organization can be characterized by the tuple (S, E, B, m). 
 
-- cache sets S
-s set index bits in A:  form an index into the array of S sets, interpreted as an unsigned integer,
-an array of $S = 2^s$ cache sets
+- **cache sets S**
+`s set index bits in A`:  form an index into the array of S sets, interpreted as an unsigned integer, an array of $S = 2^s$ cache sets
 the set index bits tell us which set the word must be stored in
 
-- cache lines E
+- **cache lines E**
 Each set consists of E cache lines.
-t tag bits in A tell us which line (if any) in the set contains the word.
-A line in the set contains the word if and only if the valid bit is set and the tag bits in the line
-match the tag bits in the address A.
+`t tag bits in A` tell us which line (if any) in the set contains the word.
+A line in the set contains the word if and only if the valid bit is set and the tag bits in the line match the tag bits in the address A.
 
-- cache line
-  - data block ：  Each line consists of a data block of B = 2^b bytes 
+- **cache line**
+  - data block ：  Each line consists of a data block of `B = 2^b bytes` 
   - a valid bit： indicates whether or not the line contains meaningful information
-  - tag bits： t = m − (b + s) tag bits (a subset of the bits from the current block’s memory address) that uniquely identify the block stored in the cache line.
+  - tag bits： `t = m − (b + s)` tag bits (a subset of the bits from the current block’s memory address) that uniquely identify the block stored in the cache line.
 
   
-The size (or capacity) of a cache =C = S × E × B
+The size (or capacity) of a cache = C = S × E × B
 is stated in terms of the aggregate size of all the blocks. The tag bits and valid bit are not included.
 
 
-
 #### How does the cache know whether it contains a copy of the word at address A?
+When the CPU is instructed by a load instruction to read a word from address A of main memory, it sends address A to the cache.
 
 memory address has m bits that form $M = 2^m$ unique addresses
 The parameters S and B induce a partitioning of the m address bits into the three fields shown in Figure 6.25(b).
 
 - The s set index bits in A
-  form an index into the array of S sets.
-  When interpreted as an unsigned integer, the set index bits tell us which set the word must be stored in.
+  - form an index into the array of S sets.
+  - When interpreted as an unsigned integer, the set index bits tell us which set the word must be stored in.
 - t tag bits in A 
-  tell us which line (if any) in the set contains the word. 
-  A line in the set contains the word if and only if the valid bit is set and the tag bits in the line match the tag bits in the address A.
+  - tell us which line (if any) in the set contains the word. 
+  - A line in the set contains the word if and only if the valid bit is set and the tag bits in the line match the tag bits in the address A.
 - the b block offset bits
-  Once we have located the line identified by the tag in the set identified by the set index, then the b block offset bits give us the offset of the word in the B-byte data block
+  - Once we have located the line identified by the tag in the set identified by the set index, then the `b block offset bits` give us `the offset of the word` in the B-byte data block
+
 
 
 Figure 6.26 Summary of cache parameters
@@ -472,46 +454,46 @@ Figure 6.26 Summary of cache parameters
 |t = m − (s + b)  | Number of tag bits|
 |C = B × E × S    | Cache size (bytes), not including overhead such as the valid and tag bits|
 
-
 #### The Word at address A
 In the context of computer memory and caches, a "word" typically refers to the standard unit of data used by a particular processor architecture. It is not necessarily just a single byte; the size of a word can vary depending on the architecture. 
 - In a 32-bit architecture, a word is usually 4 bytes (32 bits)
 - in a 64-bit architecture, a word is usually 8 bytes (64 bits)
-
+- But it can vary depending on the architecture — the key idea is that a word is the size of the CPU’s general-purpose registers and natural data size
+  
 The memory address points to the starting byte of the word
 the system reads or writes the entire word (multiple bytes) based on the architecture's word size.
 
 
 ### 6.4.2 Direct-Mapped Caches
 
-Caches are grouped into different classes based on E, the number of cache lines  per set. A cache with exactly one line per set (E = 1) is known as a direct-mapped cache (see Figure 6.27).
+Caches are grouped into different classes based on E, the number of cache lines  per set. A cache with exactly one line per set (`E = 1`) is known as ***a direct-mapped cache*** (see Figure 6.27).
 ![image](../images/Chapter%206%20The%20Memory%20Hierarchy/Figure%206.27%20Direct-mapped%20cache(E=1).png)
 
 The process that a cache goes through of determining whether a request is a
 hit or a miss and then extracting the requested word consists of three steps: 
-(1) set selection
+- (1) set selection
 s set index from address w -> unsigned integer -> set index
 ![image](../images/Chapter%206%20The%20Memory%20Hierarchy/Figure%206.28%20Set%20selection%20in%20a%20%20directmapped%20cache.png)
 
-(2) line matching
-if the valid bit set and the tags  bits in the cache line match the tag bits in the address, we know that a copy of the word we want is indeed stored in the line.
+- (2) line matching
+if `the valid bit` set and `the tags bits` in the cache line match the tag bits in the address, we know that a copy of the word we want is indeed stored in the line.
 if either the valid bit were not set or the tags did not match, then we would have had a cache miss.
 
 
-(3) word extraction 
+- (3) ***word extraction*** 
 Once we have a hit, we know that w is somewhere in the block. 
 This last step determines where the desired word starts in the block. 
 the block offset bits provide us with the offset of the first byte in the desired word.
-Similar to our view of a cache as an array of lines, we can think of a block as an array of bytes, and the byte offset as an index into that array.
+Similar to our view of a cache as an array of lines, we can think of a block as an array of bytes, and `the byte offset` as an index into that array.
 
-(4) Line Replacement on Misses in Direct-Mapped Caches
+- (4) ***Line Replacement*** on Misses in Direct-Mapped Caches
 If the cache misses, then it needs to retrieve the requested block from the next level in the memory hierarchy and store the new block in one of the cache lines of the set indicated by the set index bits. 
 In general, if the set is full of valid cache lines, then one of the existing lines must be evicted. 
 For a direct-mapped cache, where each set contains exactly one line, the replacement policy is trivial: the current line is replaced by the newly fetched line.
 
 ####  Conflict Misses in Direct-Mapped Caches
 
-Conflict misses in direct-mapped caches occur when multiple memory addresses map to the same cache line, causing the cache to repeatedly evict and replace the data in that line. This happens because a direct-mapped cache has only one line per set, so different addresses that map to the same set will conflict with each other.
+Conflict misses in direct-mapped caches occur when multiple memory addresses *** map to the same cache line***, causing the cache to repeatedly evict and replace the data in that line. This happens because a direct-mapped cache has only one line per set, so different addresses that map to the same set will conflict with each other.
 
 ```C
 float dotprod(float x[8], float y[8])
@@ -525,6 +507,7 @@ float dotprod(float x[8], float y[8])
 ```
 
 C= (S,E, B) = (2, 1, 16)
+t = 32 - (1 + 4) = 27
 s= 1
 b= 4
 
@@ -537,7 +520,6 @@ address 16  -> 01 0000 -> set 1
 address 20  -> 01 0100 -> set 1
 address 24  -> 01 1000 -> set 1
 address 28  -> 01 11000 -> set 1
-
 address 32 ->  10 0000 -> set > 0 
 address 36 ->  10 0100 -> set > 0 
 
@@ -545,7 +527,7 @@ address 36 ->  10 0100 -> set > 0
 ### 6.4.3 Set Associative Caches
 
 A set associative cache relaxes this constraint so that each set holds more than one cache line.
-a cache with $1<E <C/B$ is often called an E-way set associative cache.
+a cache with $1<E <C/B$ is often called ***an E-way set associative cache***.
 
 1. Set Selection in Set Associative Caches
 2. Line Matching and Word Selection in Set Associative Caches
@@ -564,9 +546,6 @@ A fully associative cache consists of a single set (i.e., E = C/B) that contains
 
 
 ### 6.4.5 Issues with Writes(Data store)
-
-
-
 
 #### the Read operation of a cache 
 1. look for a copy of the desired word w in the cache. 
@@ -718,24 +697,24 @@ Another issue is how to deal with write misses
 
 Cache performance is evaluated with a number of metrics
 
-- Miss rate=  num misses/num references 
+- `Miss rate = num misses/num references` 
   The fraction of memory references during the execution of a program, or a part of a program, that miss. 
 
   Typical numbers (in percentages):
     3-10% for L1
     can be quite small (e.g., < 1%) for L2, depending on size, etc.
     
-- Hit rate =1− miss rate
+- `Hit rate =1− miss rate`
   The fraction of memory references that hit
 
-- Hit time
+- `Hit time`
   The time to deliver a word in the cache to the CPU, including the time for set selection, line identification, and word selection. Hit time is on the order of several clock cycles for L1 caches
 
   Typical numbers:
     4 clock cycle for L1
     10 clock cycles for L2
   
-- Miss penalty
+- `Miss penalty`
   Any additional time required because of a miss. 
     The penalty for L1 misses served from L2 is on the order of 10 cycles;
     from L3, 50 cycles;
@@ -769,7 +748,7 @@ Modern systems such as the Core i7 compromise with cache blocks that contain 64 
 
 #### Impact of Associativity
 
-- Higher associativity (i.e., larger values of E) is that it decreases the vulnerability of the cache to thrashing due to conflict misses.
+- `Higher associativity` (i.e., larger values of E) is that it decreases the vulnerability of the cache to thrashing due to conflict misses.
 - Higher associativity is expensive to implement and hard to make fast. It requires more tag bits per line, additional LRU state bits per line, and additional control logic. 
 - Higher associativity can increase hit time, because of the increased complexity
 - increase the miss penalty because of the increased complexity of choosing a victim line.
@@ -827,22 +806,15 @@ Stride-1 reference patterns are good (spatial locality)
 
 ### 6.6.3 Exploiting Locality in Your Programs
 
-- Focus your attention on the inner loops, where the bulk of the computations
-and memory accesses occur.
-- Try to maximize the spatial locality in your programs by reading data objects
-sequentially, with stride 1, in the order they are stored in memory.
-- Try to maximize the temporal locality in your programs by using a data object
-as often as possible once it has been read from memory.
+- Focus your attention on the inner loops, where the bulk of the computations and memory accesses occur.
+- Try to maximize the spatial locality in your programs by reading data objects sequentially, with stride 1, in the order they are stored in memory.
+- Try to maximize the temporal locality in your programs by using a data object as often as possible once it has been read from memory.
 
 #### Using blocking to improve temporal locality
 
-The general idea of blocking is to organize the data structures in a program into large chunks called blocks. 
+The general idea of blocking is to organize the data structures in a program into large chunks called `blocks`. 
 (In this context, “block” refers to an application-level chunk of data, not to a cache block.) The program is structured so that it loads a chunk into the L1 cache, does all the reads and writes that it needs to on that chunk, then discards the chunk, loads in the next chunk, and so on.
-
-
 
 
 ## 6.7 Summary 684
 
-kv## Homework Problems 685
-## Solutions to Practice Problems 696

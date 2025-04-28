@@ -139,9 +139,3 @@ make mdriver
 
 # Perf index = 45 (util) + 23 (thru) = 67/100
 ```
-
-# GDB
-
-```
-
-```
