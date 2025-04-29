@@ -4,15 +4,12 @@
 #include <csapp.h>
 #include <sbuf.h>
 #include <signal.h>
+#include <cache.h>
 
 /* Misc constants */
 #define MAXLINE 8192 /* Max text line length */
 #define MAXBUF 8192  /* Max I/O buffer size */
 #define LISTENQ 1024 /* Second argument to listen() */
-
-/* Recommended max cache and object sizes */
-#define MAX_CACHE_SIZE 1049000
-#define MAX_OBJECT_SIZE 102400
 
 #define NTHREADS 4
 #define SBUFSIZE 16
@@ -34,11 +31,13 @@ void clienterror(int fd, char *cause, char *errnum,
 
 void *thread(void *vargp);
 
-void sigpipe_handler(int sig) {
+// initial the cache
+cache_list *cache = initial_cache();
+
+void sigpipe_handler(int sig)
+{
     fprintf(stderr, "Caught SIGPIPE: lost connection\n");
 }
-
-
 
 /**
  * listing on port
@@ -76,7 +75,6 @@ int main(int argc, char **argv)
         Pthread_create(&tid, NULL, thread, NULL);
 
     signal(SIGPIPE, sigpipe_handler);
-
 
     while (1)
     {
@@ -276,27 +274,44 @@ void handleRequest(int connfd)
     parse_request(connfd, method, url, server_host, server_port, path,
                   version, client_user_agent, client_connection, client_headers);
 
-    if (strcasecmp(method, "POST") == 1)
+    char *cached_obj;
+    int obj_size;
+
+    if ((cached_obj = cache_get(&cache, url, &obj_size)) != NULL)
     {
-        // fprintf(stderr, "Not implemented\n");
-        clienterror(connfd, url, "501", "Not Implemented", "Proxy does not implement this method");
+        rio_writen(connfd, cached_obj, obj_size);
+        free(cached_obj);
         return;
     }
-    char request[MAXLINE];
-    buildProxyRequest(request, method, server_host, server_port, path, version, client_user_agent, client_connection, client_headers);
+    else
+    {
+        // else, connect to server, stream response into buf
 
-    // forward the request to the server
-    printf("Proxy: Forwarding to %s:%s\n%s\n\n", server_host, server_port, request);
-    /**
-    GET /home.html HTTP/1.0
-    Host: localhost:8001
-    User-Agent: User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3
-    Connection: close
-    Proxy-Connection: close
-    Accept: */
-    /*
-     */
-    forwardRequest(connfd, server_host, server_port, request);
+        if (strcasecmp(method, "POST") == 1)
+        {
+            // fprintf(stderr, "Not implemented\n");
+            clienterror(connfd, url, "501", "Not Implemented", "Proxy does not implement this method");
+            return;
+        }
+        char request[MAXLINE];
+        buildProxyRequest(request, method, server_host, server_port, path, version, client_user_agent, client_connection, client_headers);
+
+        // forward the request to the server
+        printf("Proxy: Forwarding to %s:%s\n%s\n\n", server_host, server_port, request);
+        /**
+        GET /home.html HTTP/1.0
+        Host: localhost:8001
+        User-Agent: User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3
+        Connection: close
+        Proxy-Connection: close
+        Accept: */
+        /*
+         */
+        forwardRequest(connfd, server_host, server_port, request);
+
+        // while also writing to cache buffer
+        cache_put(&cache, url, buf, n);
+    }
 }
 
 /**
@@ -354,7 +369,7 @@ void forwardRequest(int connfd, char *host, char *port, char *request)
         Rio_writen(connfd, buf, n);
         response_len += n;
     }
-    
+
     Close(clientfd); // line:netp:echoclient:close
 }
 /* $end echoclientmain */
