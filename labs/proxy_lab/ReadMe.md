@@ -146,6 +146,20 @@ semaphores to implement your own readers-writers solution. In either case, the f
 implement a strictly LRU eviction policy will give you some flexibility in supporting multiple readers.
 
 
+# 7 Evaluation
+This assignment will be graded out of a total of 70 points:
+• BasicCorrectness: 40 points for basic proxy operation (autograded)
+• Concurrency: 15 points for handling concurrent requests (autograded)
+• Cache: 15 points for a working cache (autograded)
+
+## 7.1 Autograding
+Your handout materials include an autograder, called driver.sh, that your instructor will use to assign
+scores for BasicCorrectness, Concurrency, and Cache. From the proxylab-handout directory:
+ 
+linux> ./driver.sh
+
+You must run the driver on a Linux machine
+
 ## 7.2 Robustness
 As always, you must deliver a program that is robust to errors and even malformed or malicious input.
 Servers are typically long-running processes, and web proxies are no exception. Think carefully about how
@@ -166,7 +180,9 @@ and test a representative set of inputs, including base cases, typical cases, an
 Eventually you should test your proxy using the most recent version of Mozilla Firefox. Visiting About Firefox
 will automatically update your browser to the most recent version.
 To configure Firefox to work with a proxy, visit
+
 Preferences>Advanced>Network>Settings
+
 It will be very exciting to see your proxy working through a realWeb browser. Although the functionality of
 your proxy will be limited, you will notice that you are able to browse the vast majority of websites through
 your proxy.

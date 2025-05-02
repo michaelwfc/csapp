@@ -25,14 +25,10 @@ void parse_request(int connfd, char *method, char *url, char *server_host, char 
 void buildProxyRequest(char *request, char *method, char *server_host, char *server_port, char *path, char *version,
                        char *client_user_agent, char *client_connection, char *client_headers);
 // int parse_url(char *url, char *filename, char *cgiargs);
-void forwardRequest(int connfd, char *host, char *port, char *buf);
-void clienterror(int fd, char *cause, char *errnum,
-                 char *shortmsg, char *longmsg);
+void forwardRequest(int connfd, char *host, char *port, char *request, char *response, size_t *response_size);
+void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg);
 
 void *thread(void *vargp);
-
-// initial the cache
-cache_list *cache = initial_cache();
 
 void sigpipe_handler(int sig)
 {
@@ -46,6 +42,8 @@ void sigpipe_handler(int sig)
  * - check if the request is cached
  * - if not, send the request to the server and cache the response
  */
+CacheList *cache;
+
 int main(int argc, char **argv)
 {
     printf("start proxy at port:%s\n", argv[1]);
@@ -55,6 +53,9 @@ int main(int argc, char **argv)
         fprintf(stderr, "usage: %s <port>\n", argv[0]);
         exit(1);
     }
+
+    // initial the cache
+    cache = cache_build();
 
     char *proxy_port = argv[1];
 
@@ -89,6 +90,7 @@ int main(int argc, char **argv)
         // handleRequest(connfd);
         // close(connfd);
     }
+    cache_free(cache);
 
     return 0;
 }
@@ -276,8 +278,10 @@ void handleRequest(int connfd)
 
     char *cached_obj;
     int obj_size;
+    char *response=NULL;
+    size_t response_len = 0;
 
-    if ((cached_obj = cache_get(&cache, url, &obj_size)) != NULL)
+    if ((cached_obj = cache_get(cache, url, &obj_size)) != NULL)
     {
         rio_writen(connfd, cached_obj, obj_size);
         free(cached_obj);
@@ -307,10 +311,10 @@ void handleRequest(int connfd)
         Accept: */
         /*
          */
-        forwardRequest(connfd, server_host, server_port, request);
+        forwardRequest(connfd, server_host, server_port, request, response, &response_len);
 
         // while also writing to cache buffer
-        cache_put(&cache, url, buf, n);
+        cache_put(cache, url, response, response_len);
     }
 }
 
@@ -325,7 +329,7 @@ If the server uses chunked transfer encoding (in HTTP/1.1), you’ll need to:
 - Read chunks accordingly
 - Handle \r\n correctly
  */
-void forwardRequest(int connfd, char *host, char *port, char *request)
+void forwardRequest(int connfd, char *host, char *port, char *request, char *response, size_t *response_len)
 {
     int n;
     char buf[MAXLINE];
@@ -345,20 +349,10 @@ void forwardRequest(int connfd, char *host, char *port, char *request)
     // block and wait the response from the server
     // read the response from the server until the end of the response
     printf("Proxy Receiving  response from %s:%s\n", host, port);
-    // while ((n = Rio_readlineb(&rio, buf, MAXLINE)) != 0)
-    // {
-    //     printf("%s", buf);
-    //     strcat(response, buf);
-    // }
-    // // response to the client connfd
-    // // proxyResponseRequest(connfd, buf);
-    // Rio_writen(connfd, response, strlen(response));
-
-    int response_len = 0;
 
     while ((n = Rio_readnb(&rio, buf, MAXBUF)) > 0) // Read from server and write to client until EOF or error
     {
-        printf("%s", buf); // might stop early on binary data  include null bytes (\0)
+        // printf("%s", buf); // might stop early on binary data  include null bytes (\0)
         /* This is streaming, not buffering the full data. It works well even for large files.
          the client will start receiving data as each write() call is made — not only after the loop finishes.
         The key here is that write(client_fd, buf, n) sends data over a TCP socket. TCP is a streaming protocol, so:
@@ -367,10 +361,11 @@ void forwardRequest(int connfd, char *host, char *port, char *request)
             3. The client can start receiving the data incrementally, often even before your while loop finishes.
          */
         Rio_writen(connfd, buf, n);
-        response_len += n;
+        memcpy(response + *response_len, buf, n);
+        *response_len += n;
     }
 
-    Close(clientfd); // line:netp:echoclient:close
+    Close(clientfd);
 }
 /* $end echoclientmain */
 

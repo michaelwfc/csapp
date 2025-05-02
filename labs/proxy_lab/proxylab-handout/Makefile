@@ -16,14 +16,14 @@ csapp.o: csapp.c csapp.h
 sbuf.o: sbuf.c sbuf.h csapp.h
 	$(CC) $(CFLAGS) -c sbuf.c
 
-proxy.o: proxy.c csapp.h sbuf.h
+cache.o: cache.c cache.h
+	$(CC) $(CFLAGS) -c cache.c
+
+proxy.o: proxy.c csapp.h sbuf.h cache.h
 	$(CC) $(CFLAGS) -c proxy.c
 
 proxy: proxy.o sbuf.o csapp.o 
-	$(CC) $(CFLAGS) proxy.o sbuf.o csapp.o -o proxy $(LDFLAGS)
-
-test: test_concurrency.c csapp.h
-	$(CC) $(CFLAGS) $(LDFLAGS) test_concurrency.c csapp.c csapp.h -o test_concurrency
+	$(CC) $(CFLAGS) proxy.o sbuf.o cache.o csapp.o -o proxy $(LDFLAGS)
 
 # Creates a tarball in ../proxylab-handin.tar that you can then
 # hand in. DO NOT MODIFY THIS!

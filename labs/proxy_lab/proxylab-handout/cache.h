@@ -1,3 +1,6 @@
+
+#include <pthread.h>
+
 /* Recommended max cache and object sizes */
 #define MAX_CACHE_SIZE 1049000  // 1 MiB
 #define MAX_OBJECT_SIZE 102400  // 100 KiB
@@ -13,25 +16,27 @@ Use pthread_rwlock_t:
 pthread_rwlock_rdlock(&lock) for concurrent readers
 pthread_rwlock_wrlock(&lock) for writers (insert/remove)
 */
-typedef struct cache_block
+typedef struct CacheBlock
 {
     char *url;                // Unique key
     char *content;            // The cached web object
     int size;                 // Size of the object in bytes
-    struct cache_block *prev; // For LRU: older
-    struct cache_block *next; // For LRU: newer
-} cache_block;
+    struct CacheBlock *prev; // For LRU: older
+    struct CacheBlock *next; // For LRU: newer
+} CacheBlock;
 
 typedef struct
 {
-    cache_block *head; // Most recently used
-    cache_block *tail; // Least recently used
+    CacheBlock *head; // Most recently used
+    CacheBlock *tail; // Least recently used
     int total_size;
     pthread_rwlock_t lock; // Reader-writer lock for thread-safe access
-} cache_list;
+} CacheList;
 
-cache_list * initial_cache();
+CacheList * cache_build();
 
-char *cache_get(cache_list *cache, const char *url, int *object_size);
+void cache_free(CacheList *cache);
 
-void cache_put(cache_list *cache, const char *url, const char *buf, int size);
+char *cache_get(CacheList *cache, const char *url, int *object_size);
+
+void cache_put(CacheList *cache, const char *url, const char *buf, int size);
