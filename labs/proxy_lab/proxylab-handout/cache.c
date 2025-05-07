@@ -1,10 +1,9 @@
 
 
-#include <stdlib.h>  // For malloc, free
-#include <string.h>  // For strcmp, memcpy, strdup
+#include <stdlib.h> // For malloc, free
+#include <string.h> // For strcmp, memcpy, strdup
 #include "cache.h"
 #include <pthread.h>
-
 
 void evict_from_cache(CacheList *cache);
 void move_to_front(CacheList *cache, CacheBlock *block);
@@ -12,18 +11,20 @@ void remove_from_list(CacheList *cache, CacheBlock *block);
 void insert_at_front(CacheList *cache, CacheBlock *block);
 
 // build cache
-CacheList * cache_build() {
+CacheList *cache_build()
+{
     CacheList *cache = malloc(sizeof(CacheList));
     cache->head = NULL;
     cache->tail = NULL;
-    cache->total_size = MAX_OBJECT_SIZE;
+    cache->total_size = 0;
     return cache;
-
 }
 
- void cache_free(CacheList *cache) {
+void cache_free(CacheList *cache)
+{
     CacheBlock *p = cache->head;
-    while (p) {
+    while (p)
+    {
         CacheBlock *next = p->next;
         free(p->url);
         free(p->content);
@@ -34,12 +35,15 @@ CacheList * cache_build() {
 }
 
 // Cache Lookup
-char *cache_get(CacheList *cache, const char *url, int *object_size) {
+char *cache_get(CacheList *cache, const char *url, int *object_size)
+{
     pthread_rwlock_rdlock(&cache->lock);
 
     CacheBlock *p = cache->head;
-    while (p) {
-        if (strcmp(p->url, url) == 0) {
+    while (p)
+    {
+        if (strcmp(p->url, url) == 0)
+        {
             // Move this block to the front (most recently used)
             move_to_front(cache, p);
             *object_size = p->size;
@@ -56,44 +60,66 @@ char *cache_get(CacheList *cache, const char *url, int *object_size) {
     return NULL;
 }
 
-void move_to_front(CacheList *cache, CacheBlock *block) {
-    if (block == cache->head) return;
+void move_to_front(CacheList *cache, CacheBlock *block)
+{
+    if (block == cache->head)
+        return;
 
     remove_from_list(cache, block);
     insert_at_front(cache, block);
 }
 
-void remove_from_list(CacheList *cache, CacheBlock *block) {
+void remove_from_list(CacheList *cache, CacheBlock *block)
+{
     // block -> prev -> next  =  block -> next
     // block -> next-> prev   =  block -> prev
-    if (block == cache->head) {
+    if (block == cache->head)
+    {
         cache->head = block->next;
-    } else {
+    }
+    else
+    {
         block->prev->next = block->next;
     }
 
-    if (block == cache->tail) {
+    if (block == cache->tail)
+    {
         cache->tail = block->prev;
-    } else {
+    }
+    else
+    {
         block->next->prev = block->prev;
     }
 }
 
-void insert_at_front(CacheList *cache, CacheBlock *block) {
+void insert_at_front(CacheList *cache, CacheBlock *block)
+{
     block->next = cache->head;
     block->prev = NULL;
-    cache->head->prev = block;
+
+    if (cache->head)
+    {
+        //  when cache->head is not NULL,otherwise occurs The segmentation fault
+        cache->head->prev = block;
+    }else{
+        cache->tail = block;
+    }
     cache->head = block;
+    
 }
 
 // Eviction Policy (Approx LRU)
-void cache_put(CacheList *cache, const char *url, const char *buf, int size) {
-    if (size > MAX_OBJECT_SIZE) return;
+int cache_put(CacheList *cache, const char *url, const char *buf, int size)
+{   
+    int total_size = cache->total_size + size;
+    if (size > MAX_OBJECT_SIZE || total_size > MAX_CACHE_SIZE)
+        return;
 
     pthread_rwlock_wrlock(&cache->lock);
 
     // Evict until there’s space
-    while (cache->total_size + size > MAX_CACHE_SIZE) {
+    while (cache->total_size + size > MAX_CACHE_SIZE)
+    {
         evict_from_cache(cache);
     }
 
@@ -107,11 +133,24 @@ void cache_put(CacheList *cache, const char *url, const char *buf, int size) {
     cache->total_size += size;
 
     pthread_rwlock_unlock(&cache->lock);
+    return 0;
 }
 
+void Cache_put(CacheList *cache, const char *url, const char *buf, int size)
+{
+    int rc;
 
-void evict_from_cache(CacheList *cache) {
-    if (!cache->tail) return;
+    if ((rc = cache_put(cache, url, buf, size)) != 0)
+    {
+        posix_error(rc, "Cache_put error");
+        exit(0);
+    }
+}
+
+void evict_from_cache(CacheList *cache)
+{
+    if (!cache->tail)
+        return;
 
     CacheBlock *victim = cache->tail;
 
@@ -121,4 +160,3 @@ void evict_from_cache(CacheList *cache) {
     free(victim->content);
     free(victim);
 }
-

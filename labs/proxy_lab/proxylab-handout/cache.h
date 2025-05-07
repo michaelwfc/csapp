@@ -39,4 +39,6 @@ void cache_free(CacheList *cache);
 
 char *cache_get(CacheList *cache, const char *url, int *object_size);
 
-void cache_put(CacheList *cache, const char *url, const char *buf, int size);
+
+int cache_put(CacheList *cache, const char *url, const char *buf, int size);
+void Cache_put(CacheList *cache, const char *url, const char *buf, int size);

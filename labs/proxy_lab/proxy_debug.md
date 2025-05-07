@@ -178,3 +178,71 @@ Accept-Language: zh-CN,zh;q=0.9
 
 Accepted connection from (localhost, 50566)
 ```
+
+# evalution
+$ ./driver.sh 
+*** Basic ***
+Starting tiny on 14824
+Port 14824 is in use.
+Starting proxy on 4618
+./driver.sh: line 254: f: command not found
+1: home.html
+   Fetching ./tiny/home.html into ./.proxy using the proxy
+   Fetching ./tiny/home.html into ./.noproxy directly from Tiny
+   Comparing the two files
+   Success: Files are identical.
+2: csapp.c
+   Fetching ./tiny/csapp.c into ./.proxy using the proxy
+   Fetching ./tiny/csapp.c into ./.noproxy directly from Tiny
+   Comparing the two files
+   Success: Files are identical.
+3: tiny.c
+   Fetching ./tiny/tiny.c into ./.proxy using the proxy
+   Fetching ./tiny/tiny.c into ./.noproxy directly from Tiny
+   Comparing the two files
+   Success: Files are identical.
+4: godzilla.jpg
+   Fetching ./tiny/godzilla.jpg into ./.proxy using the proxy
+   Fetching ./tiny/godzilla.jpg into ./.noproxy directly from Tiny
+   Comparing the two files
+   Success: Files are identical.
+5: tiny
+   Fetching ./tiny/tiny into ./.proxy using the proxy
+   Fetching ./tiny/tiny into ./.noproxy directly from Tiny
+   Comparing the two files
+   Success: Files are identical.
+Killing tiny and proxy
+basicScore: 40/40
+
+*** Concurrency ***
+Starting tiny on port 24665
+Port 24665 is in use.
+Starting proxy on port 13375
+Port 13375 is in use.
+Starting the blocking NOP server on port 14622
+HOME_DIR = /mnt/e/projects/csapp/labs/proxy_lab/proxylab-handout
+Server listening on port 14622
+Port 14622 is in use.
+Trying to fetch a file from the blocking nop-server
+Fetching ./tiny/home.html into ./.noproxy directly from Tiny
+Fetching ./tiny/home.html into ./.proxy using the proxy
+Checking whether the proxy fetch succeeded
+Success: Was able to fetch tiny/home.html from the proxy.
+Killing tiny, proxy, and nop-server
+concurrencyScore: 15/15
+
+*** Cache ***
+Starting tiny on port 23785
+Port 23785 is in use.
+Starting proxy on port 13787
+Port 13787 is in use.
+Fetching ./tiny/tiny.c into ./.proxy using the proxy
+Fetching ./tiny/home.html into ./.proxy using the proxy
+Fetching ./tiny/csapp.c into ./.proxy using the proxy
+Killing tiny
+Fetching a cached copy of ./tiny/home.html into ./.noproxy
+Success: Was able to fetch tiny/home.html from the cache.
+Killing proxy
+cacheScore: 15/15
+
+totalScore: 70/70

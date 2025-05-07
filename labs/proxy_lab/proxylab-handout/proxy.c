@@ -278,7 +278,9 @@ void handleRequest(int connfd)
 
     char *cached_obj;
     int obj_size;
-    char *response=NULL;
+    
+    // Allocate buffer
+    char response[MAX_OBJECT_SIZE];
     size_t response_len = 0;
 
     if ((cached_obj = cache_get(cache, url, &obj_size)) != NULL)
@@ -314,7 +316,7 @@ void handleRequest(int connfd)
         forwardRequest(connfd, server_host, server_port, request, response, &response_len);
 
         // while also writing to cache buffer
-        cache_put(cache, url, response, response_len);
+        Cache_put(cache, url, response, response_len);
     }
 }
 
@@ -332,6 +334,7 @@ If the server uses chunked transfer encoding (in HTTP/1.1), you’ll need to:
 void forwardRequest(int connfd, char *host, char *port, char *request, char *response, size_t *response_len)
 {
     int n;
+    size_t totol_size=0;
     char buf[MAXLINE];
 
     // the proxy clientfd
@@ -361,7 +364,10 @@ void forwardRequest(int connfd, char *host, char *port, char *request, char *res
             3. The client can start receiving the data incrementally, often even before your while loop finishes.
          */
         Rio_writen(connfd, buf, n);
-        memcpy(response + *response_len, buf, n);
+        totol_size += n;
+        if(totol_size < MAX_OBJECT_SIZE+1)
+            memcpy(response + *response_len, buf, n);
+        // keep recording the response_len
         *response_len += n;
     }
 
