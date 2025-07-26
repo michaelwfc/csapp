@@ -12,7 +12,7 @@
 - Windows: remote wsl
   Pros:   
     - without worrying about pathing issues, binary compatibility, or other cross-OS challenges
-    - 
+  
 
   
 - Windows: vm linux 虚拟机
@@ -85,68 +85,6 @@ Windows uses the Portable Executable (PE) format, while Linux commonly uses the 
 - https://code.visualstudio.com/docs/remote/wsl
 
 
-# WSL 
-
-
-## Remote wsl connect to windows proxy(clash) for VS extensions
-### 1. Configure Clash to Listen on All Interfaces
-Clash for Windows (or similar tools) may be set by default to bind only to 127.0.0.1. To allow WSL to reach Clash via the Windows host IP, you need to change its binding settings.
-Enable “Allow LAN” in Clash
-Open Clash’s settings:
-Look for an option labeled “Allow LAN” or similar. Enabling this option will bind Clash to 0.0.0.0 (all interfaces) instead of just 127.0.0.1.
-
-Restart Clash:
-After changing the setting, restart Clash so that it binds on all interfaces. Then, confirm that it is listening on the Windows host IP.
-
-Verify the Binding on Windows
-You can check which interfaces Clash is listening on by opening a Command Prompt (run as administrator) and executing:
-
-```Powershell
-netstat -ano | findstr :7897
-# You should see an entry like:
-TCP    0.0.0.0:7897    0.0.0.0:0    LISTENING    <PID>
-# If it shows only 127.0.0.1:7897, then Clash is not listening on the external interface.
-```
-### 2. Test Proxy Connectivity from Windows:
-Testing connectivity from Windows itself could help. They can try using curl on Windows to connect to
-curl -I --proxy http://127.0.0.1:7897 https://www.google.com
-If this fails, Clash isn't running correctly on port 7897.
-
-### 3. Allow Port in Windows Firewall:
-Open Windows Security → Firewall & Network Protection → Advanced Settings.
-Create a new Inbound Rule for port 7897 (TCP) to allow connections from WSL.
-
-### 4. Confirm Windows Host IP:
-Find Windows Host IP from WSL
-Run this in WSL:  # 10.255.255.254 
-```shell
-cat /etc/resolv.conf | grep nameserver | awk '{print $2}'
-```
-but this IP is specific to WSL’s virtual network and ***may not work for proxy connections***.
-
-Confirm Windows Host IP instead: 192.168.1.14
-
-```Powershell
-ipconfig | findstr IPv4
-```
-
-
-
-### 5. set the proxy for remote wsl
-```bash
-echo 'export http_proxy="http://192.168.1.14:7897"' >> ~/.bashrc
-echo 'export https_proxy="http://192.168.1.14:7897"' >> ~/.bashrc
-echo 'export no_proxy="localhost,127.0.0.1,::1"' >> ~/.bashrc
-# Run the Fixed Command (replace YOUR_WINDOWS_IP 192.168.1.14):
-# sed -i 's/10.255.255.254/192.168.1.17/g' ~/.bashrc
-# sed -i 's/192.168.1.14/192.168.1.4/g' ~/.bashrc
-# sed -i 's/192.168.1.17/10.255.255.254/g' ~/.bashrc
-source ~/.bashrc
-
-# 检查remote wsl代理是否生效
-curl -I --proxy http://192.168.1.14:7897 https://www.google.com
-curl -I https://www.google.com
-```
 
 
 ## Reference
